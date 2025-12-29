@@ -25,7 +25,9 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="flex flex-col gap-6 px-5 py-10 text-center border-t border-[#ededed] dark:border-[#333]">
-            <p className="text-neutral-400 text-sm font-normal">© 2024 GestionAR Inc. Todos los derechos reservados.</p>
+            <p className="text-neutral-400 text-sm font-normal">
+  © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
+</p>
           </footer>
         </div>
       </body>

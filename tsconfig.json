@@ -9,7 +9,7 @@
     "incremental": true,
     "module": "esnext",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler", //ACA IBA "node" lo tube que cambiar porque tailwind.config.ts no me andaba
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
