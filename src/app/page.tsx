@@ -8,7 +8,7 @@ export default function Panel() {
         {/* --- CABECERA DEL PANEL --- */}
         <div className="flex flex-wrap justify-between items-end gap-3 px-4 pb-8">
           <div className="flex min-w-72 flex-col gap-2">
-            <h1 className="text-primary dark:text-white text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em]">
+            <h1 className="text-primary dark:text-white text-4xl sm:text-5xl font-extrabold leading-tight tracking-[-0.033em]">
               Bienvenido de nuevo, Admin
             </h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-lg font-normal">
@@ -48,7 +48,7 @@ export default function Panel() {
           </Link>
 
           {/* Tarjeta: Stock */}
-          <Link className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="#">
+          <Link className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="/inventario">
             <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXdzopWsFirwytLlZdQ2T-VwLsDDHyQrPIXFjPNZnOmM84yF8_-rztmm7J9WHEJZkRgfPAPwNOmtbYjBQwjgd-iskl6vwfx-LNc0b4z2lwUfaRCoZlLoSGH1EbAwphJI4_kSTJSPV0bbVRYgrYXN_1Loi9tr-B3cmLbp65nVO7EjQxXaLrMDDVwaK18G02jeFv4JW2ChVfp2YinqBHcWwu5W5t0JjtIE14DN6ilDaDKp-bpIMNdO3-uPc5K_aW7JPMNeNVC33jiygJ')`}}>
               <div className="absolute inset-0  from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
@@ -59,7 +59,7 @@ export default function Panel() {
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600">Stock</p>
+                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600">Inventario</p>
                 <span className="material-symbols-outlined text-neutral-400">inventory_2</span>
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Gestiona inventario, almacenes y seguimiento en tiempo real.</p>

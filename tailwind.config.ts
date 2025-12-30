@@ -14,8 +14,7 @@ const config: Config = {
         "background-dark": "#191919",
       },
       fontFamily: {
-        "display": ["Plus Jakarta Sans", "sans-serif"],
-        "body": ["Noto Sans", "sans-serif"],
+        "sans": ["var(--font-jakarta)", "sans-serif"],
       },
     },
   },

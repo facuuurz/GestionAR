@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header/Header"; // Usando el alias @ configurado en tu tsconfig
+import {Plus_Jakarta_Sans} from "next/font/google";
+
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],       // Importante para que cargue los caracteres latinos
+  variable: "--font-jakarta", // Creamos una variable CSS para usarla en Tailwind
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "GestionAR - Inicio",
@@ -15,10 +23,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* Importación de iconos de Google */}
+        {/* Iconos */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
       </head>
-      <body className="antialiased">
+      <body className={`antialiased ${jakarta.className}`}>
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
           <Header />
           <main className="flex-1">
@@ -26,8 +34,8 @@ export default function RootLayout({
           </main>
           <footer className="flex flex-col gap-6 px-5 py-10 text-center border-t border-[#ededed] dark:border-[#333]">
             <p className="text-neutral-400 text-sm font-normal">
-  © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
-</p>
+              © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
+            </p>
           </footer>
         </div>
       </body>
