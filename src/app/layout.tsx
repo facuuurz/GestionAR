@@ -5,8 +5,8 @@ import {Plus_Jakarta_Sans} from "next/font/google";
 
 
 const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],       // Importante para que cargue los caracteres latinos
-  variable: "--font-jakarta", // Creamos una variable CSS para usarla en Tailwind
+  subsets: ["latin"],       
+  variable: "--font-jakarta", 
   display: "swap",
 });
 
@@ -26,7 +26,7 @@ export default function RootLayout({
         {/* Iconos */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
       </head>
-      <body className={`antialiased ${jakarta.className}`}>
+      <body className={`antialiased ${jakarta.variable}`}>
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
           <Header />
           <main className="flex-1">
