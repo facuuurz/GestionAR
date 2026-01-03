@@ -68,12 +68,12 @@ export default function FilterModal({ isOpen, onClose }) {
             <div className="flex gap-3 items-center">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">$</span>
-                <input type="number" placeholder="Min" className="w-full h-10 pl-6 pr-3 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#252525] text-sm outline-none focus:border-neutral-400 transition-colors" />
+                <input type="number" placeholder="Min" className="w-full h-10 pl-6 pr-3 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#252525] text-sm text-neutral-900 dark:text-white outline-none focus:border-neutral-400 transition-colors" />
               </div>
               <span className="text-neutral-400">-</span>
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">$</span>
-                <input type="number" placeholder="Max" className="w-full h-10 pl-6 pr-3 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#252525] text-sm outline-none focus:border-neutral-400 transition-colors" />
+                <input type="number" placeholder="Max" className="w-full h-10 pl-6 pr-3 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#252525] text-sm text-neutral-900 dark:text-white outline-none focus:border-neutral-400 transition-colors" />
               </div>
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function FilterModal({ isOpen, onClose }) {
 
           <button 
             onClick={onClose} 
-            className="h-10 px-4 rounded-lg text-sm font-bold bg-neutral-800 text-white hover:bg-black dark:bg-white dark:text-primary dark:hover:bg-neutral-200 shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center justify-center"
+            className="h-10 px-4 rounded-lg text-sm font-bold bg-gray-200 text-black hover:bg-gray-300 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center justify-center"
           >
             Aplicar Filtros
           </button>

@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 // IMPORTANTE: Ajusta las rutas según donde guardaste los archivos
 import FilterModal from "@/components/FilterModal/FilterModal"; 
+import Ordenar from "@/components/Ordenar/Ordenar";
 import ProductRow from "@/components/ProductRow/ProductRow"; // <--- IMPORTAMOS LA NUEVA FILA
 
 export default function InventarioPage() {
   const [showFilters, setShowFilters] = useState(false);
+  const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
 
   const productos = [
     { id: "77900123", nombre: "Leche Entera La Serenísima 1L", sub: "Cartón / Larga Vida", stock: "45 un.", precio: "$1.200,00", lotes: 3, tipo: "Lácteos", prov: "PROV-101", status: "ok" },
@@ -22,6 +24,10 @@ export default function InventarioPage() {
       <FilterModal 
         isOpen={showFilters} 
         onClose={() => setShowFilters(false)} 
+      />
+      <Ordenar
+        isOpen={mostrarOrdenar}
+        onClose={() => setMostrarOrdenar(false)}
       />
 
       <div className="w-full flex flex-col gap-6 h-full">
@@ -72,7 +78,10 @@ export default function InventarioPage() {
               <span>Filtrar</span>
             </button>
 
-            <button className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white">
+            <button 
+              onClick={() => setMostrarOrdenar(true)} 
+              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
+            >
               <span className="material-symbols-outlined text-[18px]">sort</span>
               <span>Ordenar</span>
             </button>
