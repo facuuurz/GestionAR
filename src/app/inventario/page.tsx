@@ -51,10 +51,10 @@ export default function InventarioPage() {
               Gestiona el inventario, precios y stock de tus productos.
             </p>
           </div>
-          <button className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm">
+          <Link className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" href="/inventario/nuevo-producto">
             <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
             <span className="text-sm font-bold truncate">Agregar Nuevo Producto</span>
-          </button>
+          </Link>
         </div>
 
         {/* --- FILTROS Y BÚSQUEDA --- */}
