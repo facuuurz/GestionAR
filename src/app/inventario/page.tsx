@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 // IMPORTANTE: Ajusta las rutas según donde guardaste los archivos
 import FilterModal from "@/components/FilterModal/FilterModal"; 
-import Ordenar from "@/components/Ordenar/Ordenar";
+import Ordenar from "@/components/VentanaOrdenar/VentanaOrdenar";
 import ProductRow from "@/components/ProductRow/ProductRow"; // <--- IMPORTAMOS LA NUEVA FILA
 
 export default function InventarioPage() {
