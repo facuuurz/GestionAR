@@ -8,7 +8,7 @@ export default function Panel() {
         {/* --- CABECERA DEL PANEL --- */}
         <div className="flex flex-wrap justify-between items-end gap-3 px-4 pb-8">
           <div className="flex min-w-72 flex-col gap-2">
-            <h1 className="text-primary dark:text-white text-4xl sm:text-5xl font-extrabold leading-tight tracking-[-0.033em]">
+            <h1 className="text-primary dark:text-white text-4xl sm:text-5xl font-bold leading-tight tracking-[-0.033em]">
               Bienvenido de nuevo, Admin
             </h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-lg font-normal">
