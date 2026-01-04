@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 
-export default function Ordenar({ isOpen, onClose }) {
+export default function Ordenar({ isOpen, onClose, onAplicar }) {
   if (!isOpen) return null;
 
   // Estado local para la opción seleccionada
@@ -12,6 +12,7 @@ export default function Ordenar({ isOpen, onClose }) {
   const handleApply = () => {
     // Aquí luego conectaremos la lógica real
     console.log("Ordenando por:", criterio);
+    onAplicar(criterio);
     onClose();
   };
 
