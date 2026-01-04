@@ -92,7 +92,7 @@ export default function FilterModal({ isOpen, onClose }) {
 
           <button 
             onClick={onClose} 
-            className="h-10 px-4 rounded-lg text-sm font-bold bg-gray-200 text-black hover:bg-gray-300 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center justify-center"
+            className="h-10 px-4 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center justify-center"
           >
             Aplicar Filtros
           </button>
