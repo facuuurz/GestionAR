@@ -1,21 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 // IMPORTANTE: Ajusta las rutas según donde guardaste los archivos
 import FilterModal from "@/components/FilterModal/FilterModal"; 
 import Ordenar from "@/components/VentanaOrdenar/VentanaOrdenar";
 import ProductRow from "@/components/ProductRow/ProductRow"; // <--- IMPORTAMOS LA NUEVA FILA
+import { useProductos } from "@/hooks/useProductos";
 
 export default function InventarioPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
 
-  const productos = [
+  const productosData = [
     { id: "77900123", nombre: "Leche Entera La Serenísima 1L", sub: "Cartón / Larga Vida", stock: "45 un.", precio: "$1.200,00", lotes: 3, tipo: "Lácteos", prov: "PROV-101", status: "ok" },
     { id: "77900654", nombre: "Yogur Frutilla Bebible 180g", sub: "", stock: "8 un.", precio: "$950,00", lotes: 1, tipo: "Lácteos", prov: "PROV-101", status: "low" },
     { id: "77900789", nombre: "Coca Cola Sabor Original 2.25L", sub: "", stock: "12 un.", precio: "$2.100,00", lotes: 2, tipo: "Bebidas", prov: "PROV-310", status: "warning" },
   ];
+
+  // LOGICA DE ORDENAMIENTO HASTA USAR PRISMA
+  const { productos, setCriterioOrden } = useProductos(productosData);
 
   return (
     <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative">
@@ -28,6 +32,7 @@ export default function InventarioPage() {
       <Ordenar
         isOpen={mostrarOrdenar}
         onClose={() => setMostrarOrdenar(false)}
+        onAplicar={setCriterioOrden}
       />
 
       <div className="w-full flex flex-col gap-6 h-full">
