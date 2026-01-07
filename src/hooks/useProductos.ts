@@ -1,62 +1,25 @@
 import { useState, useMemo, useEffect } from "react";
 import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos";
 
+// Definimos el tipo aquí o impórtalo si lo tienes en otro lado
 type Producto = {
   id: number;
   nombre: string;
-  descripcion: string | null;
+  codigoBarra: string | null;
+  tipo: string | null;
+  proveedor: string | null;
   stock: number;
   precio: number;
-  tipo: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
-/*export function useProductos(productosIniciales: any[]) {
-  const [criterioOrden, setCriterioOrden] = useState("nombre-asc");
-
-  const productosOrdenados = useMemo(() => {
-    // copia para no afectar el array original
-    let ordenados = [...productosIniciales];
-
-    return ordenados.sort((a, b) => {
-      // Helpers para limpiar datos
-      const limpiarPrecio = (p: string) => parseFloat(p.replace("$", "").replace(".", "").replace(",", "."));
-      const limpiarStock = (s: string) => parseInt(s.replace(" un.", ""));
-
-      switch (criterioOrden) {
-        case "nombre-asc":
-          return a.nombre.localeCompare(b.nombre);
-        
-        case "stock-desc":
-          return limpiarStock(b.stock) - limpiarStock(a.stock);
-        
-        case "stock-asc":
-          return limpiarStock(a.stock) - limpiarStock(b.stock);
-        
-        case "precio-desc":
-          return limpiarPrecio(b.precio) - limpiarPrecio(a.precio);
-
-        case "precio-asc":
-          return limpiarPrecio(a.precio) - limpiarPrecio(b.precio);
-        
-        default:
-          return 0;
-      }
-    });
-  }, [criterioOrden, productosIniciales]);
-
-  return {
-    productos: productosOrdenados, // lista ya ordenada
-    criterioOrden,                 // criterio actual
-    setCriterioOrden               // función para cambiar el orden
-  };
-}*/
-
-
-export function useProductos() {
-  const [productos, setProductos] = useState<Producto[]>([]);
+// Aceptamos "datosIniciales" para que no falle la llamada en page.tsx
+export function useProductos(datosIniciales: any[] = []) {
+  const [productosBase, setProductosBase] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [criterioOrden, setCriterioOrden] = useState("");
 
-  // Cargar productos automáticamente al entrar a la página
   useEffect(() => {
     recargar();
   }, []);
@@ -64,25 +27,40 @@ export function useProductos() {
   async function recargar() {
     setLoading(true);
     const datos = await obtenerProductosDB();
-    // Convertimos el precio Decimal a number para evitar problemas en frontend
-    const datosFormateados = datos.map(p => ({
-        ...p,
-        precio: Number(p.precio)
-    }));
-    setProductos(datosFormateados);
+    setProductosBase(datos);
     setLoading(false);
   }
 
   async function generarDatosPrueba() {
     setLoading(true);
     await cargarDatosDePrueba();
-    await recargar(); // Volvemos a leer la DB para mostrar los nuevos
+    await recargar();
   }
 
+  // Lógica de ordenamiento
+  const productosOrdenados = useMemo(() => {
+    let ordenados = [...productosBase];
+    if (!criterioOrden) return ordenados;
+
+    ordenados.sort((a, b) => {
+      switch (criterioOrden) {
+        case "nombre-asc": return a.nombre.localeCompare(b.nombre);
+        case "nombre-desc": return b.nombre.localeCompare(a.nombre);
+        case "stock-desc": return b.stock - a.stock;
+        case "stock-asc": return a.stock - b.stock;
+        case "precio-desc": return b.precio - a.precio;
+        case "precio-asc": return a.precio - b.precio;
+        default: return 0;
+      }
+    });
+    return ordenados;
+  }, [productosBase, criterioOrden]);
+
   return {
-    productos,
+    productos: productosOrdenados,
     loading,
     recargar,
-    generarDatosPrueba
+    generarDatosPrueba,
+    setCriterioOrden, // ¡Esto soluciona el error en page.tsx!
   };
 }
