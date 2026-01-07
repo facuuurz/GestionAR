@@ -1,6 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos";
 
-export function useProductos(productosIniciales: any[]) {
+type Producto = {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  stock: number;
+  precio: number;
+  tipo: string;
+};
+
+/*export function useProductos(productosIniciales: any[]) {
   const [criterioOrden, setCriterioOrden] = useState("nombre-asc");
 
   const productosOrdenados = useMemo(() => {
@@ -38,5 +48,41 @@ export function useProductos(productosIniciales: any[]) {
     productos: productosOrdenados, // lista ya ordenada
     criterioOrden,                 // criterio actual
     setCriterioOrden               // función para cambiar el orden
+  };
+}*/
+
+
+export function useProductos() {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar productos automáticamente al entrar a la página
+  useEffect(() => {
+    recargar();
+  }, []);
+
+  async function recargar() {
+    setLoading(true);
+    const datos = await obtenerProductosDB();
+    // Convertimos el precio Decimal a number para evitar problemas en frontend
+    const datosFormateados = datos.map(p => ({
+        ...p,
+        precio: Number(p.precio)
+    }));
+    setProductos(datosFormateados);
+    setLoading(false);
+  }
+
+  async function generarDatosPrueba() {
+    setLoading(true);
+    await cargarDatosDePrueba();
+    await recargar(); // Volvemos a leer la DB para mostrar los nuevos
+  }
+
+  return {
+    productos,
+    loading,
+    recargar,
+    generarDatosPrueba
   };
 }
