@@ -1,42 +1,66 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+// NOTA: Asegúrate de que estas rutas sean correctas según tu proyecto
+import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos"; 
 
-export function useProductos(productosIniciales: any[]) {
-  const [criterioOrden, setCriterioOrden] = useState("nombre-asc");
+type Producto = {
+  id: number;
+  nombre: string;
+  codigoBarra: string | null;
+  tipo: string | null;
+  proveedor: string | null;
+  stock: number;
+  precio: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
+// Aceptamos "datosIniciales" para evitar errores si se pasan props
+export function useProductos(datosIniciales: any[] = []) {
+  const [productosBase, setProductosBase] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [criterioOrden, setCriterioOrden] = useState("");
+
+  useEffect(() => {
+    recargar();
+  }, []);
+
+  async function recargar() {
+    setLoading(true);
+    const datos = await obtenerProductosDB();
+    setProductosBase(datos);
+    setLoading(false);
+  }
+
+  async function generarDatosPrueba() {
+    setLoading(true);
+    await cargarDatosDePrueba();
+    await recargar();
+  }
+
+  // Lógica de ordenamiento
   const productosOrdenados = useMemo(() => {
-    // copia para no afectar el array original
-    let ordenados = [...productosIniciales];
+    let ordenados = [...productosBase];
+    if (!criterioOrden) return ordenados;
 
-    return ordenados.sort((a, b) => {
-      // Helpers para limpiar datos
-      const limpiarPrecio = (p: string) => parseFloat(p.replace("$", "").replace(".", "").replace(",", "."));
-      const limpiarStock = (s: string) => parseInt(s.replace(" un.", ""));
-
+    ordenados.sort((a, b) => {
       switch (criterioOrden) {
-        case "nombre-asc":
-          return a.nombre.localeCompare(b.nombre);
-        
-        case "stock-desc":
-          return limpiarStock(b.stock) - limpiarStock(a.stock);
-        
-        case "stock-asc":
-          return limpiarStock(a.stock) - limpiarStock(b.stock);
-        
-        case "precio-desc":
-          return limpiarPrecio(b.precio) - limpiarPrecio(a.precio);
-
-        case "precio-asc":
-          return limpiarPrecio(a.precio) - limpiarPrecio(b.precio);
-        
-        default:
-          return 0;
+        case "nombre-asc": return a.nombre.localeCompare(b.nombre);
+        case "nombre-desc": return b.nombre.localeCompare(a.nombre);
+        case "stock-desc": return b.stock - a.stock;
+        case "stock-asc": return a.stock - b.stock;
+        case "precio-desc": return b.precio - a.precio;
+        case "precio-asc": return a.precio - b.precio;
+        default: return 0;
       }
     });
-  }, [criterioOrden, productosIniciales]);
+    return ordenados;
+  }, [productosBase, criterioOrden]);
 
   return {
-    productos: productosOrdenados, // lista ya ordenada
-    criterioOrden,                 // criterio actual
-    setCriterioOrden               // función para cambiar el orden
+    productos: productosOrdenados,
+    loading,
+    recargar,
+    generarDatosPrueba,
+    setCriterioOrden, 
   };
 }
