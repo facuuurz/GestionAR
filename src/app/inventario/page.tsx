@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-// IMPORTANTE: Ajusta las rutas según donde guardaste los archivos
+// IMPORTANTE: Ajusta las rutas según donde guardaste los archivos pene
+
 import FilterModal from "@/components/FilterModal/FilterModal"; 
 import Ordenar from "@/components/VentanaOrdenar/VentanaOrdenar";
 import ProductRow from "@/components/ProductRow/ProductRow"; // <--- IMPORTAMOS LA NUEVA FILA
