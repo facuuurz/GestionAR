@@ -272,18 +272,18 @@ export type ProductoOrderByWithRelationInput = {
 
 export type ProductoWhereUniqueInput = Prisma.AtLeast<{
   id?: number
+  codigoBarra?: string
   AND?: Prisma.ProductoWhereInput | Prisma.ProductoWhereInput[]
   OR?: Prisma.ProductoWhereInput[]
   NOT?: Prisma.ProductoWhereInput | Prisma.ProductoWhereInput[]
   nombre?: Prisma.StringFilter<"Producto"> | string
-  codigoBarra?: Prisma.StringNullableFilter<"Producto"> | string | null
   tipo?: Prisma.StringNullableFilter<"Producto"> | string | null
   proveedor?: Prisma.StringNullableFilter<"Producto"> | string | null
   stock?: Prisma.IntFilter<"Producto"> | number
   precio?: Prisma.DecimalFilter<"Producto"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   createdAt?: Prisma.DateTimeFilter<"Producto"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Producto"> | Date | string
-}, "id">
+}, "id" | "codigoBarra">
 
 export type ProductoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder

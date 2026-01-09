@@ -5,10 +5,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // ✅ NO url here - now configured in prisma.config.ts
+  // NOTA: Para hacer migraciones (npx prisma migrate), Prisma necesita la URL aquí.
+  // Si usas un setup personalizado, asegúrate de que el comando migrate sepa dónde conectarse.
 }
 
-// Example User model for testing
+// Modelo de Usuario (sin cambios)
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -17,14 +18,22 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+// Modelo Producto corregido
 model Producto {
   id          Int      @id @default(autoincrement()) @map("id_producto")
   nombre      String   @map("nombre_producto")
-  codigoBarra String?  @map("codigo_barra")
+  
+  // ✅ SOLUCIÓN: Cambiado de Int a String para soportar códigos largos y ceros iniciales
+  codigoBarra String?  @unique @map("codigo_barra") 
+  
   tipo        String?  @map("tipo_producto")
   proveedor   String?  @map("codigo_proveedor")
+  
   stock       Int      @default(0) @map("stock_inicial")
+  
+  // Decimal es perfecto para dinero (evita errores de redondeo de float)
   precio      Decimal  @default(0.00) @db.Decimal(10, 2) @map("precio_unitario")
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
