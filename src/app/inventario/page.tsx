@@ -7,11 +7,13 @@ import Link from "next/link";
 import FilterModal from "@/components/FilterModal/FilterModal"; 
 import Ordenar from "@/components/VentanaOrdenar/VentanaOrdenar";
 import ProductRow from "@/components/ProductRow/ProductRow"; // <--- IMPORTAMOS LA NUEVA FILA
+import { ProductDetailsModal } from '@/components/ProductDetailsModal/ProductDetailsModal'
 import { useProductos } from "@/hooks/useProductos";
 
 export default function InventarioPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
+  const [seleccionado, setSeleccionado] = useState<any | null>(null)
 
   const productosData = [
     { id: "77900123", nombre: "Leche Entera La Serenísima 1L", sub: "Cartón / Larga Vida", stock: "45 un.", precio: "$1.200,00", lotes: 3, tipo: "Lácteos", prov: "PROV-101", status: "ok" },
@@ -35,6 +37,12 @@ export default function InventarioPage() {
         onClose={() => setMostrarOrdenar(false)}
         onAplicar={setCriterioOrden}
       />
+      {seleccionado && (
+        <ProductDetailsModal 
+            producto={seleccionado}
+            onClose={() => setSeleccionado(null)}
+        />
+      )}
 
       <div className="w-full flex flex-col gap-6 h-full">
         
@@ -119,7 +127,9 @@ export default function InventarioPage() {
               {/* AQUÍ OCURRE LA MAGIA DEL CÓDIGO LIMPIO */}
               <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
                 {productos.map((prod) => (
-                  <ProductRow key={prod.id} prod={prod} />
+                  <ProductRow key={prod.id} prod={prod} 
+                  onClickName={() => setSeleccionado(prod)}
+                  />
                 ))}
               </tbody>
 
