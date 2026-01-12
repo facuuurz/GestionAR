@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.2.0",
   "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
-  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/app/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  // NOTA: Para hacer migraciones (npx prisma migrate), Prisma necesita la URL aquí.\n  // Si usas un setup personalizado, asegúrate de que el comando migrate sepa dónde conectarse.\n}\n\n// Modelo de Usuario (sin cambios)\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  name      String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// Modelo Producto corregido\nmodel Producto {\n  id     Int    @id @default(autoincrement()) @map(\"id_producto\")\n  nombre String @map(\"nombre_producto\")\n\n  // ✅ SOLUCIÓN: Cambiado de Int a String para soportar códigos largos y ceros iniciales\n  codigoBarra String? @unique @map(\"codigo_barra\")\n\n  tipo      String? @map(\"tipo_producto\")\n  proveedor String? @map(\"codigo_proveedor\")\n\n  stock Int @default(0) @map(\"stock_inicial\")\n\n  // Decimal es perfecto para dinero (evita errores de redondeo de float)\n  precio Decimal @default(0.00) @map(\"precio_unitario\") @db.Decimal(10, 2)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"productos\")\n}\n",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/app/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  // NOTA: Para hacer migraciones (npx prisma migrate), Prisma necesita la URL aquí.\n  // Si usas un setup personalizado, asegúrate de que el comando migrate sepa dónde conectarse.\n}\n\n// Modelo de Usuario (sin cambios)\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  name      String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// Modelo Producto corregido\nmodel Producto {\n  id     Int    @id @default(autoincrement()) @map(\"id_producto\")\n  nombre String @map(\"nombre_producto\")\n\n  // ✅ SOLUCIÓN: Cambiado de Int a String para soportar códigos largos y ceros iniciales\n  codigoBarra String? @unique @map(\"codigo_barra\")\n\n  // ✅ NUEVO CAMPO: Descripción (Opcional)\n  descripcion String? @map(\"descripcion\")\n\n  tipo      String? @map(\"tipo_producto\")\n  proveedor String? @map(\"codigo_proveedor\")\n\n  stock Int @default(0) @map(\"stock_inicial\")\n\n  // Decimal es perfecto para dinero (evita errores de redondeo de float)\n  precio Decimal @default(0.00) @map(\"precio_unitario\") @db.Decimal(10, 2)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"productos\")\n}\n\n//para los tipos de productos\nmodel Categoria {\n  id     Int    @id @default(autoincrement())\n  nombre String @unique // @unique evita duplicados\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Producto\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"id_producto\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"nombre_producto\"},{\"name\":\"codigoBarra\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"codigo_barra\"},{\"name\":\"tipo\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"tipo_producto\"},{\"name\":\"proveedor\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"codigo_proveedor\"},{\"name\":\"stock\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"stock_inicial\"},{\"name\":\"precio\",\"kind\":\"scalar\",\"type\":\"Decimal\",\"dbName\":\"precio_unitario\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"productos\"}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Producto\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"id_producto\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"nombre_producto\"},{\"name\":\"codigoBarra\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"codigo_barra\"},{\"name\":\"descripcion\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"descripcion\"},{\"name\":\"tipo\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"tipo_producto\"},{\"name\":\"proveedor\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"codigo_proveedor\"},{\"name\":\"stock\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"stock_inicial\"},{\"name\":\"precio\",\"kind\":\"scalar\",\"type\":\"Decimal\",\"dbName\":\"precio_unitario\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"productos\"},\"Categoria\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -193,6 +193,16 @@ export interface PrismaClient<
     * ```
     */
   get producto(): Prisma.ProductoDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.categoria`: Exposes CRUD operations for the **Categoria** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Categorias
+    * const categorias = await prisma.categoria.findMany()
+    * ```
+    */
+  get categoria(): Prisma.CategoriaDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

@@ -49,3 +49,8 @@ export type User = Prisma.UserModel
  * 
  */
 export type Producto = Prisma.ProductoModel
+/**
+ * Model Categoria
+ * 
+ */
+export type Categoria = Prisma.CategoriaModel

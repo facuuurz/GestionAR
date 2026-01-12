@@ -26,6 +26,9 @@ model Producto {
   // ✅ SOLUCIÓN: Cambiado de Int a String para soportar códigos largos y ceros iniciales
   codigoBarra String?  @unique @map("codigo_barra") 
   
+  // ✅ NUEVO CAMPO: Descripción (Opcional)
+  descripcion   String?  @map("descripcion")
+
   tipo        String?  @map("tipo_producto")
   proveedor   String?  @map("codigo_proveedor")
   
@@ -33,9 +36,17 @@ model Producto {
   
   // Decimal es perfecto para dinero (evita errores de redondeo de float)
   precio      Decimal  @default(0.00) @db.Decimal(10, 2) @map("precio_unitario")
+
+
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("productos")
+}
+
+//para los tipos de productos
+model Categoria {
+  id    Int    @id @default(autoincrement())
+  nombre String @unique // @unique evita duplicados
 }

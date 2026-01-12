@@ -3,14 +3,59 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
-// 1. Obtener productos (Lectura)
+// ----------------------------------------------------------------------
+// 1. ESQUEMA DE VALIDACIÓN
+// ----------------------------------------------------------------------
+
+const productoSchema = z.object({
+  nombre: z.string().min(1, "El nombre es obligatorio"),
+  codigoBarra: z.string().min(1, "El código de barra es obligatorio"),
+  proveedor: z.string().min(1, "El código de proveedor es obligatorio"),
+  
+  // Zod compatible con tu versión
+  tipo: z.string().min(1, "Seleccione un tipo válido"),
+
+  // Lógica para que Stock sea OBLIGATORIO (no vacío)
+  stock: z.string()
+    .trim()
+    .min(1, "El stock es obligatorio") 
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => !isNaN(val) && val >= 0, { message: "El stock no puede ser negativo" }),
+
+  // Lógica para que Precio sea OBLIGATORIO (no vacío)
+  precio: z.string()
+    .trim()
+    .min(1, "El precio es obligatorio")
+    .transform((val) => parseFloat(val))
+    .refine((val) => !isNaN(val) && val > 0, { message: "El precio debe ser mayor a 0" }),
+  
+  descripcion: z.string().max(200, "Máximo 200 caracteres").optional(),
+});
+
+export type State = {
+  errors?: {
+    nombre?: string[];
+    codigoBarra?: string[];
+    proveedor?: string[];
+    tipo?: string[];
+    stock?: string[];
+    precio?: string[];
+    descripcion?: string[];
+  };
+  message?: string | null;
+};
+
+// ----------------------------------------------------------------------
+// 2. FUNCIONES (ACTIONS)
+// ----------------------------------------------------------------------
+
 export async function obtenerProductosDB() {
   try {
     const productos = await prisma.producto.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    // Convertimos Decimal a number para que sea fácil de usar en el frontend
     return productos.map((p) => ({
       ...p,
       precio: Number(p.precio),
@@ -21,41 +66,48 @@ export async function obtenerProductosDB() {
   }
 }
 
-// 2. Crear producto (Escritura)
-export async function crearProducto(formData: FormData) {
-  const nombre = formData.get("nombre") as string;
-  const codigoBarra = formData.get("codigoBarra") as string;
-  const tipo = formData.get("tipo") as string;
-  const proveedor = formData.get("proveedor") as string;
-  const stock = formData.get("stock");
-  const precio = formData.get("precio");
-
-  if (!nombre) throw new Error("El nombre es obligatorio");
-
-  await prisma.producto.create({
-    data: {
-      nombre,
-      codigoBarra: codigoBarra || null,
-      tipo: tipo || null,
-      proveedor: proveedor || null,
-      stock: stock ? parseInt(stock.toString()) : 0,
-      precio: precio ? parseFloat(precio.toString()) : 0.00,
-    },
+export async function crearProducto(prevState: State, formData: FormData) {
+  // Validación
+  const validatedFields = productoSchema.safeParse({
+    nombre: formData.get("nombre"),
+    codigoBarra: formData.get("codigoBarra"),
+    proveedor: formData.get("proveedor"),
+    tipo: formData.get("tipo"),
+    stock: formData.get("stock"), 
+    precio: formData.get("precio"),
+    descripcion: formData.get("descripcion"),
   });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Faltan campos requeridos. Revisa el formulario.",
+    };
+  }
+
+  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion } = validatedFields.data;
+
+  try {
+    await prisma.producto.create({
+      data: {
+        nombre,
+        codigoBarra,
+        proveedor,
+        tipo,
+        stock,
+        precio,
+        descripcion: descripcion || "",
+      },
+    });
+  } catch (error) {
+    console.error("Error DB:", error);
+    return {
+      message: "Error al guardar en la base de datos.",
+    };
+  }
 
   revalidatePath("/inventario");
   redirect("/inventario");
-}
-
-// 3. Cargar datos de prueba
-export async function cargarDatosDePrueba() {
-  await prisma.producto.createMany({
-    data: [
-      { nombre: "Producto A", stock: 10, precio: 100, tipo: "General" },
-      { nombre: "Producto B", stock: 20, precio: 200, tipo: "General" },
-    ]
-  });
-  revalidatePath("/inventario");
 }
 
 export async function actualizarProducto(formData: FormData) {
@@ -68,6 +120,7 @@ export async function actualizarProducto(formData: FormData) {
     precio: parseFloat(formData.get("precio") as string) || 0,
     tipo: formData.get("tipo") as string,
     proveedor: formData.get("proveedor") as string,
+    descripcion: formData.get("descripcion") as string,
   };
 
   await prisma.producto.update({
@@ -79,7 +132,6 @@ export async function actualizarProducto(formData: FormData) {
   redirect("/inventario");
 }
 
-// 2. FUNCIÓN PARA ELIMINAR
 export async function eliminarProducto(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
 
@@ -89,4 +141,14 @@ export async function eliminarProducto(formData: FormData) {
 
   revalidatePath("/inventario");
   redirect("/inventario");
+}
+
+export async function cargarDatosDePrueba() {
+  await prisma.producto.createMany({
+    data: [
+      { nombre: "Producto A", stock: 10, precio: 100, tipo: "otros", codigoBarra: "111", proveedor: "P1", descripcion: "Test A" },
+      { nombre: "Producto B", stock: 20, precio: 200, tipo: "otros", codigoBarra: "222", proveedor: "P2", descripcion: "Test B" },
+    ]
+  });
+  revalidatePath("/inventario");
 }

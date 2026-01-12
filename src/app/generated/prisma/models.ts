@@ -10,4 +10,5 @@
  */
 export type * from './models/User'
 export type * from './models/Producto'
+export type * from './models/Categoria'
 export type * from './commonInputTypes'
