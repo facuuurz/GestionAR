@@ -57,3 +57,36 @@ export async function cargarDatosDePrueba() {
   });
   revalidatePath("/inventario");
 }
+
+export async function actualizarProducto(formData: FormData) {
+  const id = parseInt(formData.get("id") as string);
+  
+  const data = {
+    nombre: formData.get("nombre") as string,
+    codigoBarra: formData.get("codigoBarra") as string,
+    stock: parseInt(formData.get("stock") as string) || 0,
+    precio: parseFloat(formData.get("precio") as string) || 0,
+    tipo: formData.get("tipo") as string,
+    proveedor: formData.get("proveedor") as string,
+  };
+
+  await prisma.producto.update({
+    where: { id },
+    data,
+  });
+
+  revalidatePath("/inventario");
+  redirect("/inventario");
+}
+
+// 2. FUNCIÓN PARA ELIMINAR
+export async function eliminarProducto(formData: FormData) {
+  const id = parseInt(formData.get("id") as string);
+
+  await prisma.producto.delete({
+    where: { id },
+  });
+
+  revalidatePath("/inventario");
+  redirect("/inventario");
+}

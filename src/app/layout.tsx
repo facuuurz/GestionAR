@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
       <body className={`antialiased ${jakarta.variable}`}>
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
