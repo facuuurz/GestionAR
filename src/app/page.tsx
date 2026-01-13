@@ -117,12 +117,10 @@ export default function Panel() {
           </Link>
 
           {/* Tarjeta: Proveedores (Ancha) */}
-          <Link className="md:col-span-2 xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="#">
+          <Link className="md:col-span-2 xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" 
+                href="/proveedores"> 
+            
             <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://plus.unsplash.com/premium_photo-1681488229881-d733064c22cf?q=80&w=746&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`}}>
-              {/* 
-              https://plus.unsplash.com/premium_photo-1732028259493-25c22c72cc1b?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
-              
-              */}
               <div className="absolute inset-0 from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
                 <span className="inline-flex items-center rounded-full bg-purple-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">

@@ -1,0 +1,37 @@
+"use client";
+
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+
+export default function Search({ placeholder }: { placeholder: string }) {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  const handleSearch = (term: string) => {
+    const params = new URLSearchParams(searchParams);
+    
+    if (term) {
+      params.set("query", term);
+    } else {
+      params.delete("query");
+    }
+    
+    // Esto actualiza la URL sin recargar la página
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  return (
+    <label className="flex w-full h-11 items-center rounded-lg bg-[#f0f2f4] dark:bg-gray-800 px-3 overflow-hidden focus-within:ring-2 ring-[#135bec] transition-all">
+      <span className="material-symbols-outlined text-[#616f89] dark:text-gray-400 text-[22px]">
+        search
+      </span>
+      <input
+        className="w-full bg-transparent border-none outline-none text-[#111318] dark:text-white placeholder-[#616f89] dark:placeholder-gray-500 text-sm ml-2 h-full"
+        placeholder={placeholder}
+        onChange={(e) => handleSearch(e.target.value)}
+        defaultValue={searchParams.get("query")?.toString()}
+        type="text"
+      />
+    </label>
+  );
+}

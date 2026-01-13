@@ -50,3 +50,19 @@ model Categoria {
   id    Int    @id @default(autoincrement())
   nombre String @unique // @unique evita duplicados
 }
+
+model Proveedor {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique // Ej: PROV-1024
+  razonSocial String
+  contacto    String?  // Ej: Roberto Gómez
+  telefono    String?
+  email       String?
+  estado      String   @default("Activo") // Activo, Inactivo, Pendiente
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("proveedores")
+}
+
