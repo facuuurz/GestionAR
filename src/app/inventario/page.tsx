@@ -2,32 +2,48 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-// IMPORTANTE: Ajusta las rutas según donde guardaste los archivos pene
 
+// Asegúrate de que las rutas sean correctas
 import FilterModal from "@/components/FilterModal/FilterModal"; 
 import Ordenar from "@/components/VentanaOrdenar/VentanaOrdenar";
-import ProductRow from "@/components/ProductRow/ProductRow"; // <--- IMPORTAMOS LA NUEVA FILA
-import { ProductDetailsModal } from '@/components/ProductDetailsModal/ProductDetailsModal'
+import ProductRow from "@/components/ProductRow/ProductRow"; 
 import { useProductos } from "@/hooks/useProductos";
 
 export default function InventarioPage() {
+  // --- ESTADOS DE UI ---
   const [showFilters, setShowFilters] = useState(false);
   const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
-  const [seleccionado, setSeleccionado] = useState<any | null>(null)
+  
+  // --- ESTADO DEL BUSCADOR ---
+  const [busqueda, setBusqueda] = useState("");
 
-  const productosData = [
-    { id: "77900123", nombre: "Leche Entera La Serenísima 1L", sub: "Cartón / Larga Vida", stock: "45 un.", precio: "$1.200,00", lotes: 3, tipo: "Lácteos", prov: "PROV-101", status: "ok" },
-    { id: "77900654", nombre: "Yogur Frutilla Bebible 180g", sub: "", stock: "8 un.", precio: "$950,00", lotes: 1, tipo: "Lácteos", prov: "PROV-101", status: "low" },
-    { id: "77900789", nombre: "Coca Cola Sabor Original 2.25L", sub: "", stock: "12 un.", precio: "$2.100,00", lotes: 2, tipo: "Bebidas", prov: "PROV-310", status: "warning" },
-  ];
+  // --- DATA DESDE EL HOOK (CONECTADO A DB) ---
+  const { productos, setCriterioOrden, loading } = useProductos();
 
-  // LOGICA DE ORDENAMIENTO HASTA USAR PRISMA
-  const { productos, setCriterioOrden } = useProductos(productosData);
+  // --- LÓGICA DE FILTRADO EN TIEMPO REAL ---
+  const productosFiltrados = useMemo(() => {
+    // 1. Si no hay nada escrito, mostramos todo lo que trajo el hook
+    if (!busqueda) return productos;
+
+    const termino = busqueda.toLowerCase();
+
+    // 2. Filtramos considerando que algunos campos pueden ser null
+    return productos.filter((prod) => {
+      const nombreMatch = prod.nombre.toLowerCase().includes(termino);
+      const tipoMatch = prod.tipo?.toLowerCase().includes(termino) || false;
+      const proveedorMatch = prod.proveedor?.toLowerCase().includes(termino) || false;
+      const codigoBarraMatch = prod.codigoBarra?.includes(termino) || false;
+      // Convertimos el ID (number) a string para poder buscarlo
+      const idMatch = prod.id.toString().includes(termino);
+
+      return nombreMatch || tipoMatch || proveedorMatch || codigoBarraMatch || idMatch;
+    });
+  }, [productos, busqueda]);
 
   return (
     <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative">
       
-      {/* COMPONENTE MODAL */}
+      {/* --- MODALES --- */}
       <FilterModal 
         isOpen={showFilters} 
         onClose={() => setShowFilters(false)} 
@@ -37,12 +53,6 @@ export default function InventarioPage() {
         onClose={() => setMostrarOrdenar(false)}
         onAplicar={setCriterioOrden}
       />
-      {seleccionado && (
-        <ProductDetailsModal 
-            producto={seleccionado}
-            onClose={() => setSeleccionado(null)}
-        />
-      )}
 
       <div className="w-full flex flex-col gap-6 h-full">
         
@@ -71,17 +81,22 @@ export default function InventarioPage() {
           </Link>
         </div>
 
-        {/* --- FILTROS Y BÚSQUEDA --- */}
+        {/* --- BARRA DE HERRAMIENTAS (BUSCADOR Y BOTONES) --- */}
         <div className="bg-white dark:bg-[#222] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col md:flex-row gap-4 shrink-0">
+          
+          {/* INPUT BUSCADOR */}
           <div className="flex flex-1 items-center bg-[#f5f5f5] dark:bg-[#333] rounded-lg px-3 py-2 border border-transparent focus-within:border-primary transition-colors">
             <span className="material-symbols-outlined text-neutral-500">search</span>
             <input 
               className="bg-transparent border-none outline-none text-sm w-full focus:ring-0 text-primary dark:text-white placeholder:text-neutral-500 pl-1" 
-              placeholder="Buscar por nombre, código de barra o proveedor..." 
+              placeholder="Buscar por nombre, código, proveedor..." 
               type="text" 
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
           
+          {/* BOTONES DE ACCIÓN */}
           <div className="flex gap-3 overflow-x-auto p-1"> 
             
             <button 
@@ -108,7 +123,7 @@ export default function InventarioPage() {
           </div>
         </div>
 
-        {/* --- TABLA --- */}
+        {/* --- TABLA DE RESULTADOS --- */}
         <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] overflow-hidden shadow-sm flex-1 min-h-0">
           <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
             <table className="w-full text-left border-collapse">
@@ -124,13 +139,35 @@ export default function InventarioPage() {
                 </tr>
               </thead>
               
-              {/* AQUÍ OCURRE LA MAGIA DEL CÓDIGO LIMPIO */}
               <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
-                {productos.map((prod) => (
-                  <ProductRow key={prod.id} prod={prod} 
-                  onClickName={() => setSeleccionado(prod)}
-                  />
-                ))}
+                {/* 1. ESTADO DE CARGA */}
+                {loading ? (
+                   <tr>
+                     <td colSpan={7} className="text-center py-20">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                           <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                           <span className="text-neutral-400 text-sm">Cargando inventario...</span>
+                        </div>
+                     </td>
+                   </tr>
+                ) : productosFiltrados.length > 0 ? (
+                    // 2. LISTA DE PRODUCTOS
+                    productosFiltrados.map((prod) => (
+                      <ProductRow 
+                        key={prod.id} 
+                        prod={prod} 
+                      />
+                    ))
+                ) : (
+                    // 3. ESTADO VACÍO (NO SE ENCONTRÓ NADA)
+                    <tr>
+                        <td colSpan={7} className="text-center py-10 text-neutral-500 text-sm">
+                            {busqueda 
+                              ? `No se encontraron productos que coincidan con "${busqueda}"` 
+                              : "No hay productos registrados."}
+                        </td>
+                    </tr>
+                )}
               </tbody>
 
             </table>

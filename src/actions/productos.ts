@@ -152,3 +152,25 @@ export async function cargarDatosDePrueba() {
   });
   revalidatePath("/inventario");
 }
+
+//Obtener el ID del producto 
+export async function obtenerProductoPorId(id: number) {
+  // 1. VALIDACIÓN DE SEGURIDAD ROBUSTA
+  // Si no hay ID, o no es un número, o es NaN, devolvemos null inmediatamente.
+  if (!id || typeof id !== 'number' || isNaN(id)) {
+    console.log("Intento de buscar producto con ID inválido:", id);
+    return null;
+  }
+
+  try {
+    const producto = await prisma.producto.findUnique({
+      where: { 
+        id: id // Aquí ya estamos seguros de que 'id' es un número válido
+      },
+    });
+    return producto;
+  } catch (error) {
+    console.error("Error Prisma al obtener producto:", error);
+    return null;
+  }
+}
