@@ -59,3 +59,8 @@ export type Categoria = Prisma.CategoriaModel
  * 
  */
 export type Proveedor = Prisma.ProveedorModel
+/**
+ * Model Cuenta_corriente
+ * 
+ */
+export type Cuenta_corriente = Prisma.Cuenta_corrienteModel

@@ -387,7 +387,8 @@ export const ModelName = {
   User: 'User',
   Producto: 'Producto',
   Categoria: 'Categoria',
-  Proveedor: 'Proveedor'
+  Proveedor: 'Proveedor',
+  Cuenta_corriente: 'Cuenta_corriente'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -403,7 +404,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "producto" | "categoria" | "proveedor"
+    modelProps: "user" | "producto" | "categoria" | "proveedor" | "cuenta_corriente"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -703,6 +704,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Cuenta_corriente: {
+      payload: Prisma.$Cuenta_corrientePayload<ExtArgs>
+      fields: Prisma.Cuenta_corrienteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.Cuenta_corrienteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.Cuenta_corrienteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>
+        }
+        findFirst: {
+          args: Prisma.Cuenta_corrienteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.Cuenta_corrienteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>
+        }
+        findMany: {
+          args: Prisma.Cuenta_corrienteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>[]
+        }
+        create: {
+          args: Prisma.Cuenta_corrienteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>
+        }
+        createMany: {
+          args: Prisma.Cuenta_corrienteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.Cuenta_corrienteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>[]
+        }
+        delete: {
+          args: Prisma.Cuenta_corrienteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>
+        }
+        update: {
+          args: Prisma.Cuenta_corrienteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>
+        }
+        deleteMany: {
+          args: Prisma.Cuenta_corrienteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.Cuenta_corrienteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.Cuenta_corrienteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>[]
+        }
+        upsert: {
+          args: Prisma.Cuenta_corrienteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$Cuenta_corrientePayload>
+        }
+        aggregate: {
+          args: Prisma.Cuenta_corrienteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCuenta_corriente>
+        }
+        groupBy: {
+          args: Prisma.Cuenta_corrienteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Cuenta_corrienteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.Cuenta_corrienteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Cuenta_corrienteCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -790,6 +865,22 @@ export const ProveedorScalarFieldEnum = {
 } as const
 
 export type ProveedorScalarFieldEnum = (typeof ProveedorScalarFieldEnum)[keyof typeof ProveedorScalarFieldEnum]
+
+
+export const Cuenta_corrienteScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  cuit: 'cuit',
+  telefono: 'telefono',
+  email: 'email',
+  direccion: 'direccion',
+  saldo: 'saldo',
+  estado: 'estado',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type Cuenta_corrienteScalarFieldEnum = (typeof Cuenta_corrienteScalarFieldEnum)[keyof typeof Cuenta_corrienteScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -990,6 +1081,7 @@ export type GlobalOmitConfig = {
   producto?: Prisma.ProductoOmit
   categoria?: Prisma.CategoriaOmit
   proveedor?: Prisma.ProveedorOmit
+  cuenta_corriente?: Prisma.Cuenta_corrienteOmit
 }
 
 /* Types for Logging */

@@ -71,7 +71,10 @@ export default function Panel() {
           </Link>
 
           {/* Tarjeta: Cuentas Corrientes */}
-          <Link className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="#">
+          <Link 
+            className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" 
+            href="/cuentas-corrientes"
+          >
             <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuDfGMEdhP1OzxBoq3a_Tyj5cRIiEZmDl7qvZxOSQds7H4yNhQPw2QskXNYEMihzDlrz7CWBMWkIxlfehSdgJjj2oNAJjfmlabu6KfBcAYEH9yVVJc6e0ZLDcF5KdDFR7XotN8_qMKMwgUuoyoddurmB82Nt7YIDmlh-3lZ_pxwC9e8b6RHww2RKWqbIk-_iOaET5XR2vbRCUDmevfEpf1szv61Jcia11Xk6Jp2UIJ2Z2_N6ej01Magc5Vk3rFdHwQe30wtUT-2_BvVj')`}}>
               <div className="absolute inset-0 from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
