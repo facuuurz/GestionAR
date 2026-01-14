@@ -66,3 +66,20 @@ model Proveedor {
   @@map("proveedores")
 }
 
+model Cuenta_corriente {
+  id              Int      @id @default(autoincrement())
+  nombre          String   @map("razon_social")
+  cuit            String?  @unique
+  telefono        String?
+  email           String?
+  direccion       String?
+  
+  saldo           Decimal  @default(0.00) @db.Decimal(10, 2) 
+  estado          String   @default("Al Día")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("Cuentas_corrientes") 
+}
+
