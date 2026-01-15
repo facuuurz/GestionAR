@@ -10,53 +10,111 @@ import ProductRow from "@/components/ProductRow/ProductRow";
 import { useProductos } from "@/hooks/useProductos";
 
 export default function InventarioPage() {
-  // --- ESTADOS DE UI ---
+  // --- 1. ESTADOS DE UI (Modales) ---
   const [showFilters, setShowFilters] = useState(false);
   const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
   
-  // --- ESTADO DEL BUSCADOR ---
-  const [busqueda, setBusqueda] = useState("");
+  // --- 2. ESTADOS DE DATOS (Filtros y Orden) ---
+  const [busqueda, setBusqueda] = useState(""); 
+  const [activeFilters, setActiveFilters] = useState({ 
+    category: "Todas",
+    stockStatus: "all", 
+    priceRange: { min: "", max: "" }
+  });
+  
+  // Nuevo estado para controlar el indicador azul del botón Ordenar
+  const [currentSort, setCurrentSort] = useState(""); 
 
-  // --- DATA DESDE EL HOOK (CONECTADO A DB) ---
+  // --- 3. DATA DESDE EL HOOK ---
+  // El hook devuelve 'productos' ya ordenados si se usa setCriterioOrden
   const { productos, setCriterioOrden, loading } = useProductos();
 
-  // --- LÓGICA DE FILTRADO EN TIEMPO REAL ---
+  // --- 4. EXTRACCIÓN DE CATEGORÍAS (Para el Modal) ---
+  const categoriasUnicas = useMemo(() => {
+    // Obtenemos los tipos únicos de los productos cargados
+    const tipos = productos
+        .map(p => p.tipo)
+        .filter(t => t && t.trim() !== ""); // Filtramos nulos o vacíos
+    return Array.from(new Set(tipos)); // Eliminamos duplicados
+  }, [productos]);
+
+  // --- 5. LÓGICA DE FILTRADO MAESTRA ---
   const productosFiltrados = useMemo(() => {
-    // 1. Si no hay nada escrito, mostramos todo lo que trajo el hook
-    if (!busqueda) return productos;
-
-    const termino = busqueda.toLowerCase();
-
-    // 2. Filtramos considerando que algunos campos pueden ser null
     return productos.filter((prod) => {
-      const nombreMatch = prod.nombre.toLowerCase().includes(termino);
-      const tipoMatch = prod.tipo?.toLowerCase().includes(termino) || false;
-      const proveedorMatch = prod.proveedor?.toLowerCase().includes(termino) || false;
-      const codigoBarraMatch = prod.codigoBarra?.includes(termino) || false;
-      // Convertimos el ID (number) a string para poder buscarlo
-      const idMatch = prod.id.toString().includes(termino);
+      
+      // A. Filtro de Texto
+      let matchesSearch = true;
+      if (busqueda) {
+        const termino = busqueda.toLowerCase();
+        const matches = [
+            prod.nombre, 
+            prod.tipo, 
+            prod.proveedor, 
+            prod.codigoBarra, 
+            prod.id.toString()
+        ];
+        matchesSearch = matches.some(field => field?.toLowerCase().includes(termino));
+      }
 
-      return nombreMatch || tipoMatch || proveedorMatch || codigoBarraMatch || idMatch;
+      // B. Filtro por Categoría
+      let matchesCategory = true;
+      if (activeFilters.category !== "Todas") {
+        matchesCategory = prod.tipo?.toLowerCase() === activeFilters.category.toLowerCase();
+      }
+
+      // C. Filtro por Estado de Stock
+      let matchesStock = true;
+      if (activeFilters.stockStatus === "low") {
+        matchesStock = prod.stock > 0 && prod.stock < 20; 
+      } else if (activeFilters.stockStatus === "none") {
+        matchesStock = prod.stock <= 0; 
+      }
+
+      // D. Filtro por Precio
+      let matchesPrice = true;
+      const precio = Number(prod.precio);
+      const min = activeFilters.priceRange.min ? Number(activeFilters.priceRange.min) : 0;
+      const max = activeFilters.priceRange.max ? Number(activeFilters.priceRange.max) : Infinity;
+      
+      if (precio < min || precio > max) matchesPrice = false;
+
+      return matchesSearch && matchesCategory && matchesStock && matchesPrice;
     });
-  }, [productos, busqueda]);
+  }, [productos, busqueda, activeFilters]);
+
+  // Manejador para aplicar filtros
+  const handleApplyFilters = (filtros: any) => {
+    setActiveFilters(filtros);
+  };
+
+  // Manejador para aplicar orden (y actualizar el indicador visual)
+  const handleApplySort = (criterio: string) => {
+    setCriterioOrden(criterio); // Ejecuta la lógica del hook
+    setCurrentSort(criterio);   // Actualiza el puntito azul local
+    setMostrarOrdenar(false);
+  };
 
   return (
-    <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative">
+    <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       
       {/* --- MODALES --- */}
       <FilterModal 
         isOpen={showFilters} 
         onClose={() => setShowFilters(false)} 
+        onApply={handleApplyFilters} 
+        currentFilters={activeFilters}
+        categoriasDisponibles={categoriasUnicas} // ✅ Pasamos las categorías dinámicas
       />
+      
       <Ordenar
         isOpen={mostrarOrdenar}
         onClose={() => setMostrarOrdenar(false)}
-        onAplicar={setCriterioOrden}
+        onAplicar={handleApplySort} // ✅ Usamos el nuevo manejador
       />
 
       <div className="w-full flex flex-col gap-6 h-full">
         
-        {/* --- BREADCRUMBS --- */}
+        {/* Breadcrumbs */}
         <div className="flex flex-wrap gap-2 items-center text-sm shrink-0">
           <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600 ">
             Panel
@@ -65,7 +123,7 @@ export default function InventarioPage() {
           <span className="text-primary dark:text-white font-bold">Inventario</span>
         </div>
 
-        {/* --- ENCABEZADO --- */}
+        {/* Encabezado */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
           <div className="flex flex-col gap-1">
             <h1 className="text-primary dark:text-white tracking-tight text-[32px] font-bold leading-tight">
@@ -75,17 +133,16 @@ export default function InventarioPage() {
               Gestiona el inventario, precios y stock de tus productos.
             </p>
           </div>
-          <Link className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" href="/inventario/nuevo-producto">
+          <Link className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" href="./inventario/nuevo-producto">
             <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
             <span className="text-sm font-bold truncate">Agregar Nuevo Producto</span>
           </Link>
         </div>
 
-        {/* --- BARRA DE HERRAMIENTAS (BUSCADOR Y BOTONES) --- */}
-        <div className="bg-white dark:bg-[#222] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col md:flex-row gap-4 shrink-0">
+        {/* Barra de Herramientas */}
+        <div className="bg-white dark:bg-[#1e2736] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col md:flex-row gap-4 shrink-0">
           
-          {/* INPUT BUSCADOR */}
-          <div className="flex flex-1 items-center bg-[#f5f5f5] dark:bg-[#333] rounded-lg px-3 py-2 border border-transparent focus-within:border-primary transition-colors">
+          <div className="flex flex-1 items-center bg-[#f5f5f5] dark:bg-[#151a25] rounded-lg px-3 py-2 border border-transparent focus-within:border-primary transition-colors">
             <span className="material-symbols-outlined text-neutral-500">search</span>
             <input 
               className="bg-transparent border-none outline-none text-sm w-full focus:ring-0 text-primary dark:text-white placeholder:text-neutral-500 pl-1" 
@@ -96,26 +153,35 @@ export default function InventarioPage() {
             />
           </div>
           
-          {/* BOTONES DE ACCIÓN */}
           <div className="flex gap-3 overflow-x-auto p-1"> 
             
+            {/* BOTÓN FILTRAR */}
             <button 
               onClick={() => setShowFilters(true)} 
-              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
+              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
             >
               <span className="material-symbols-outlined text-[18px]">filter_list</span>
               <span>Filtrar</span>
+              {/* Indicador azul si hay filtros activos */}
+              {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min || activeFilters.priceRange.max) && (
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1"></span>
+              )}
             </button>
 
+            {/* BOTÓN ORDENAR */}
             <button 
               onClick={() => setMostrarOrdenar(true)} 
-              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
+              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
             >
               <span className="material-symbols-outlined text-[18px]">sort</span>
               <span>Ordenar</span>
+              {/* Indicador azul si hay un orden aplicado (que no sea vacío) */}
+              {currentSort && (
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1"></span>
+              )}
             </button>
 
-            <button className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white">
+            <button className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white">
               <span className="material-symbols-outlined text-[18px]">download</span>
               <span>Exportar</span>
             </button>
@@ -123,11 +189,11 @@ export default function InventarioPage() {
           </div>
         </div>
 
-        {/* --- TABLA DE RESULTADOS --- */}
-        <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] overflow-hidden shadow-sm flex-1 min-h-0">
+        {/* Tabla */}
+        <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
           <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-[#f9f9f9] dark:bg-[#1a1a1a] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
+              <thead className="bg-[#f9f9f9] dark:bg-[#151a25] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Código</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider min-w-50">Producto</th>
@@ -135,43 +201,61 @@ export default function InventarioPage() {
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Precio Unit.</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Tipo</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">Cod. Prov.</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#1a1a1a] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
                 </tr>
               </thead>
               
               <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
-                {/* 1. ESTADO DE CARGA */}
                 {loading ? (
                    <tr>
                      <td colSpan={7} className="text-center py-20">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                           <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                           <span className="text-neutral-400 text-sm">Cargando inventario...</span>
-                        </div>
+                       <div className="flex flex-col items-center justify-center gap-2">
+                          <span className="material-symbols-outlined animate-spin text-3xl text-primary dark:text-white">progress_activity</span>
+                          <span className="text-neutral-400 text-sm">Cargando inventario...</span>
+                       </div>
                      </td>
                    </tr>
                 ) : productosFiltrados.length > 0 ? (
-                    // 2. LISTA DE PRODUCTOS
-                    productosFiltrados.map((prod) => (
-                      <ProductRow 
-                        key={prod.id} 
-                        prod={prod} 
-                      />
-                    ))
+                   productosFiltrados.map((prod) => (
+                     <ProductRow key={prod.id} prod={prod} />
+                   ))
                 ) : (
-                    // 3. ESTADO VACÍO (NO SE ENCONTRÓ NADA)
-                    <tr>
-                        <td colSpan={7} className="text-center py-10 text-neutral-500 text-sm">
-                            {busqueda 
-                              ? `No se encontraron productos que coincidan con "${busqueda}"` 
-                              : "No hay productos registrados."}
-                        </td>
-                    </tr>
+                   <tr>
+                       <td colSpan={7} className="text-center py-12 text-neutral-500 text-sm">
+                           <div className="flex flex-col items-center gap-2">
+                               <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
+                               <p>
+                                 {busqueda 
+                                   ? `No se encontraron productos que coincidan con "${busqueda}"` 
+                                   : "No se encontraron productos con los filtros aplicados."}
+                               </p>
+                               {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || busqueda || currentSort) && (
+                                   <button 
+                                     onClick={() => {
+                                         setBusqueda("");
+                                         setActiveFilters({ category: "Todas", stockStatus: "all", priceRange: { min: "", max: "" } });
+                                         setCriterioOrden(""); // Resetear orden
+                                         setCurrentSort("");   // Resetear indicador
+                                     }}
+                                     className="text-blue-600 hover:underline text-xs font-bold mt-1"
+                                   >
+                                     Limpiar búsqueda, filtros y orden
+                                   </button>
+                               )}
+                           </div>
+                       </td>
+                   </tr>
                 )}
               </tbody>
-
             </table>
           </div>
+          
+          {!loading && (
+            <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
+                <span>Mostrando {productosFiltrados.length} productos</span>
+                <span>Total: {productos.length}</span>
+            </div>
+          )}
         </div>
       </div>
     </main>

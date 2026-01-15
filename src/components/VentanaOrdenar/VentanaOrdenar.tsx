@@ -1,4 +1,3 @@
-// Ubicación sugerida: /src/components/Ordenar.jsx
 "use client";
 
 import { useState } from "react";
@@ -15,6 +14,15 @@ export default function Ordenar({ isOpen, onClose, onAplicar }) {
     onAplicar(criterio);
     onClose();
   };
+
+  // Lógica para restablecer orden
+  const handleReset = () => {
+    // Enviamos string vacío para indicar que NO hay orden específico
+    // Esto hará que desaparezca el punto azul
+    setCriterio("nombre-asc"); // Reset visual interno (opcional)
+    onAplicar(""); 
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -128,21 +136,32 @@ export default function Ordenar({ isOpen, onClose, onAplicar }) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex justify-end gap-3">
-          <button 
-            onClick={onClose}
-            className="h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 bg-white dark:bg-transparent border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer flex items-center gap-2"
-          >
-            Cancelar
-          </button>
+        <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex justify-between gap-3">
           
-          <button 
-            onClick={handleApply} 
-            className="h-10 px-4 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center gap-2 dark:bg-white dark:text-black"
-          >
-            <span className="material-symbols-outlined text-[18px]">check</span>
-            Aplicar Orden
-          </button>
+          {/* Botón Restablecer a la izquierda */}
+           <button 
+             onClick={handleReset}
+             className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+           >
+             Restablecer
+           </button>
+          
+          <div className="flex gap-3">
+            <button 
+                onClick={onClose}
+                className="h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 bg-white dark:bg-transparent border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer flex items-center gap-2"
+            >
+                Cancelar
+            </button>
+            
+            <button 
+                onClick={handleApply} 
+                className="h-10 px-4 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center gap-2 dark:bg-white dark:text-black"
+            >
+                <span className="material-symbols-outlined text-[18px]">check</span>
+                Aplicar Orden
+            </button>
+          </div>
         </div>
 
       </div>

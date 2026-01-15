@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 // ----------------------------------------------------------------------
-// 1. ESQUEMA DE VALIDACIÓN
+// 1. ESQUEMA DE VALIDACIÓN Y TIPOS
 // ----------------------------------------------------------------------
 
 const productoSchema = z.object({
@@ -14,26 +14,22 @@ const productoSchema = z.object({
   codigoBarra: z.string().min(1, "El código de barra es obligatorio"),
   proveedor: z.string().min(1, "El código de proveedor es obligatorio"),
   
-  // Zod compatible con tu versión
   tipo: z.string().min(1, "Seleccione un tipo válido"),
 
-  // Lógica para que Stock sea OBLIGATORIO (no vacío)
-  stock: z.string()
-    .trim()
-    .min(1, "El stock es obligatorio") 
-    .transform((val) => parseInt(val, 10))
-    .refine((val) => !isNaN(val) && val >= 0, { message: "El stock no puede ser negativo" }),
+  // Usamos 'message' en lugar de 'invalid_type_error' para evitar conflictos de tipos
+  stock: z.coerce
+    .number({ message: "El stock debe ser un número" }) 
+    .int("El stock debe ser un número entero")
+    .min(0, "El stock no puede ser negativo"),
 
-  // Lógica para que Precio sea OBLIGATORIO (no vacío)
-  precio: z.string()
-    .trim()
-    .min(1, "El precio es obligatorio")
-    .transform((val) => parseFloat(val))
-    .refine((val) => !isNaN(val) && val > 0, { message: "El precio debe ser mayor a 0" }),
+  precio: z.coerce
+    .number({ message: "El precio debe ser un número válido" })
+    .min(0.01, "El precio debe ser mayor a 0"),
   
   descripcion: z.string().max(200, "Máximo 200 caracteres").optional(),
 });
 
+// Definición del Estado para useActionState
 export type State = {
   errors?: {
     nombre?: string[];
@@ -45,29 +41,15 @@ export type State = {
     descripcion?: string[];
   };
   message?: string | null;
+  // 'payload' almacena lo que el usuario escribió para devolverlo si hay error
+  payload?: any; 
 };
 
 // ----------------------------------------------------------------------
-// 2. FUNCIONES (ACTIONS)
+// 2. CREAR PRODUCTO
 // ----------------------------------------------------------------------
 
-export async function obtenerProductosDB() {
-  try {
-    const productos = await prisma.producto.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    return productos.map((p) => ({
-      ...p,
-      precio: Number(p.precio),
-    }));
-  } catch (error) {
-    console.error("Error al obtener productos:", error);
-    return [];
-  }
-}
-
-export async function crearProducto(prevState: State, formData: FormData) {
-  // Validación
+export async function crearProducto(prevState: State, formData: FormData): Promise<State> {
   const validatedFields = productoSchema.safeParse({
     nombre: formData.get("nombre"),
     codigoBarra: formData.get("codigoBarra"),
@@ -82,6 +64,7 @@ export async function crearProducto(prevState: State, formData: FormData) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: "Faltan campos requeridos. Revisa el formulario.",
+      payload: Object.fromEntries(formData.entries()), // Retornamos lo escrito
     };
   }
 
@@ -103,6 +86,7 @@ export async function crearProducto(prevState: State, formData: FormData) {
     console.error("Error DB:", error);
     return {
       message: "Error al guardar en la base de datos.",
+      payload: Object.fromEntries(formData.entries()),
     };
   }
 
@@ -110,67 +94,109 @@ export async function crearProducto(prevState: State, formData: FormData) {
   redirect("/inventario");
 }
 
-export async function actualizarProducto(formData: FormData) {
-  const id = parseInt(formData.get("id") as string);
-  
-  const data = {
-    nombre: formData.get("nombre") as string,
-    codigoBarra: formData.get("codigoBarra") as string,
-    stock: parseInt(formData.get("stock") as string) || 0,
-    precio: parseFloat(formData.get("precio") as string) || 0,
-    tipo: formData.get("tipo") as string,
-    proveedor: formData.get("proveedor") as string,
-    descripcion: formData.get("descripcion") as string,
-  };
+// ----------------------------------------------------------------------
+// 3. ACTUALIZAR PRODUCTO
+// ----------------------------------------------------------------------
 
-  await prisma.producto.update({
-    where: { id },
-    data,
+export async function actualizarProducto(prevState: State, formData: FormData): Promise<State> {
+  const id = parseInt(formData.get("id") as string);
+
+  // 1. Validar datos
+  const validatedFields = productoSchema.safeParse({
+    nombre: formData.get("nombre"),
+    codigoBarra: formData.get("codigoBarra"),
+    proveedor: formData.get("proveedor"),
+    tipo: formData.get("tipo"),
+    stock: formData.get("stock"),
+    precio: formData.get("precio"),
+    descripcion: formData.get("descripcion"),
   });
+
+  // 2. Si falla, retornamos errores Y los datos que escribió el usuario (payload)
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Error de validación. Revisa los campos marcados.",
+      payload: Object.fromEntries(formData.entries()),
+    };
+  }
+
+  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion } = validatedFields.data;
+
+  // 3. Actualizar DB
+  try {
+    await prisma.producto.update({
+      where: { id },
+      data: {
+        nombre,
+        codigoBarra,
+        stock,
+        precio,
+        tipo,
+        proveedor,
+        descripcion: descripcion || null,
+      },
+    });
+  } catch (error) {
+    console.error("Error al actualizar DB:", error);
+    return {
+      message: "Error interno al actualizar la base de datos.",
+      payload: Object.fromEntries(formData.entries()),
+    };
+  }
 
   revalidatePath("/inventario");
   redirect("/inventario");
+
+  return { message: "Actualizado" };
 }
+
+// ----------------------------------------------------------------------
+// 4. OTRAS FUNCIONES (Eliminar, Obtener, Cargar Prueba)
+// ----------------------------------------------------------------------
 
 export async function eliminarProducto(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
-
-  await prisma.producto.delete({
-    where: { id },
-  });
-
+  await prisma.producto.delete({ where: { id } });
   revalidatePath("/inventario");
   redirect("/inventario");
 }
 
-export async function cargarDatosDePrueba() {
-  await prisma.producto.createMany({
-    data: [
-      { nombre: "Producto A", stock: 10, precio: 100, tipo: "otros", codigoBarra: "111", proveedor: "P1", descripcion: "Test A" },
-      { nombre: "Producto B", stock: 20, precio: 200, tipo: "otros", codigoBarra: "222", proveedor: "P2", descripcion: "Test B" },
-    ]
-  });
-  revalidatePath("/inventario");
+export async function obtenerProductosDB() {
+  try {
+    const productos = await prisma.producto.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return productos.map((p) => ({
+      ...p,
+      precio: Number(p.precio),
+    }));
+  } catch (error) {
+    console.error("Error al obtener productos:", error);
+    return [];
+  }
 }
 
-//Obtener el ID del producto 
-export async function obtenerProductoPorId(id: number) {
-  // 1. VALIDACIÓN DE SEGURIDAD ROBUSTA
-  // Si no hay ID, o no es un número, o es NaN, devolvemos null inmediatamente.
-  if (!id || typeof id !== 'number' || isNaN(id)) {
-    console.log("Intento de buscar producto con ID inválido:", id);
-    return null;
-  }
-
+export async function cargarDatosDePrueba() {
   try {
-    const producto = await prisma.producto.findUnique({
-      where: { 
-        id: id // Aquí ya estamos seguros de que 'id' es un número válido
-      },
+    await prisma.producto.createMany({
+      data: [
+        { nombre: "Producto A", stock: 10, precio: 100, tipo: "Almacén", codigoBarra: "111", proveedor: "P1", descripcion: "Test A" },
+        { nombre: "Producto B", stock: 20, precio: 200, tipo: "Bebidas", codigoBarra: "222", proveedor: "P2", descripcion: "Test B" },
+      ],
+      skipDuplicates: true,
     });
-    return producto;
+    revalidatePath("/inventario");
   } catch (error) {
-    console.error("Error Prisma al obtener producto:", error);
+    console.error("Error cargando datos de prueba:", error);
+  }
+}
+
+export async function obtenerProductoPorId(id: number) {
+  if (!id || typeof id !== 'number' || isNaN(id)) return null;
+  try {
+    return await prisma.producto.findUnique({ where: { id } });
+  } catch (error) {
     return null;
   }
 }
