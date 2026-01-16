@@ -5,19 +5,41 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 // OBTENER
-export async function obtenerClientes(query: string = "") {
+export async function obtenerClientes(query: string = "", sort: string = "") {
   try {
-    // 👇 CAMBIO AQUÍ: prisma.cuenta_corriente
-    const cuentas = await prisma.cuenta_corriente.findMany({
+    console.log("Ordenando por:", sort); // 👈 Agrega esto para depurar en tu terminal
+
+    let orderBy: any = { id: 'desc' }; // Orden por defecto
+
+    // 2. Verifica que estos casos coincidan con los 'value' de tu componente OrdenarClientes
+    switch (sort) {
+      case "nombre-asc":
+        orderBy = { nombre: 'asc' };
+        break;
+      case "nombre-desc":
+        orderBy = { nombre: 'desc' };
+        break;
+      case "saldo-mayor": 
+        orderBy = { saldo: 'desc' }; // Mayor a menor (Positivos arriba)
+        break;
+      case "saldo-menor": 
+        orderBy = { saldo: 'asc' };  // Menor a mayor (Deudas grandes arriba)
+        break;
+      case "antiguos":
+        orderBy = { createdAt: 'asc' };
+        break;
+    }
+
+    const clientes = await prisma.cuenta_corriente.findMany({
       where: {
         OR: [
           { nombre: { contains: query, mode: 'insensitive' } },
-          { cuit: { contains: query, mode: 'insensitive' } },
+          { cuit: { contains: query } },
         ],
       },
-      orderBy: { id: 'desc' },
+      orderBy: orderBy, // 👈 ¡Importante! Que esto esté aquí
     });
-    return cuentas;
+    return clientes;
   } catch (error) {
     console.error("Error al obtener cuentas:", error);
     return [];
@@ -121,3 +143,4 @@ export async function eliminarCliente(id: number) {
   revalidatePath("/cuentas-corrientes");
   redirect("/cuentas-corrientes");
 }
+

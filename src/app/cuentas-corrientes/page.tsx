@@ -1,15 +1,17 @@
 import { obtenerClientes } from "@/actions/clientes";
 import Link from "next/link";
 import Search from "@/components/Search/Search";
+import SortWrapper from "./SortWrapper/SortWrapper";
 
 export default async function CuentasCorrientesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ query?: string }>;
+  searchParams?: Promise<{ query?: string; sort?: string }>;
 }) {
   const params = await searchParams;
   const query = params?.query || "";
-  const clientes = await obtenerClientes(query);
+  const sort = params?.sort || "";
+  const clientes = await obtenerClientes(query, sort);
 
   // Helper para formato de moneda
   const formatMoney = (amount: number) => {
@@ -64,15 +66,7 @@ export default async function CuentasCorrientesPage({
                     <Search placeholder="Buscar por cliente, CUIT o ID..." />
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0">
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#1e293b] border border-[#e4e4e7] dark:border-[#334155] rounded-lg text-sm font-medium hover:bg-[#f4f4f5] dark:hover:bg-gray-800 transition-colors whitespace-nowrap">
-                        <span className="material-symbols-outlined text-lg">filter_list</span>
-                        Filtrar
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#1e293b] border border-[#e4e4e7] dark:border-[#334155] rounded-lg text-sm font-medium hover:bg-[#f4f4f5] dark:hover:bg-gray-800 transition-colors whitespace-nowrap">
-                        <span className="material-symbols-outlined text-lg">sort</span>
-                        Ordenar
-                    </button>
-                    {/* Botón Exportar eliminado */}
+                    <SortWrapper />
                 </div>
             </div>
         </div>

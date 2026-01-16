@@ -5,7 +5,7 @@ import Link from "next/link";
 
 // Asegúrate de que las rutas sean correctas
 import FilterModal from "@/components/FilterModal/FilterModal"; 
-import Ordenar from "@/components/VentanaOrdenar/VentanaOrdenar";
+import Ordenar from "@/components/Ordenar/OrdenarProductos";
 import ProductRow from "@/components/ProductRow/ProductRow"; 
 import { useProductos } from "@/hooks/useProductos";
 
