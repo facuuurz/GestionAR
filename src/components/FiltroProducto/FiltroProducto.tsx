@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// Agregamos categoriasDisponibles a las props
 export default function FilterModal({ isOpen, onClose, onApply, currentFilters, categoriasDisponibles = [] }: any) {
   const [category, setCategory] = useState("Todas");
   const [stockStatus, setStockStatus] = useState("all");
@@ -26,16 +25,11 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
     onClose();
   };
 
-  // Lógica para restablecer filtros
+  // MODIFICADO: Solo resetea los valores visuales del formulario, no cierra ni aplica todavía.
   const handleReset = () => {
-    const defaultFilters = {
-      category: "Todas",
-      stockStatus: "all",
-      priceRange: { min: "", max: "" }
-    };
-    // Aplicamos los defaults, lo que quitará el punto azul en el padre
-    onApply(defaultFilters);
-    onClose();
+    setCategory("Todas");
+    setStockStatus("all");
+    setPriceRange({ min: "", max: "" });
   };
 
   return (
@@ -53,7 +47,7 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
             <span className="material-symbols-outlined text-neutral-700 dark:text-white">filter_list</span>
             <h3 className="text-lg font-bold text-primary dark:text-white">Filtrar Productos</h3>
           </div>
-          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white transition-colors cursor-pointer">
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white transition-colors cursor-pointer hover:scale-110 active:scale-95 duration-200">
             <span className="material-symbols-outlined text-[24px]">close</span>
           </button>
         </div>
@@ -61,7 +55,7 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
         {/* Cuerpo */}
         <div className="p-6 flex flex-col gap-6">
           
-          {/* Filtro: Tipo de producto DINÁMICO */}
+          {/* Filtro: Tipo de producto */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
               <span className="material-symbols-outlined text-[20px] text-neutral-400">category</span>
@@ -74,12 +68,9 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
                 className="w-full h-11 px-3 rounded-lg border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-[#2a2a2a] text-sm text-neutral-800 dark:text-white font-medium focus:outline-none focus:border-neutral-500 transition-all cursor-pointer appearance-none capitalize"
               >
                 <option value="Todas">Todos los tipos de producto</option>
-                
-                {/* Mapeo dinámico de categorías existentes */}
                 {categoriasDisponibles.map((cat: string) => (
                     <option key={cat} value={cat}>{cat}</option>
                 ))}
-
               </select>
               <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">expand_more</span>
             </div>
@@ -141,25 +132,27 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
         </div>
 
         {/* Footer */}
-        <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex justify-between gap-3">
-            {/* Botón Restablecer a la izquierda */}
+        <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex flex-col sm:flex-row justify-between gap-3">
+            
+           {/* Botón Restablecer */}
            <button 
              onClick={handleReset}
-             className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+             className="h-10 px-4 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold text-red-600 border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 transition-all hover:scale-105 active:scale-95 cursor-pointer dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20"
            >
+             <span className="material-symbols-outlined text-[18px]">restart_alt</span>
              Restablecer
            </button>
 
-           <div className="flex gap-3">
-            <button onClick={onClose} className="h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 hover:bg-neutral-50 transition-all cursor-pointer">
-                Cancelar
-            </button>
+           <div className="flex gap-3 w-full sm:w-auto">
+            {/* Se ha eliminado el botón cancelar */}
+            
+            {/* Botón Aplicar */}
             <button 
                 onClick={handleApply} 
-                className="h-10 px-4 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2 dark:bg-white dark:text-black"
+                className="w-full sm:w-auto h-10 px-6 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 dark:bg-white dark:text-black"
             >
                 <span className="material-symbols-outlined text-[18px]">check</span>
-                Aplicar Filtros
+                Aplicar
             </button>
            </div>
         </div>

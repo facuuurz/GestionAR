@@ -1,27 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function Ordenar({ isOpen, onClose, onAplicar }) {
+export default function Ordenar({ isOpen, onClose, onAplicar, currentSort = "nombre-asc" }: any) {
+  
+  const [criterio, setCriterio] = useState(currentSort);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCriterio(currentSort);
+    }
+  }, [isOpen, currentSort]);
+
   if (!isOpen) return null;
 
-  // Estado local para la opción seleccionada
-  const [criterio, setCriterio] = useState("nombre-asc");
-
   const handleApply = () => {
-    // Aquí luego conectaremos la lógica real
-    console.log("Ordenando por:", criterio);
-    onAplicar(criterio);
-    onClose();
+    const valorFinal = (criterio === "nombre-asc" || criterio === "") ? "" : criterio;
+    
+    // Enviamos TRUE como segundo parámetro para indicar que SI debe cerrar
+    onAplicar(valorFinal, true); 
+    onClose(); 
   };
 
-  // Lógica para restablecer orden
   const handleReset = () => {
-    // Enviamos string vacío para indicar que NO hay orden específico
-    // Esto hará que desaparezca el punto azul
-    setCriterio("nombre-asc"); // Reset visual interno (opcional)
-    onAplicar(""); 
-    onClose();
+    // 1. Reset visual
+    setCriterio("nombre-asc"); 
+    
+    // 2. Reset funcional: Enviamos FALSE para indicar que NO debe cerrar el modal
+    // Esto actualizará el estado del padre (quitando el punto azul) pero mantendrá el modal abierto.
+    onAplicar("", false); 
   }
 
   return (
@@ -44,7 +51,7 @@ export default function Ordenar({ isOpen, onClose, onAplicar }) {
           </div>
           <button 
             onClick={onClose}
-            className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white transition-colors cursor-pointer"
+            className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white transition-colors cursor-pointer hover:scale-110 active:scale-95 duration-200"
           >
             <span className="material-symbols-outlined text-[24px]">close</span>
           </button>
@@ -54,16 +61,16 @@ export default function Ordenar({ isOpen, onClose, onAplicar }) {
         <div className="p-2 flex flex-col gap-1">
           
           {/* Opción: Nombre A-Z */}
-          <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all group ${criterio === "nombre-asc" ? "bg-neutral-100 dark:bg-[#2a2a2a]" : "hover:bg-neutral-50 dark:hover:bg-[#252525]"}`}>
+          <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all group ${(criterio === "nombre-asc" || criterio === "") ? "bg-neutral-100 dark:bg-[#2a2a2a]" : "hover:bg-neutral-50 dark:hover:bg-[#252525]"}`}>
             <div className="flex items-center gap-3">
-              <span className={`material-symbols-outlined transition-colors ${criterio === "nombre-asc" ? "text-neutral-900 dark:text-white" : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"}`}>sort_by_alpha</span>
-              <span className={`text-sm font-medium transition-colors ${criterio === "nombre-asc" ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-200"}`}>Nombre (A - Z)</span>
+              <span className={`material-symbols-outlined transition-colors ${(criterio === "nombre-asc" || criterio === "") ? "text-neutral-900 dark:text-white" : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"}`}>sort_by_alpha</span>
+              <span className={`text-sm font-medium transition-colors ${(criterio === "nombre-asc" || criterio === "") ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-200"}`}>Nombre (A - Z)</span>
             </div>
             <input 
               type="radio" 
               name="ordenar" 
               value="nombre-asc"
-              checked={criterio === "nombre-asc"}
+              checked={criterio === "nombre-asc" || criterio === ""}
               onChange={(e) => setCriterio(e.target.value)}
               className="accent-black dark:accent-white w-4 h-4 cursor-pointer" 
             />
@@ -117,7 +124,7 @@ export default function Ordenar({ isOpen, onClose, onAplicar }) {
             />
           </label>
 
-          {/* NUEVA OPCIÓN: Precio Menor a Mayor */}
+          {/* Opción: Precio Menor a Mayor */}
           <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all group ${criterio === "precio-asc" ? "bg-neutral-100 dark:bg-[#2a2a2a]" : "hover:bg-neutral-50 dark:hover:bg-[#252525]"}`}>
             <div className="flex items-center gap-3">
               <span className={`material-symbols-outlined transition-colors ${criterio === "precio-asc" ? "text-neutral-900 dark:text-white" : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"}`}>savings</span>
@@ -136,30 +143,25 @@ export default function Ordenar({ isOpen, onClose, onAplicar }) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex justify-between gap-3">
+        <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex flex-col sm:flex-row justify-between gap-3">
           
-          {/* Botón Restablecer a la izquierda */}
            <button 
+             type="button" 
              onClick={handleReset}
-             className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+             className="h-10 px-4 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold text-red-600 border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 transition-all hover:scale-105 active:scale-95 cursor-pointer dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20"
            >
+             <span className="material-symbols-outlined text-[18px]">restart_alt</span>
              Restablecer
            </button>
           
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full sm:w-auto">
             <button 
-                onClick={onClose}
-                className="h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 bg-white dark:bg-transparent border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer flex items-center gap-2"
-            >
-                Cancelar
-            </button>
-            
-            <button 
+                type="button"
                 onClick={handleApply} 
-                className="h-10 px-4 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md cursor-pointer flex items-center gap-2 dark:bg-white dark:text-black"
+                className="w-full sm:w-auto h-10 px-6 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 dark:bg-white dark:text-black"
             >
                 <span className="material-symbols-outlined text-[18px]">check</span>
-                Aplicar Orden
+                Aplicar
             </button>
           </div>
         </div>

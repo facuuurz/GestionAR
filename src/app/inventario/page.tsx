@@ -3,46 +3,42 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 
-// Asegúrate de que las rutas sean correctas
-import FilterModal from "@/components/FilterModal/FilterModal"; 
+// Componentes
+import FilterModal from "@/components/FiltroProducto/FiltroProducto"; 
 import Ordenar from "@/components/Ordenar/OrdenarProductos";
-import ProductRow from "@/components/ProductRow/ProductRow"; 
+import ProductRow from "@/components/ListaProductos/ListaProductos";
+import BarraNavegacionInventario from "@/components/BarraNavegacionInventario/BarraNavegacionInventario"; 
 import { useProductos } from "@/hooks/useProductos";
 
 export default function InventarioPage() {
-  // --- 1. ESTADOS DE UI (Modales) ---
+  // --- 1. ESTADOS DE UI ---
   const [showFilters, setShowFilters] = useState(false);
   const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
   
-  // --- 2. ESTADOS DE DATOS (Filtros y Orden) ---
+  // --- 2. ESTADOS DE DATOS ---
   const [busqueda, setBusqueda] = useState(""); 
   const [activeFilters, setActiveFilters] = useState({ 
     category: "Todas",
     stockStatus: "all", 
     priceRange: { min: "", max: "" }
   });
-  
-  // Nuevo estado para controlar el indicador azul del botón Ordenar
   const [currentSort, setCurrentSort] = useState(""); 
 
   // --- 3. DATA DESDE EL HOOK ---
-  // El hook devuelve 'productos' ya ordenados si se usa setCriterioOrden
   const { productos, setCriterioOrden, loading } = useProductos();
 
-  // --- 4. EXTRACCIÓN DE CATEGORÍAS (Para el Modal) ---
+  // --- 4. EXTRACCIÓN DE CATEGORÍAS ---
   const categoriasUnicas = useMemo(() => {
-    // Obtenemos los tipos únicos de los productos cargados
     const tipos = productos
         .map(p => p.tipo)
-        .filter(t => t && t.trim() !== ""); // Filtramos nulos o vacíos
-    return Array.from(new Set(tipos)); // Eliminamos duplicados
+        .filter(t => t && t.trim() !== "");
+    return Array.from(new Set(tipos));
   }, [productos]);
 
-  // --- 5. LÓGICA DE FILTRADO MAESTRA ---
+  // --- 5. LÓGICA DE FILTRADO ---
   const productosFiltrados = useMemo(() => {
     return productos.filter((prod) => {
-      
-      // A. Filtro de Texto
+      // Lógica de búsqueda
       let matchesSearch = true;
       if (busqueda) {
         const termino = busqueda.toLowerCase();
@@ -56,42 +52,35 @@ export default function InventarioPage() {
         matchesSearch = matches.some(field => field?.toLowerCase().includes(termino));
       }
 
-      // B. Filtro por Categoría
+      // Filtro Categoría
       let matchesCategory = true;
       if (activeFilters.category !== "Todas") {
-        matchesCategory = prod.tipo?.toLowerCase() === activeFilters.category.toLowerCase();
+          matchesCategory = prod.tipo?.toLowerCase() === activeFilters.category.toLowerCase();
       }
 
-      // C. Filtro por Estado de Stock
+      // Filtro Stock
       let matchesStock = true;
-      if (activeFilters.stockStatus === "low") {
-        matchesStock = prod.stock > 0 && prod.stock < 20; 
-      } else if (activeFilters.stockStatus === "none") {
-        matchesStock = prod.stock <= 0; 
-      }
+      if (activeFilters.stockStatus === "low") matchesStock = prod.stock > 0 && prod.stock < 20; 
+      else if (activeFilters.stockStatus === "none") matchesStock = prod.stock <= 0; 
 
-      // D. Filtro por Precio
+      // Filtro Precio
       let matchesPrice = true;
       const precio = Number(prod.precio);
       const min = activeFilters.priceRange.min ? Number(activeFilters.priceRange.min) : 0;
       const max = activeFilters.priceRange.max ? Number(activeFilters.priceRange.max) : Infinity;
-      
       if (precio < min || precio > max) matchesPrice = false;
 
       return matchesSearch && matchesCategory && matchesStock && matchesPrice;
     });
   }, [productos, busqueda, activeFilters]);
 
-  // Manejador para aplicar filtros
-  const handleApplyFilters = (filtros: any) => {
-    setActiveFilters(filtros);
-  };
+  // Manejadores
+  const handleApplyFilters = (filtros: any) => setActiveFilters(filtros);
 
-  // Manejador para aplicar orden (y actualizar el indicador visual)
-  const handleApplySort = (criterio: string) => {
-    setCriterioOrden(criterio); // Ejecuta la lógica del hook
-    setCurrentSort(criterio);   // Actualiza el puntito azul local
-    setMostrarOrdenar(false);
+  const handleApplySort = (criterio: string, cerrarModal: boolean = true) => {
+    setCriterioOrden(criterio);
+    setCurrentSort(criterio);
+    if (cerrarModal) setMostrarOrdenar(false);
   };
 
   return (
@@ -103,13 +92,14 @@ export default function InventarioPage() {
         onClose={() => setShowFilters(false)} 
         onApply={handleApplyFilters} 
         currentFilters={activeFilters}
-        categoriasDisponibles={categoriasUnicas} // ✅ Pasamos las categorías dinámicas
+        categoriasDisponibles={categoriasUnicas} 
       />
       
       <Ordenar
         isOpen={mostrarOrdenar}
         onClose={() => setMostrarOrdenar(false)}
-        onAplicar={handleApplySort} // ✅ Usamos el nuevo manejador
+        onAplicar={handleApplySort}
+        currentSort={currentSort}
       />
 
       <div className="w-full flex flex-col gap-6 h-full">
@@ -139,55 +129,20 @@ export default function InventarioPage() {
           </Link>
         </div>
 
-        {/* Barra de Herramientas */}
-        <div className="bg-white dark:bg-[#1e2736] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col md:flex-row gap-4 shrink-0">
-          
-          <div className="flex flex-1 items-center bg-[#f5f5f5] dark:bg-[#151a25] rounded-lg px-3 py-2 border border-transparent focus-within:border-primary transition-colors">
-            <span className="material-symbols-outlined text-neutral-500">search</span>
-            <input 
-              className="bg-transparent border-none outline-none text-sm w-full focus:ring-0 text-primary dark:text-white placeholder:text-neutral-500 pl-1" 
-              placeholder="Buscar por nombre, código, proveedor..." 
-              type="text" 
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex gap-3 overflow-x-auto p-1"> 
-            
-            {/* BOTÓN FILTRAR */}
-            <button 
-              onClick={() => setShowFilters(true)} 
-              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
-            >
-              <span className="material-symbols-outlined text-[18px]">filter_list</span>
-              <span>Filtrar</span>
-              {/* Indicador azul si hay filtros activos */}
-              {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min || activeFilters.priceRange.max) && (
-                <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1"></span>
-              )}
-            </button>
-
-            {/* BOTÓN ORDENAR */}
-            <button 
-              onClick={() => setMostrarOrdenar(true)} 
-              className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
-            >
-              <span className="material-symbols-outlined text-[18px]">sort</span>
-              <span>Ordenar</span>
-              {/* Indicador azul si hay un orden aplicado (que no sea vacío) */}
-              {currentSort && (
-                <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1"></span>
-              )}
-            </button>
-
-            <button className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white">
-              <span className="material-symbols-outlined text-[18px]">download</span>
-              <span>Exportar</span>
-            </button>
-
-          </div>
-        </div>
+        {/* --- USANDO EL NUEVO COMPONENTE --- */}
+        <BarraNavegacionInventario 
+            busqueda={busqueda}
+            onSearchChange={setBusqueda}
+            onOpenFilters={() => setShowFilters(true)}
+            onOpenSort={() => setMostrarOrdenar(true)}
+            hasActiveFilters={
+                activeFilters.category !== "Todas" || 
+                activeFilters.stockStatus !== "all" || 
+                activeFilters.priceRange.min !== "" || 
+                activeFilters.priceRange.max !== ""
+            }
+            hasActiveSort={!!currentSort} 
+        />
 
         {/* Tabla */}
         <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
@@ -234,8 +189,8 @@ export default function InventarioPage() {
                                      onClick={() => {
                                          setBusqueda("");
                                          setActiveFilters({ category: "Todas", stockStatus: "all", priceRange: { min: "", max: "" } });
-                                         setCriterioOrden(""); // Resetear orden
-                                         setCurrentSort("");   // Resetear indicador
+                                         setCriterioOrden("");
+                                         setCurrentSort("");
                                      }}
                                      className="text-blue-600 hover:underline text-xs font-bold mt-1"
                                    >
