@@ -1,13 +1,15 @@
 "use client";
 
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useDebouncedCallback } from "use-debounce"; // 👈 Importamos esto
 
 export default function Search({ placeholder }: { placeholder: string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
 
-  const handleSearch = (term: string) => {
+  // Envolvemos tu lógica en el Debounce (300ms de espera)
+  const handleSearch = useDebouncedCallback((term: string) => {
     const params = new URLSearchParams(searchParams);
     
     if (term) {
@@ -16,9 +18,8 @@ export default function Search({ placeholder }: { placeholder: string }) {
       params.delete("query");
     }
     
-    // Esto actualiza la URL sin recargar la página
     replace(`${pathname}?${params.toString()}`);
-  };
+  }, 300);
 
   return (
     <label className="flex w-full h-11 items-center rounded-lg bg-[#f0f2f4] dark:bg-gray-800 px-3 overflow-hidden focus-within:ring-2 ring-[#135bec] transition-all">
@@ -28,7 +29,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
       <input
         className="w-full bg-transparent border-none outline-none text-[#111318] dark:text-white placeholder-[#616f89] dark:placeholder-gray-500 text-sm ml-2 h-full"
         placeholder={placeholder}
-        onChange={(e) => handleSearch(e.target.value)}
+        onChange={(e) => handleSearch(e.target.value)} // Ahora usa la función con retardo
         defaultValue={searchParams.get("query")?.toString()}
         type="text"
       />
