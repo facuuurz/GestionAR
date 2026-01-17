@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useDebouncedCallback } from "use-debounce"; // 👈 Importamos esto
+import { useDebouncedCallback } from "use-debounce"; 
 
 export default function Search({ placeholder }: { placeholder: string }) {
   const searchParams = useSearchParams();
