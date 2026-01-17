@@ -1,15 +1,18 @@
 import { obtenerProveedores } from "@/actions/proveedores";
 import Link from "next/link";
 import Search from "@/components/Search/Search";
+import SortProveedoresWrapper from "./ProveedoresWrapper/ProveedoresWrapper";
 
 export default async function ProveedoresPage(props: {
-  searchParams?: Promise<{ query?: string }>;
+  searchParams?: Promise<{ query?: string; sort?: string }>;
 }) {
   //const proveedores = await obtenerProveedores();
   
   const searchParams = await props.searchParams;
+  const params = await searchParams;
   const query = searchParams?.query || ""; // Leemos lo que escribiste en el buscador
-  const proveedores = await obtenerProveedores(query);
+  const sort = params?.sort || "";
+  const proveedores = await obtenerProveedores(query, sort);
 
   // Función auxiliar para colores aleatorios
   const getAvatarColor = (id: number) => {
@@ -72,13 +75,10 @@ export default async function ProveedoresPage(props: {
           <div className="bg-white dark:bg-[#1A202C] rounded-t-xl border border-b-0 border-[#e5e7eb] dark:border-gray-700 p-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="w-full sm:max-w-md">
-                <Search placeholder="Buscar por nombre o código..." />
+                <Search placeholder="Buscar por Código, Razón Social o Contacto..." />
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-[#616f89] dark:text-gray-400 hover:bg-[#f0f2f4] dark:hover:bg-gray-800 transition-colors">
-                  <span className="material-symbols-outlined text-[20px]">filter_list</span>
-                  Filtrar
-                </button>
+                <SortProveedoresWrapper />
               </div>
             </div>
           </div>
