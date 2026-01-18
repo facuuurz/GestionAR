@@ -32,9 +32,12 @@ export default function ProductRow({ prod }: ProductRowProps) {
   return (
     <tr className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
       
-      {/* CÓDIGO */}
-      <td className="px-4 py-3 text-sm font-medium text-neutral-600 dark:text-neutral-400 font-mono">
-        {prod.codigoBarra || prod.id}
+      {/* CÓDIGO   font-bold text-[#135bec] dark:text-blue-400 hover:underline hover:text-blue-600 cursor-pointer*/}
+      <td className="px-4 py-3 text-sm font-bold dark:text-neutral-400 font-mono
+      hover:underline hover:text-blue-600 cursor-pointer text-[#135bec]">
+        <Link href={`/inventario/detalles-producto/${prod.id}`}>
+          {prod.codigoBarra || prod.id}
+        </Link>
       </td>
 
       {/* PRODUCTO (Nombre + Descripción Corta) */}

@@ -11,27 +11,40 @@ export default function SortProveedoresWrapper() {
   const { replace } = useRouter();
 
   const valorActual = searchParams.get("sort")?.toString();
+  
+  // El punto azul solo aparece si hay un valor Y no es el default ("razon-social-asc")
+  const hasActiveSort = !!valorActual && valorActual !== "razon-social-asc";
 
-  const handleAplicar = (criterio: string) => {
+  const handleAplicar = (criterio: string, cerrarModal: boolean = true) => {
     const params = new URLSearchParams(searchParams);
     
-    if (criterio) {
+    // Si el criterio es vacío o es el default, borramos el param de la URL
+    if (criterio && criterio !== "razon-social-asc") {
       params.set("sort", criterio);
     } else {
       params.delete("sort");
     }
     
     replace(`${pathname}?${params.toString()}`);
+    
+    if (cerrarModal) {
+        setIsOpen(false);
+    }
   };
 
   return (
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#1e293b] border border-[#e4e4e7] dark:border-[#334155] rounded-lg text-sm font-medium hover:bg-[#f4f4f5] dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+        className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
       >
-        <span className="material-symbols-outlined text-lg">sort</span>
-        Ordenar
+        <span className="material-symbols-outlined text-[18px]">sort</span>
+        <span>Ordenar</span>
+
+        {/* Indicador azul (Punto) */}
+        {hasActiveSort && (
+            <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1 animate-in fade-in zoom-in duration-300"></span>
+        )}
       </button>
 
       <OrdenarProveedores 

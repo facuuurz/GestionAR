@@ -208,7 +208,7 @@ export default function InventarioPage() {
           {!loading && (
             <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
                 <span>Mostrando {productosFiltrados.length} productos</span>
-                <span>Total: {productos.length}</span>
+                <span>Total Productos: {productos.length}</span>
             </div>
           )}
         </div>
