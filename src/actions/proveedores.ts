@@ -5,31 +5,32 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-
 const proveedorSchema = z.object({
-  // AHORA EL CÓDIGO ES OBLIGATORIO Y MANUAL
+  // Código obligatorio
   codigo: z.string()
     .min(1, "El código es obligatorio")
     .max(20, "El código no puede tener más de 20 caracteres")
     .trim(),
 
+  // Razón Social obligatoria
   razonSocial: z.string().min(1, "La Razón Social es obligatoria"),
   
   contacto: z.string().optional(),
   
+  // CORRECCIÓN AQUÍ: Teléfono ahora es obligatorio
   telefono: z.string()
     .trim()
-    .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {
+    .min(1, "El teléfono es obligatorio") // Esto hace que salte el error si está vacío
+    .refine((val) => /^\+?[0-9]+$/.test(val), {
       message: "Solo números (ej: 112233) o + al inicio",
-    })
-    .optional(),
+    }),
   
   email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
 export type State = {
   errors?: {
-    codigo?: string[]; // Agregamos error de código
+    codigo?: string[];
     razonSocial?: string[];
     contacto?: string[];
     telefono?: string[];
@@ -41,7 +42,7 @@ export type State = {
 
 export async function crearProveedor(prevState: State, formData: FormData) {
   const rawData = {
-    codigo: formData.get("codigo") as string, // Leemos el código del form
+    codigo: formData.get("codigo") as string,
     razonSocial: formData.get("razonSocial") as string,
     contacto: formData.get("contacto") as string,
     telefono: formData.get("telefono") as string,
@@ -59,7 +60,6 @@ export async function crearProveedor(prevState: State, formData: FormData) {
   }
 
   try {
-    // Verificamos si el código ya existe para evitar error de Prisma
     const existeCodigo = await prisma.proveedor.findUnique({
         where: { codigo: validatedFields.data.codigo }
     });
@@ -74,10 +74,10 @@ export async function crearProveedor(prevState: State, formData: FormData) {
 
     await prisma.proveedor.create({
       data: {
-        codigo: validatedFields.data.codigo, // Usamos el manual
+        codigo: validatedFields.data.codigo,
         razonSocial: validatedFields.data.razonSocial,
         contacto: validatedFields.data.contacto || null,
-        telefono: validatedFields.data.telefono || null,
+        telefono: validatedFields.data.telefono, // Ya no es opcional, se guarda directo
         email: validatedFields.data.email || null,
       },
     });
@@ -93,9 +93,10 @@ export async function crearProveedor(prevState: State, formData: FormData) {
   redirect("/proveedores");
 }
 
+// ... (El resto de las funciones obtenerProveedores, actualizar, eliminar quedan igual)
 export async function obtenerProveedores(query: string = "", sort: string = "") {
   try {
-    let orderBy: any = { id: 'desc' }; // Por defecto: Más recientes
+    let orderBy: any = { id: 'desc' };
 
     switch (sort) {
       case "Contacto-asc":
@@ -104,8 +105,6 @@ export async function obtenerProveedores(query: string = "", sort: string = "") 
       case "Contacto-desc":
         orderBy = { contacto: 'desc'};
         break;
-      
-      // Si el usuario elige "Razón Social" explícitamente
       case "razon-social-asc":
         orderBy = { razonSocial: 'asc' }; 
         break;
@@ -114,7 +113,6 @@ export async function obtenerProveedores(query: string = "", sort: string = "") 
     const proveedores = await prisma.proveedor.findMany({
       where: {
         OR: [
-          // Buscamos en Razón Social, Contacto y Email (ya no en nombre)
           { razonSocial: { contains: query, mode: 'insensitive' } },
           { contacto: { contains: query, mode: 'insensitive' } },
           { email: { contains: query, mode: 'insensitive' } },
@@ -169,12 +167,9 @@ export async function eliminarProveedor(formData: FormData) {
     });
   } catch (error) {
     console.error("Error al eliminar proveedor:", error);
-    // Manejar error si tiene productos asociados
     throw new Error("No se puede eliminar este proveedor");
   }
 
   revalidatePath("/proveedores");
   redirect("/proveedores");
 }
-
-

@@ -4,16 +4,26 @@ import { useActionState } from "react";
 import { crearProveedor, State } from "@/actions/proveedores";
 import Link from "next/link";
 
+// --- COMPONENTE PARA EL MENSAJE DE ERROR CON ÍCONO ---
+function ErrorMessage({ errors }: { errors?: string[] }) {
+  if (!errors || errors.length === 0) return null;
+  return (
+    <p className="text-red-500 text-xs mt-1 font-medium ml-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+      <span className="material-symbols-outlined text-[16px]">error</span>
+      {errors[0]}
+    </p>
+  );
+}
+
 export default function NuevoProveedorPage() {
   const initialState: State = { message: null, errors: {} };
   
-  // 1. Obtenemos 'isPending' del hook useActionState
   const [state, formAction, isPending] = useActionState(crearProveedor, initialState);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       <main className="flex-1 flex flex-col items-center py-8 px-6 lg:px-12 xl:px-40 w-full">
-        <div className="flex flex-col w-full max-w-300"> 
+        <div className="flex flex-col w-full max-w-4xl"> 
           
           {/* --- Breadcrumbs --- */}
           <div className="flex flex-wrap items-center gap-2 px-1 pb-4">
@@ -41,22 +51,32 @@ export default function NuevoProveedorPage() {
           {/* FORMULARIO */}
           <form action={formAction} className="bg-white dark:bg-[#1A202C] rounded-xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm overflow-hidden">
             
+            {/* --- HEADER INFORMACIÓN GENERAL CON ÍCONO DE CAMIÓN --- */}
+            <div className="border-b border-[#e5e7eb] dark:border-[#2d3748] px-6 py-4 bg-gray-50/50 dark:bg-[#1e2736]">
+                <h3 className="text-base font-bold text-[#0d121b] dark:text-white flex items-center gap-2">
+                {/* Se cambió 'domain' por 'local_shipping' */}
+                <span className="material-symbols-outlined">local_shipping</span>
+                Información General
+                </h3>
+            </div>
+
             <div className="p-6 md:p-8">
               
-              {/* Mensaje Global de Error */}
-              {state.message && (
+              {/* Mensaje Global de Error (Solo errores generales de DB) */}
+              {state.message && !Object.keys(state.errors || {}).length && (
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900 text-sm font-medium flex items-center gap-2">
                     <span className="material-symbols-outlined text-[20px]">error</span>
                     {state.message}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* GRILLA PRINCIPAL */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 
                 {/* 1. Código del Proveedor */}
-                <div className="col-span-1">
+                <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="codigo">
-                    Código del Proveedor <span className="text-red-500">*</span>
+                    Código <span className="text-black dark:text-white">*</span>
                   </label>
                   <div className="relative flex items-center">
                     <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 pointer-events-none">
@@ -74,15 +94,13 @@ export default function NuevoProveedorPage() {
                       type="text"
                     />
                   </div>
-                  {state.errors?.codigo && (
-                    <p className="text-sm text-red-500 mt-1 font-medium ml-1">{state.errors.codigo[0]}</p>
-                  )}
+                  <ErrorMessage errors={state.errors?.codigo} />
                 </div>
 
-                {/* 3. Razón Social */}
-                <div className="col-span-1 md:col-span-2">
+                {/* 2. Razón Social */}
+                <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="razonSocial">
-                    Razón Social <span className="text-red-500">*</span>
+                    Razón Social <span className="text-black dark:text-white">*</span>
                   </label>
                   <div className="relative flex items-center">
                     <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 pointer-events-none">
@@ -96,17 +114,15 @@ export default function NuevoProveedorPage() {
                             : 'border-transparent focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/20'}`}
                       id="razonSocial" 
                       name="razonSocial" 
-                      placeholder="Nombre de la empresa o proveedor" 
+                      placeholder="Nombre de la empresa" 
                       type="text"
                     />
                   </div>
-                  {state.errors?.razonSocial && (
-                    <p className="text-sm text-red-500 mt-1 font-medium ml-1">{state.errors.razonSocial[0]}</p>
-                  )}
+                  <ErrorMessage errors={state.errors?.razonSocial} />
                 </div>
 
-                {/* 4. Contacto */}
-                <div className="col-span-1">
+                {/* 3. Contacto */}
+                <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="contacto">
                     Contacto
                   </label>
@@ -123,12 +139,13 @@ export default function NuevoProveedorPage() {
                       type="text"
                     />
                   </div>
+                  <ErrorMessage errors={state.errors?.contacto} />
                 </div>
 
-                {/* 5. Teléfono */}
-                <div className="col-span-1">
+                {/* 4. Teléfono */}
+                <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="telefono">
-                    Teléfono
+                    Teléfono <span className="text-black dark:text-white">*</span>
                   </label>
                   <div className="relative flex items-center">
                     <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 pointer-events-none">
@@ -146,13 +163,11 @@ export default function NuevoProveedorPage() {
                       type="tel"
                     />
                   </div>
-                  {state.errors?.telefono && (
-                    <p className="text-sm text-red-500 mt-1 font-medium ml-1">{state.errors.telefono[0]}</p>
-                  )}
+                  <ErrorMessage errors={state.errors?.telefono} />
                 </div>
 
-                {/* 6. Email */}
-                <div className="col-span-1 md:col-span-2">
+                {/* 5. Email */}
+                <div className="col-span-1 md:col-span-12">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="email">
                     Correo Electrónico
                   </label>
@@ -172,33 +187,28 @@ export default function NuevoProveedorPage() {
                       type="email"
                     />
                   </div>
-                  {state.errors?.email && (
-                    <p className="text-sm text-red-500 mt-1 font-medium ml-1">{state.errors.email[0]}</p>
-                  )}
+                  <ErrorMessage errors={state.errors?.email} />
                 </div>
 
               </div>
             </div>
 
-            {/* --- FOOTER BOTONES ACTUALIZADO --- */}
+            {/* --- FOOTER BOTONES --- */}
             <div className="px-6 md:px-8 py-5 bg-[#f8f9fa] dark:bg-gray-800/50 border-t border-[#e5e7eb] dark:border-gray-700 flex flex-col-reverse sm:flex-row justify-end gap-3">
-               
-               {/* Botón Cancelar (ANIMADO) */}
                <Link 
                   href="/proveedores" 
                   className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-gray-200 bg-white dark:bg-transparent border border-neutral-300 dark:border-gray-600 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                >
+               >
                   Cancelar
-                </Link>
-                
-                {/* Botón Guardar (ANIMADO) */}
-                <button 
+               </Link>
+               
+               <button 
                   type="submit" 
                   disabled={isPending}
                   className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
                     ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-[#135bec] dark:hover:bg-blue-600'}
                   `}
-                >
+               >
                   {isPending ? (
                     <>
                       <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
@@ -210,7 +220,7 @@ export default function NuevoProveedorPage() {
                       Guardar Proveedor
                     </>
                   )}
-                </button>
+               </button>
             </div>
 
           </form>
