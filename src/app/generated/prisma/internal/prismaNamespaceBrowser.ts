@@ -116,7 +116,6 @@ export const ProveedorScalarFieldEnum = {
   contacto: 'contacto',
   telefono: 'telefono',
   email: 'email',
-  estado: 'estado',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

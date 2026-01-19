@@ -7,83 +7,88 @@ import { z } from "zod";
 
 
 const proveedorSchema = z.object({
+  // AHORA EL CÓDIGO ES OBLIGATORIO Y MANUAL
+  codigo: z.string()
+    .min(1, "El código es obligatorio")
+    .max(20, "El código no puede tener más de 20 caracteres")
+    .trim(),
+
   razonSocial: z.string().min(1, "La Razón Social es obligatoria"),
   
-  // Opcionales (permiten string vacío o null)
   contacto: z.string().optional(),
   
   telefono: z.string()
-    .trim() // Quitamos espacios accidentales al inicio/final
+    .trim()
     .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {
-      message: "El teléfono solo puede contener números (ej: 115555) o + al inicio (ej: +54911...)",
+      message: "Solo números (ej: 112233) o + al inicio",
     })
     .optional(),
   
-  email: z.string()
-    .email("El formato del email no es válido")
-    .optional()
-    .or(z.literal("")), // Permite dejarlo vacío
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
-// 2. Definición del Estado
 export type State = {
   errors?: {
+    codigo?: string[]; // Agregamos error de código
     razonSocial?: string[];
     contacto?: string[];
     telefono?: string[];
     email?: string[];
   };
   message?: string | null;
-  payload?: any; // Para no borrar lo que escribió el usuario si hay error
+  payload?: any;
 };
 
-// 3. Función Crear Proveedor
 export async function crearProveedor(prevState: State, formData: FormData) {
-  
-  // Extraemos datos
   const rawData = {
+    codigo: formData.get("codigo") as string, // Leemos el código del form
     razonSocial: formData.get("razonSocial") as string,
     contacto: formData.get("contacto") as string,
     telefono: formData.get("telefono") as string,
     email: formData.get("email") as string,
   };
 
-  // Validamos
   const validatedFields = proveedorSchema.safeParse(rawData);
 
-  // Si hay error, devolvemos los mensajes y lo que escribió
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Faltan datos o son incorrectos. Revise el formulario.",
+      message: "Faltan datos o son incorrectos.",
       payload: rawData,
     };
   }
 
   try {
-    // Generamos un código automático (Ej: PROV-1234)
-    const randomCode = Math.floor(1000 + Math.random() * 9000);
-    const codigoGenerado = `PROV-${randomCode}`;
+    // Verificamos si el código ya existe para evitar error de Prisma
+    const existeCodigo = await prisma.proveedor.findUnique({
+        where: { codigo: validatedFields.data.codigo }
+    });
+
+    if (existeCodigo) {
+        return {
+            errors: { codigo: ["Este código ya existe, use otro."] },
+            message: "El código de proveedor ya está registrado.",
+            payload: rawData
+        };
+    }
 
     await prisma.proveedor.create({
       data: {
-        codigo: codigoGenerado,
+        codigo: validatedFields.data.codigo, // Usamos el manual
         razonSocial: validatedFields.data.razonSocial,
         contacto: validatedFields.data.contacto || null,
         telefono: validatedFields.data.telefono || null,
         email: validatedFields.data.email || null,
-        estado: "Activo", // Valor por defecto
       },
     });
   } catch (error) {
     console.error("Error al crear proveedor:", error);
     return {
-      message: "Error interno: No se pudo crear el proveedor.",
+      message: "Error de base de datos. Intente nuevamente.",
       payload: rawData,
     };
   }
 
-  // Éxito
   revalidatePath("/proveedores");
   redirect("/proveedores");
 }
@@ -131,7 +136,6 @@ export async function actualizarProveedor(formData: FormData) {
   const contacto = formData.get("contacto") as string;
   const telefono = formData.get("telefono") as string;
   const email = formData.get("email") as string;
-  const estado = formData.get("estado") as string;
 
   if (!id) throw new Error("ID de proveedor no válido");
 
@@ -143,7 +147,6 @@ export async function actualizarProveedor(formData: FormData) {
         contacto,
         telefono,
         email,
-        estado,
       },
     });
   } catch (error) {

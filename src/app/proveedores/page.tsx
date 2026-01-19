@@ -35,15 +35,6 @@ export default async function ProveedoresPage(props: {
     return colors[id % colors.length];
   };
 
-  const getStatusBadge = (estado: string) => {
-    switch (estado) {
-      case "Activo": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case "Inactivo": return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
-      case "Pendiente": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       
@@ -101,10 +92,9 @@ export default async function ProveedoresPage(props: {
                     <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
                     <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden lg:table-cell">Teléfono</th>
                     <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden xl:table-cell">Email</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center w-28">Estado</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
+                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 z-20 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
                       Acciones
-                    </th>
+                  </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#ededed] dark:divide-[#333] text-sm">
@@ -141,11 +131,7 @@ export default async function ProveedoresPage(props: {
                       <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">{prov.contacto || "-"}</td>
                       <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden lg:table-cell">{prov.telefono || "-"}</td>
                       <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden xl:table-cell">{prov.email || "-"}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(prov.estado)}`}>
-                          {prov.estado}
-                        </span>
-                      </td>
+                      
                        <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-[#222] group-hover:bg-neutral-50 dark:group-hover:bg-[#333] transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
                          <Link 
                            href={`/proveedores/editar/${prov.id}`} 
