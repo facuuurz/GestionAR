@@ -11,7 +11,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
     redirect("/inventario");
   }
 
-  // Obtenemos los datos del producto (Server Side)
+  // 1. Obtenemos los datos del producto
   const producto = await prisma.producto.findUnique({
     where: { id: idNumerico },
   });
@@ -20,11 +20,15 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
     redirect("/inventario");
   }
 
-  // Normalizamos el precio a número para que TypeScript no se queje si Prisma devuelve Decimal
+  // 2. NUEVO: Obtenemos todas las categorías de la base de datos
+  const categorias = await prisma.categoria.findMany({
+    orderBy: { nombre: 'asc' },
+  });
+
+  // Normalizamos el precio
   const productoFormateado = {
     ...producto,
     precio: Number(producto.precio),
-    // Aseguramos que tipo, proveedor y codigoBarra no sean null si la DB lo permite (aunque Zod lo exige)
     tipo: producto.tipo || "",
     proveedor: producto.proveedor || "",
     codigoBarra: producto.codigoBarra || "",
@@ -39,7 +43,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
             <Link href="/" className="hover:text-blue-600 dark:hover:text-white transition-colors">
-                 Panel
+                  Panel
             </Link>
             <span className="material-symbols-outlined text-base">chevron_right</span>
             <Link href="/inventario" className="hover:text-blue-600 dark:hover:text-white transition-colors">
@@ -66,8 +70,8 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
           <div className="bg-white dark:bg-[#151a25] rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="p-6 md:p-8">
               
-              {/* Formulario Interactivo (Cliente) */}
-              <EditProductForm producto={productoFormateado} />
+              {/* Pasamos producto Y categorias al formulario */}
+              <EditProductForm producto={productoFormateado} categorias={categorias} />
 
             </div>
           </div>
