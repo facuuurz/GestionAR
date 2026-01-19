@@ -58,7 +58,6 @@ model Proveedor {
   contacto    String?  // Ej: Roberto Gómez
   telefono    String?
   email       String?
-  estado      String   @default("Activo") // Activo, Inactivo, Pendiente
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

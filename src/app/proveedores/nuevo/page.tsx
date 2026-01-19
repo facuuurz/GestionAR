@@ -79,31 +79,6 @@ export default function NuevoProveedorPage() {
                   )}
                 </div>
 
-                {/* 2. Estado */}
-                <div className="col-span-1">
-                  <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="estado">
-                      Estado
-                  </label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 z-10 pointer-events-none">
-                      <span className="material-symbols-outlined text-[18px]">toggle_on</span>
-                    </div>
-                    <select 
-                        defaultValue={state.payload?.estado || "Activo"} 
-                        className="w-full appearance-none rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent focus:border-[#135bec] focus:bg-white dark:focus:bg-gray-900 pl-14 pr-10 py-3 text-[#111318] dark:text-white transition-all outline-none ring-0 focus:ring-2 focus:ring-[#135bec]/20 cursor-pointer" 
-                        id="estado" 
-                        name="estado"
-                    >
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                      <option value="Pendiente">Pendiente</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#616f89] dark:text-gray-400">
-                      <span className="material-symbols-outlined text-[24px]">expand_more</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* 3. Razón Social */}
                 <div className="col-span-1 md:col-span-2">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="razonSocial">

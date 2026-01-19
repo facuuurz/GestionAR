@@ -41,7 +41,6 @@ export type ProveedorMinAggregateOutputType = {
   contacto: string | null
   telefono: string | null
   email: string | null
-  estado: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -53,7 +52,6 @@ export type ProveedorMaxAggregateOutputType = {
   contacto: string | null
   telefono: string | null
   email: string | null
-  estado: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -65,7 +63,6 @@ export type ProveedorCountAggregateOutputType = {
   contacto: number
   telefono: number
   email: number
-  estado: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -87,7 +84,6 @@ export type ProveedorMinAggregateInputType = {
   contacto?: true
   telefono?: true
   email?: true
-  estado?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -99,7 +95,6 @@ export type ProveedorMaxAggregateInputType = {
   contacto?: true
   telefono?: true
   email?: true
-  estado?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -111,7 +106,6 @@ export type ProveedorCountAggregateInputType = {
   contacto?: true
   telefono?: true
   email?: true
-  estado?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -210,7 +204,6 @@ export type ProveedorGroupByOutputType = {
   contacto: string | null
   telefono: string | null
   email: string | null
-  estado: string
   createdAt: Date
   updatedAt: Date
   _count: ProveedorCountAggregateOutputType | null
@@ -245,7 +238,6 @@ export type ProveedorWhereInput = {
   contacto?: Prisma.StringNullableFilter<"Proveedor"> | string | null
   telefono?: Prisma.StringNullableFilter<"Proveedor"> | string | null
   email?: Prisma.StringNullableFilter<"Proveedor"> | string | null
-  estado?: Prisma.StringFilter<"Proveedor"> | string
   createdAt?: Prisma.DateTimeFilter<"Proveedor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Proveedor"> | Date | string
 }
@@ -257,7 +249,6 @@ export type ProveedorOrderByWithRelationInput = {
   contacto?: Prisma.SortOrderInput | Prisma.SortOrder
   telefono?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
-  estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -272,7 +263,6 @@ export type ProveedorWhereUniqueInput = Prisma.AtLeast<{
   contacto?: Prisma.StringNullableFilter<"Proveedor"> | string | null
   telefono?: Prisma.StringNullableFilter<"Proveedor"> | string | null
   email?: Prisma.StringNullableFilter<"Proveedor"> | string | null
-  estado?: Prisma.StringFilter<"Proveedor"> | string
   createdAt?: Prisma.DateTimeFilter<"Proveedor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Proveedor"> | Date | string
 }, "id" | "codigo">
@@ -284,7 +274,6 @@ export type ProveedorOrderByWithAggregationInput = {
   contacto?: Prisma.SortOrderInput | Prisma.SortOrder
   telefono?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
-  estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ProveedorCountOrderByAggregateInput
@@ -304,7 +293,6 @@ export type ProveedorScalarWhereWithAggregatesInput = {
   contacto?: Prisma.StringNullableWithAggregatesFilter<"Proveedor"> | string | null
   telefono?: Prisma.StringNullableWithAggregatesFilter<"Proveedor"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"Proveedor"> | string | null
-  estado?: Prisma.StringWithAggregatesFilter<"Proveedor"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Proveedor"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Proveedor"> | Date | string
 }
@@ -315,7 +303,6 @@ export type ProveedorCreateInput = {
   contacto?: string | null
   telefono?: string | null
   email?: string | null
-  estado?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -327,7 +314,6 @@ export type ProveedorUncheckedCreateInput = {
   contacto?: string | null
   telefono?: string | null
   email?: string | null
-  estado?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -338,7 +324,6 @@ export type ProveedorUpdateInput = {
   contacto?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -350,7 +335,6 @@ export type ProveedorUncheckedUpdateInput = {
   contacto?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -362,7 +346,6 @@ export type ProveedorCreateManyInput = {
   contacto?: string | null
   telefono?: string | null
   email?: string | null
-  estado?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -373,7 +356,6 @@ export type ProveedorUpdateManyMutationInput = {
   contacto?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -385,7 +367,6 @@ export type ProveedorUncheckedUpdateManyInput = {
   contacto?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -397,7 +378,6 @@ export type ProveedorCountOrderByAggregateInput = {
   contacto?: Prisma.SortOrder
   telefono?: Prisma.SortOrder
   email?: Prisma.SortOrder
-  estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -413,7 +393,6 @@ export type ProveedorMaxOrderByAggregateInput = {
   contacto?: Prisma.SortOrder
   telefono?: Prisma.SortOrder
   email?: Prisma.SortOrder
-  estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -425,7 +404,6 @@ export type ProveedorMinOrderByAggregateInput = {
   contacto?: Prisma.SortOrder
   telefono?: Prisma.SortOrder
   email?: Prisma.SortOrder
-  estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -443,7 +421,6 @@ export type ProveedorSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   contacto?: boolean
   telefono?: boolean
   email?: boolean
-  estado?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["proveedor"]>
@@ -455,7 +432,6 @@ export type ProveedorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   contacto?: boolean
   telefono?: boolean
   email?: boolean
-  estado?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["proveedor"]>
@@ -467,7 +443,6 @@ export type ProveedorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   contacto?: boolean
   telefono?: boolean
   email?: boolean
-  estado?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["proveedor"]>
@@ -479,12 +454,11 @@ export type ProveedorSelectScalar = {
   contacto?: boolean
   telefono?: boolean
   email?: boolean
-  estado?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ProveedorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "codigo" | "razonSocial" | "contacto" | "telefono" | "email" | "estado" | "createdAt" | "updatedAt", ExtArgs["result"]["proveedor"]>
+export type ProveedorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "codigo" | "razonSocial" | "contacto" | "telefono" | "email" | "createdAt" | "updatedAt", ExtArgs["result"]["proveedor"]>
 
 export type $ProveedorPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Proveedor"
@@ -496,7 +470,6 @@ export type $ProveedorPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     contacto: string | null
     telefono: string | null
     email: string | null
-    estado: string
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["proveedor"]>
@@ -928,7 +901,6 @@ export interface ProveedorFieldRefs {
   readonly contacto: Prisma.FieldRef<"Proveedor", 'String'>
   readonly telefono: Prisma.FieldRef<"Proveedor", 'String'>
   readonly email: Prisma.FieldRef<"Proveedor", 'String'>
-  readonly estado: Prisma.FieldRef<"Proveedor", 'String'>
   readonly createdAt: Prisma.FieldRef<"Proveedor", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Proveedor", 'DateTime'>
 }
