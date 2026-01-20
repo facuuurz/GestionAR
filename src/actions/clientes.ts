@@ -4,41 +4,36 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// OBTENER
+// --- OBTENER TODOS LOS CLIENTES ---
 export async function obtenerClientes(query: string = "", sort: string = "") {
   try {
-    console.log("Ordenando por:", sort); // 👈 Agrega esto para depurar en tu terminal
+    let orderBy: any = { id: 'desc' };
 
-    let orderBy: any = { id: 'desc' }; // Orden por defecto
-
-    // 2. Verifica que estos casos coincidan con los 'value' de tu componente OrdenarClientes
     switch (sort) {
-      case "nombre-asc":
-        orderBy = { nombre: 'asc' };
-        break;
-      case "nombre-desc":
-        orderBy = { nombre: 'desc' };
-        break;
-      case "saldo-mayor": 
-        orderBy = { saldo: 'desc' }; // Mayor a menor (Positivos arriba)
-        break;
-      case "saldo-menor": 
-        orderBy = { saldo: 'asc' };  // Menor a mayor (Deudas grandes arriba)
-        break;
-      case "antiguos":
-        orderBy = { createdAt: 'asc' };
-        break;
+      case "nombre-asc": orderBy = { nombre: 'asc' }; break;
+      case "nombre-desc": orderBy = { nombre: 'desc' }; break;
+      case "saldo-mayor": orderBy = { saldo: 'desc' }; break;
+      case "saldo-menor": orderBy = { saldo: 'asc' }; break;
+      case "antiguos": orderBy = { createdAt: 'asc' }; break;
     }
 
-    const clientes = await prisma.cuenta_corriente.findMany({
+    const clientesRaw = await prisma.cuenta_corriente.findMany({
       where: {
         OR: [
           { nombre: { contains: query, mode: 'insensitive' } },
           { cuit: { contains: query } },
         ],
       },
-      orderBy: orderBy, // 👈 ¡Importante! Que esto esté aquí
+      orderBy: orderBy,
     });
+
+    // 👇 SOLUCIÓN DEL ERROR:
+    // Convertimos el objeto Decimal a un número simple de JavaScript
+    const clientes = clientesRaw.map((cliente) => ({
+      ...cliente,
+      saldo: cliente.saldo.toNumber(), 
+    }));
+
     return clientes;
   } catch (error) {
     console.error("Error al obtener cuentas:", error);
@@ -46,7 +41,7 @@ export async function obtenerClientes(query: string = "", sort: string = "") {
   }
 }
 
-// CREAR
+// --- CREAR CLIENTE ---
 export async function crearCliente(formData: FormData) {
   const nombre = formData.get("nombre") as string;
   const cuit = formData.get("cuit") as string;
@@ -57,7 +52,6 @@ export async function crearCliente(formData: FormData) {
   if (!nombre) throw new Error("El nombre es obligatorio");
 
   try {
-    // 👇 CAMBIO AQUÍ
     await prisma.cuenta_corriente.create({
       data: {
         nombre,
@@ -65,6 +59,7 @@ export async function crearCliente(formData: FormData) {
         telefono,
         email,
         direccion,
+        // El saldo por defecto es 0, Prisma lo maneja bien
       },
     });
   } catch (error) {
@@ -76,18 +71,28 @@ export async function crearCliente(formData: FormData) {
   redirect("/cuentas-corrientes");
 }
 
+// --- OBTENER CLIENTE INDIVIDUAL ---
 export async function obtenerClientePorId(id: number) {
   try {
     const cuenta = await prisma.cuenta_corriente.findUnique({
       where: { id },
     });
-    return cuenta;
+
+    if (!cuenta) return null;
+
+    // 👇 SOLUCIÓN DEL ERROR TAMBIÉN AQUÍ:
+    return {
+      ...cuenta,
+      saldo: cuenta.saldo.toNumber(),
+    };
+
   } catch (error) {
     console.error("Error al obtener cliente:", error);
     return null;
   }
 }
 
+// --- ACTUALIZAR CLIENTE ---
 export async function actualizarCliente(id: number, formData: FormData) {
   const nombre = formData.get("nombre") as string;
   const cuit = formData.get("cuit") as string;
@@ -99,12 +104,7 @@ export async function actualizarCliente(id: number, formData: FormData) {
   if (!nombre) throw new Error("El nombre es obligatorio");
 
   try {
-    // 1. Convertimos el saldo a número
     const nuevoSaldo = saldoInput ? parseFloat(saldoInput) : 0;
-
-    // 2. Lógica Automática:
-    // Si el saldo es menor a 0 (negativo) -> "Deudor"
-    // Si es 0 o positivo -> "Al Día"
     const nuevoEstado = nuevoSaldo < 0 ? "Deudor" : "Al Día";
 
     await prisma.cuenta_corriente.update({
@@ -116,7 +116,7 @@ export async function actualizarCliente(id: number, formData: FormData) {
         email,
         direccion,
         saldo: nuevoSaldo,
-        estado: nuevoEstado, // 👈 Aquí guardamos el estado calculado
+        estado: nuevoEstado,
       },
     });
   } catch (error) {
@@ -129,6 +129,7 @@ export async function actualizarCliente(id: number, formData: FormData) {
   redirect("/cuentas-corrientes");
 }
 
+// --- ELIMINAR CLIENTE ---
 export async function eliminarCliente(id: number) {
   try {
     await prisma.cuenta_corriente.delete({
@@ -139,8 +140,6 @@ export async function eliminarCliente(id: number) {
     throw new Error("No se pudo eliminar");
   }
 
-  // Revalidar y redirigir
   revalidatePath("/cuentas-corrientes");
   redirect("/cuentas-corrientes");
 }
-

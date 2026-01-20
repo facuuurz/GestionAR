@@ -1,145 +1,202 @@
-import { obtenerClientes } from "@/actions/clientes";
+"use client";
+
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import Search from "@/components/Search/Search";
-import SortWrapper from "./SortWrapper/SortWrapper";
 
-export default async function CuentasCorrientesPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ query?: string; sort?: string }>;
-}) {
-  const params = await searchParams;
-  const query = params?.query || "";
-  const sort = params?.sort || "";
-  const clientes = await obtenerClientes(query, sort);
+// Componentes
+import FiltroCuentas from "@/components/FiltroCuentas/FiltroCuentas"; 
+import OrdenarCuentas from "@/components/Ordenar/OrdenarCuentas";
+import FilaCliente from "@/components/FilaCliente/FilaCliente";
+import BarraNavegacionCuentas from "@/components/BarraNavegacionCuentas/BarraNavegacionCuentas"; 
+import { useClientes } from "@/hooks/useClientes";
 
-  // Helper para formato de moneda
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-    }).format(amount);
-  };
+export default function CuentasCorrientesPage() {
+  // --- 1. ESTADOS DE UI ---
+  const [showFilters, setShowFilters] = useState(false);
+  const [mostrarOrdenar, setMostrarOrdenar] = useState(false);
+  
+  // --- 2. ESTADOS DE DATOS ---
+  const [busqueda, setBusqueda] = useState(""); 
+  const [activeFilters, setActiveFilters] = useState({ 
+    estado: "Todos",
+    saldoRange: { min: "", max: "" }
+  });
+  const [currentSort, setCurrentSort] = useState(""); 
 
-  // Helper para colores de estado
-  const getStatusBadge = (estado: string) => {
-    switch (estado) {
-      case "Al Día": return "bg-[#dcfce7] text-[#166534] dark:bg-green-900/30 dark:text-green-300";
-      case "Deudor": return "bg-[#fee2e2] text-[#991b1b] dark:bg-red-900/30 dark:text-red-300";
-      case "Pendiente": return "bg-[#fef9c3] text-[#854d0e] dark:bg-yellow-900/30 dark:text-yellow-300";
-      default: return "bg-gray-100 text-gray-800";
-    }
+  // --- 3. DATA DESDE EL HOOK ---
+  const { clientes, setCriterioOrden, loading } = useClientes();
+
+  // --- 4. LÓGICA DE FILTRADO ---
+  const clientesFiltrados = useMemo(() => {
+    return clientes.filter((cliente) => {
+      // Lógica de búsqueda
+      let matchesSearch = true;
+      if (busqueda) {
+        const termino = busqueda.toLowerCase();
+        const matches = [
+            cliente.nombre, 
+            cliente.cuit, 
+            cliente.estado, 
+            cliente.id.toString()
+        ];
+        matchesSearch = matches.some(field => field?.toLowerCase().includes(termino));
+      }
+
+      // Filtro Estado
+      let matchesEstado = true;
+      if (activeFilters.estado !== "Todos") {
+          matchesEstado = cliente.estado === activeFilters.estado;
+      }
+
+      // Filtro Rango Saldo
+      let matchesSaldo = true;
+      const saldo = Number(cliente.saldo);
+      const min = activeFilters.saldoRange.min ? Number(activeFilters.saldoRange.min) : -Infinity; // Permitimos negativos
+      const max = activeFilters.saldoRange.max ? Number(activeFilters.saldoRange.max) : Infinity;
+      
+      // Ajuste simple: si solo ponen min/max, validamos el rango
+      if (activeFilters.saldoRange.min !== "" && saldo < min) matchesSaldo = false;
+      if (activeFilters.saldoRange.max !== "" && saldo > max) matchesSaldo = false;
+
+      return matchesSearch && matchesEstado && matchesSaldo;
+    });
+  }, [clientes, busqueda, activeFilters]);
+
+  // Manejadores
+  const handleApplyFilters = (filtros: any) => setActiveFilters(filtros);
+
+  const handleApplySort = (criterio: string, cerrarModal: boolean = true) => {
+    setCriterioOrden(criterio);
+    setCurrentSort(criterio);
+    if (cerrarModal) setMostrarOrdenar(false);
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#f4f4f5] dark:bg-[#0f172a] text-[#18181b] dark:text-[#f1f5f9]">
+    <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       
-      <main className="flex-1 max-w-[1400px] w-full mx-auto p-6 md:p-8">
+      {/* --- MODALES --- */}
+      <FiltroCuentas 
+        isOpen={showFilters} 
+        onClose={() => setShowFilters(false)} 
+        onApply={handleApplyFilters} 
+        currentFilters={activeFilters}
+      />
+      
+      <OrdenarCuentas
+        isOpen={mostrarOrdenar}
+        onClose={() => setMostrarOrdenar(false)}
+        onAplicar={handleApplySort}
+        currentSort={currentSort}
+      />
+
+      <div className="w-full flex flex-col gap-6 h-full">
         
-        {/* BREADCRUMBS */}
-        <div className="flex items-center gap-2 text-sm text-[#71717a] dark:text-[#94a3b8] mb-6">
-            <span>Panel</span>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="font-medium text-[#18181b] dark:text-[#f1f5f9]">Cuentas Corrientes</span>
+        {/* Breadcrumbs */}
+        <div className="flex flex-wrap gap-2 items-center text-sm shrink-0">
+          <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600 ">
+            Panel
+          </Link>
+          <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
+          <span className="text-primary dark:text-white font-bold">Cuentas Corrientes</span>
         </div>
 
-        {/* TÍTULO Y BOTÓN AGREGAR */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-            <div>
-                <h1 className="text-3xl font-bold mb-2">Cuentas Corrientes</h1>
-                <p className="text-[#71717a] dark:text-[#94a3b8]">Gestiona los saldos y estados de cuenta de tus clientes.</p>
+        {/* Encabezado */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-primary dark:text-white tracking-tight text-[32px] font-bold leading-tight">
+              Cuentas Corrientes
+            </h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm font-normal">
+              Gestiona los saldos y estados de cuenta de tus clientes.
+            </p>
+          </div>
+          <Link className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" href="/cuentas-corrientes/nuevo">
+            <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
+            <span className="text-sm font-bold truncate">Agregar Nueva Cuenta Corriente</span>
+          </Link>
+        </div>
+
+        {/* --- BARRA NAVEGACIÓN --- */}
+        <BarraNavegacionCuentas 
+            busqueda={busqueda}
+            onSearchChange={setBusqueda}
+            onOpenFilters={() => setShowFilters(true)}
+            onOpenSort={() => setMostrarOrdenar(true)}
+            hasActiveFilters={
+                activeFilters.estado !== "Todos" || 
+                activeFilters.saldoRange.min !== "" || 
+                activeFilters.saldoRange.max !== ""
+            }
+            hasActiveSort={!!currentSort} 
+        />
+
+        {/* Tabla */}
+        <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
+          <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-[#f9f9f9] dark:bg-[#151a25] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">ID Cliente</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider min-w-50">Cliente / Razón Social</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Estado</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Saldo Actual</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+                </tr>
+              </thead>
+              
+              <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
+                {loading ? (
+                   <tr>
+                     <td colSpan={5} className="text-center py-20">
+                       <div className="flex flex-col items-center justify-center gap-2">
+                          <span className="material-symbols-outlined animate-spin text-3xl text-primary dark:text-white">progress_activity</span>
+                          <span className="text-neutral-400 text-sm">Cargando cuentas...</span>
+                       </div>
+                     </td>
+                   </tr>
+                ) : clientesFiltrados.length > 0 ? (
+                    clientesFiltrados.map((cliente) => (
+                      <FilaCliente key={cliente.id} cliente={cliente} />
+                    ))
+                ) : (
+                   <tr>
+                       <td colSpan={5} className="text-center py-12 text-neutral-500 text-sm">
+                           <div className="flex flex-col items-center gap-2">
+                               <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
+                               <p>
+                                 {busqueda 
+                                   ? `No se encontraron clientes para "${busqueda}"` 
+                                   : "No se encontraron cuentas con los filtros aplicados."}
+                               </p>
+                               {(activeFilters.estado !== "Todos" || busqueda || currentSort) && (
+                                   <button 
+                                     onClick={() => {
+                                          setBusqueda("");
+                                          setActiveFilters({ estado: "Todos", saldoRange: { min: "", max: "" } });
+                                          setCriterioOrden("");
+                                          setCurrentSort("");
+                                     }}
+                                     className="text-blue-600 hover:underline text-xs font-bold mt-1"
+                                   >
+                                     Limpiar búsqueda, filtros y orden
+                                   </button>
+                               )}
+                           </div>
+                       </td>
+                   </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {!loading && (
+            <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
+                <span>Mostrando {clientesFiltrados.length} cuentas</span>
+                <span>Total Cuentas: {clientes.length}</span>
             </div>
-            <Link 
-                href="/cuentas-corrientes/nuevo"
-                className="bg-[#18181b] hover:bg-black/80 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm"
-            >
-                <span className="material-symbols-outlined text-xl">add</span>
-                Agregar Cuenta Corriente
-            </Link>
+          )}
         </div>
-
-        {/* BARRA DE BÚSQUEDA Y FILTROS */}
-        <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl shadow-sm border border-[#e4e4e7] dark:border-[#334155] mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                    {/* 👇 COMPONENTE SEARCH FUNCIONAL */}
-                    <Search placeholder="Buscar por cliente, CUIT o ID..." />
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0">
-                    <SortWrapper />
-                </div>
-            </div>
-        </div>
-
-        {/* TABLA DE CLIENTES */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#e4e4e7] dark:border-[#334155] overflow-hidden flex flex-col">
-            <div className="overflow-auto h-[600px]">
-                <table className="w-full text-left text-sm border-collapse">
-                    <thead className="sticky top-0 z-10 bg-white dark:bg-[#1e293b] shadow-sm">
-                        <tr className="border-b border-[#e4e4e7] dark:border-[#334155] text-[#71717a] dark:text-[#94a3b8] uppercase tracking-wider text-xs font-semibold">
-                            <th className="px-6 py-4">ID Cliente</th>
-                            <th className="px-6 py-4">Cliente / Razón Social</th>
-                            <th className="px-6 py-4">Estado</th>
-                            <th className="px-6 py-4">Saldo Actual</th>
-                            {/* Columnas eliminadas: Límite, Movimiento, Condición Fiscal */}
-                            <th className="px-6 py-4 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#e4e4e7] dark:divide-[#334155] text-[#18181b] dark:text-[#f1f5f9]">
-                        
-                        {clientes.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                    {query ? `No se encontraron clientes para "${query}"` : "No hay cuentas corrientes registradas."}
-                                </td>
-                            </tr>
-                        )}
-
-                        {clientes.map((cliente) => (
-                            <tr key={cliente.id} className="hover:bg-[#f4f4f5] dark:hover:bg-gray-800 transition-colors group">
-                                <td className="px-6 py-4 text-[#71717a] dark:text-[#94a3b8] font-mono">
-                                    CC-{cliente.id.toString().padStart(5, '0')}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <Link 
-                                      href={`/cuentas-corrientes/${cliente.id}`}
-                                      className="block group-hover:translate-x-1 transition-transform"
-                                    >
-                                      <div className="font-bold text-base text-[#18181b] dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer">
-                                        {cliente.nombre}
-                                      </div>
-                                      <div className="text-xs text-[#71717a] dark:text-[#94a3b8] mt-0.5">
-                                        CUIT: {cliente.cuit || "-"}
-                                      </div>
-                                    </Link>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`${getStatusBadge(cliente.estado)} px-2.5 py-1 rounded-md text-xs font-semibold`}>
-                                        {cliente.estado}
-                                    </span>
-                                </td>
-                                <td className={`px-6 py-4 font-medium ${Number(cliente.saldo) < 0 ? 'text-[#991b1b] dark:text-red-400' : 'text-[#166534] dark:text-green-400'}`}>
-                                    {formatMoney(Number(cliente.saldo))}
-                                </td>
-                                
-                                <td className="px-6 py-4 text-center">
-                                    <Link 
-                                        href={`/cuentas-corrientes/editar/${cliente.id}`}
-                                        className="bg-[#18181b] text-white dark:bg-white dark:text-black px-3 py-1.5 rounded text-xs font-medium inline-flex items-center gap-1 hover:opacity-90 transition-opacity"
-                                    >
-                                        <span className="material-symbols-outlined text-sm">edit</span>
-                                        Actualizar
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
