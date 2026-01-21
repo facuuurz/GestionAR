@@ -97,9 +97,12 @@ export default function Panel() {
           </Link>
 
           {/* Tarjeta: Promociones (Ancha) */}
-          <Link className="xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="#">
+          <Link 
+            className="xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" 
+            href="/promociones"
+          >
             <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD-TKVWStBi45-oCdf2wdITmTtwKVeBerJWoOI41z6QIJkA17qYci2r9-0z1-_Jc3IuGMtC6ZHqi0L3uFXBfTzTaLX4Bp6z1gFVupxJfyUl1lZAzciEmrqyp0wXunQUFE7orn-iOxhnqqsR-k5IRXCUqvQgt-4gBhW3MwmZp4mu_KF-PtUvMmYpEGm2BLM7XZsYAbBskXvT7BXaPUQaEqS8cBlwzOk_u0uKdWpSce8YoDEniIdpRJ8M0VPWmnuUrNapLdUry1FI4Hgc')`}}>
-              <div className="absolute inset-0  from-black/60 to-transparent"></div>
+              <div className="absolute inset-0 from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
                 <span className="inline-flex items-center rounded-full bg-green-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
                   <span className="material-symbols-outlined text-[14px] mr-1">bolt</span> Activo Ahora

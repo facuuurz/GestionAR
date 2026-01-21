@@ -64,3 +64,13 @@ export type Proveedor = Prisma.ProveedorModel
  * 
  */
 export type Cuenta_corriente = Prisma.Cuenta_corrienteModel
+/**
+ * Model Promocion
+ * 
+ */
+export type Promocion = Prisma.PromocionModel
+/**
+ * Model PromocionProducto
+ * 
+ */
+export type PromocionProducto = Prisma.PromocionProductoModel

@@ -55,7 +55,9 @@ export const ModelName = {
   Producto: 'Producto',
   Categoria: 'Categoria',
   Proveedor: 'Proveedor',
-  Cuenta_corriente: 'Cuenta_corriente'
+  Cuenta_corriente: 'Cuenta_corriente',
+  Promocion: 'Promocion',
+  PromocionProducto: 'PromocionProducto'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -137,6 +139,29 @@ export const Cuenta_corrienteScalarFieldEnum = {
 } as const
 
 export type Cuenta_corrienteScalarFieldEnum = (typeof Cuenta_corrienteScalarFieldEnum)[keyof typeof Cuenta_corrienteScalarFieldEnum]
+
+
+export const PromocionScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  descripcion: 'descripcion',
+  precio: 'precio',
+  fechaInicio: 'fechaInicio',
+  fechaFin: 'fechaFin',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PromocionScalarFieldEnum = (typeof PromocionScalarFieldEnum)[keyof typeof PromocionScalarFieldEnum]
+
+
+export const PromocionProductoScalarFieldEnum = {
+  promocionId: 'promocionId',
+  productoId: 'productoId',
+  cantidad: 'cantidad'
+} as const
+
+export type PromocionProductoScalarFieldEnum = (typeof PromocionProductoScalarFieldEnum)[keyof typeof PromocionProductoScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -102,19 +102,6 @@ export default async function DetalleProveedorPage({ params }: { params: Promise
               </div>
             </div>
 
-            {/* Estado */}
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center">
-                <span className="material-symbols-outlined text-xl">verified</span>
-              </div>
-              <div>
-                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Estado</h3>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(proveedor.estado)}`}>
-                  {proveedor.estado}
-                </span>
-              </div>
-            </div>
-
             {/* Contacto */}
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center">

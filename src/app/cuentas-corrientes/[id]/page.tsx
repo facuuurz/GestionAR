@@ -1,4 +1,4 @@
-import { obtenerClientePorId } from "@/actions/clientes";
+import { obtenerClientePorId } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
