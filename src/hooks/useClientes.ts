@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { obtenerClientes } from "@/actions/clientes"; 
+import { obtenerClientes } from "@/actions/cuentas-corrientes"; 
 
 export function useClientes() {
   const [clientesBase, setClientesBase] = useState<any[]>([]);

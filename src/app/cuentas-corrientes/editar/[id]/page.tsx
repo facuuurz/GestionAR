@@ -1,4 +1,4 @@
-import { obtenerClientePorId, actualizarCliente, eliminarCliente } from "@/actions/clientes";
+import { obtenerClientePorId, actualizarCliente, eliminarCliente } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BotonEliminar from "@/components/BotonEliminar/BotonEliminar";

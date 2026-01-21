@@ -1,4 +1,4 @@
-import { crearCliente } from "@/actions/clientes";
+import { crearCliente } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 
 export default function NuevoClientePage() {
