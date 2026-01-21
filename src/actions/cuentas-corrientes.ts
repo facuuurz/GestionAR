@@ -11,32 +11,29 @@ const clienteSchema = z.object({
   
   cuit: z.string()
     .trim()
+    .min(1, "El CUIT/CUIL es obligatorio")
     .regex(/^\d{2}-\d{7,8}-\d{1}$/, {
-      message: "Formato de CUIT inválido (ej: 20-8954756-5)"
-    })
-    .optional()
-    .or(z.literal("")),
+      message: "Formato de CUIT/CUIL inválido (ej: 20-8954756-5)"
+    }),
   
-  // Validación de teléfono (solo números y + opcional)
   telefono: z.string()
     .trim()
-    .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {
+    .min(1, "El teléfono es obligatorio")
+    .refine((val) => /^\+?[0-9]+$/.test(val), {
       message: "Solo números (ej: 112233) o + al inicio",
-    })
-    .optional(),
+    }),
   
   email: z.string()
-    .email("El formato del email no es válido")
-    .optional()
-    .or(z.literal("")), // Permite vacío
+    .trim()
+    .min(1, "El correo electrónico es obligatorio")
+    .email("El formato del email no es válido"),
     
-  direccion: z.string().trim().optional(),
-  
-  // Saldo es opcional al crear, pero numérico si se envía
+  direccion: z.string().trim().optional().or(z.literal("")), 
+
   saldo: z.coerce.number().optional(),
 });
 
-// 2. Definición del Estado para el Formulario
+// 2. Definición del Estado
 export type State = {
   errors?: {
     nombre?: string[];
@@ -73,8 +70,6 @@ export async function obtenerClientes(query: string = "", sort: string = "") {
       orderBy: orderBy,
     });
 
-    // 👇 SOLUCIÓN DEL ERROR:
-    // Convertimos el objeto Decimal a un número simple de JavaScript
     const clientes = clientesRaw.map((cliente) => ({
       ...cliente,
       saldo: cliente.saldo.toNumber(), 
@@ -87,53 +82,59 @@ export async function obtenerClientes(query: string = "", sort: string = "") {
   }
 }
 
-// --- CREAR CLIENTE ---
+// --- CREAR CLIENTE (CORREGIDO) ---
 export async function crearCliente(prevState: State, formData: FormData) {
-  // Extraer datos
   const rawData = {
     nombre: formData.get("nombre"),
     cuit: formData.get("cuit"),
     telefono: formData.get("telefono"),
     email: formData.get("email"),
     direccion: formData.get("direccion"),
+    saldo: formData.get("saldo"),
   };
 
-  // Validar
   const validatedFields = clienteSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Faltan datos o son incorrectos.",
-      payload: rawData, // Devolvemos lo escrito para no borrarlo
-    };
-  }
-
-  try {
-    await prisma.cuenta_corriente.create({
-      data: {
-        nombre: validatedFields.data.nombre,
-        cuit: validatedFields.data.cuit || null,
-        telefono: validatedFields.data.telefono || null,
-        email: validatedFields.data.email || null,
-        direccion: validatedFields.data.direccion || null,
-        saldo: 0,       // Inicializa en 0
-        estado: "Al Día" // Estado inicial
-      },
-    });
-  } catch (error) {
-    console.error("Error al crear cuenta:", error);
-    return {
-      message: "Error de base de datos. Intente nuevamente.",
+      message: "Error de validación",
       payload: rawData,
     };
   }
 
+  try {
+    const saldoInicial = validatedFields.data.saldo ?? 0;
+    const estadoInicial = saldoInicial < 0 ? "Deudor" : "Al Día";
+
+    await prisma.cuenta_corriente.create({
+      data: {
+        nombre: validatedFields.data.nombre,
+        cuit: validatedFields.data.cuit,
+        telefono: validatedFields.data.telefono,
+        email: validatedFields.data.email,
+        direccion: validatedFields.data.direccion || null,
+        saldo: saldoInicial,
+        estado: estadoInicial
+      },
+    });
+
+  } catch (error) {
+    console.error("Error al crear cuenta:", error);
+    // Si el error es de base de datos (ej: CUIT duplicado), devolvemos el error.
+    return {
+      message: "Error de base de datos. Verifique que el CUIT no esté duplicado.",
+      payload: rawData,
+    };
+  }
+
+  // ✅ CORRECCIÓN IMPORTANTE:
+  // revalidatePath y redirect deben estar FUERA del bloque try/catch
   revalidatePath("/cuentas-corrientes");
   redirect("/cuentas-corrientes");
 }
 
-// --- ACTUALIZAR CLIENTE (Con Validación y Lógica de Saldo) ---
+// --- ACTUALIZAR CLIENTE (CORREGIDO) ---
 export async function actualizarCliente(id: number, prevState: State, formData: FormData) {
   const rawData = {
     nombre: formData.get("nombre"),
@@ -141,7 +142,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
     telefono: formData.get("telefono"),
     email: formData.get("email"),
     direccion: formData.get("direccion"),
-    saldo: formData.get("saldo"), // Recibimos el saldo para validarlo
+    saldo: formData.get("saldo"),
   };
 
   const validatedFields = clienteSchema.safeParse(rawData);
@@ -149,13 +150,12 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Revise los errores en el formulario.",
+      message: "Error de validación",
       payload: rawData,
     };
   }
 
   try {
-    // Calculamos el nuevo estado basado en el saldo
     const nuevoSaldo = validatedFields.data.saldo ?? 0;
     const nuevoEstado = nuevoSaldo < 0 ? "Deudor" : "Al Día";
 
@@ -163,9 +163,9 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
       where: { id },
       data: {
         nombre: validatedFields.data.nombre,
-        cuit: validatedFields.data.cuit || null,
-        telefono: validatedFields.data.telefono || null,
-        email: validatedFields.data.email || null,
+        cuit: validatedFields.data.cuit,
+        telefono: validatedFields.data.telefono,
+        email: validatedFields.data.email,
         direccion: validatedFields.data.direccion || null,
         saldo: nuevoSaldo,
         estado: nuevoEstado,
@@ -179,6 +179,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
     };
   }
 
+  // ✅ CORRECCIÓN: Redirect fuera del try/catch
   revalidatePath("/cuentas-corrientes");
   revalidatePath(`/cuentas-corrientes/${id}`);
   redirect("/cuentas-corrientes");
@@ -193,7 +194,6 @@ export async function obtenerClientePorId(id: number) {
 
     if (!cuenta) return null;
 
-    // 👇 SOLUCIÓN DEL ERROR TAMBIÉN AQUÍ:
     return {
       ...cuenta,
       saldo: cuenta.saldo.toNumber(),
@@ -205,8 +205,7 @@ export async function obtenerClientePorId(id: number) {
   }
 }
 
-
-// --- ELIMINAR CLIENTE ---
+// --- ELIMINAR CLIENTE (CORREGIDO) ---
 export async function eliminarCliente(id: number) {
   try {
     await prisma.cuenta_corriente.delete({
@@ -217,6 +216,7 @@ export async function eliminarCliente(id: number) {
     throw new Error("No se pudo eliminar");
   }
 
+  // ✅ CORRECCIÓN: Redirect fuera del try/catch
   revalidatePath("/cuentas-corrientes");
   redirect("/cuentas-corrientes");
 }
