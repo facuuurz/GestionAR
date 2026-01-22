@@ -220,7 +220,7 @@ export default function NuevaPromocionPage() {
 
             <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
                 
-                {/* --- BREADCRUMBS (Estilo Nuevo) --- */}
+                {/* --- BREADCRUMBS --- */}
                 <div className="w-full mb-4">
                     <nav aria-label="Breadcrumb" className="flex items-center text-sm">
                         <Link href="/" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
@@ -582,11 +582,11 @@ export default function NuevaPromocionPage() {
 
                         </div>
 
-                        {/* --- BOTONES ACCIÓN --- */}
+                        {/* --- BOTONES ACCIÓN (ESTILO ANIMADO) --- */}
                         <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row justify-end items-center gap-4">
                             <Link 
                                 href="/promociones"
-                                className="w-full sm:w-auto px-6 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 text-center"
+                                className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-slate-200 border border-neutral-300 dark:border-slate-600 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                             >
                                 Cancelar
                             </Link>
@@ -594,13 +594,18 @@ export default function NuevaPromocionPage() {
                             <button 
                                 type="submit" 
                                 disabled={isPending}
-                                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-transparent rounded-lg text-white bg-[#0F172A] hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
+                                    ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-neutral-200'}
+                                `}
                             >
                                 {isPending ? (
-                                    "Guardando..."
+                                    <>
+                                        <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                        Guardando...
+                                    </>
                                 ) : (
                                     <>
-                                        <span className="material-symbols-outlined text-sm mr-2">save</span>
+                                        <span className="material-symbols-outlined text-[18px]">save</span>
                                         Guardar Promoción
                                     </>
                                 )}
