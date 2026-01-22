@@ -1,176 +1,138 @@
+"use client";
+
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { obtenerPromociones } from "@/actions/promociones";
-import Search from "@/components/Search/Search"; // Asumo que ya tienes este componente de módulos anteriores
 
-export default async function PromocionesPage(props: {
-  searchParams?: Promise<{ query?: string }>;
-}) {
-  const searchParams = await props.searchParams;
-  const query = searchParams?.query || "";
-  const promociones = await obtenerPromociones(query);
+// Componentes y Hooks
+import BarraNavegacionPromociones from "@/components/BarraNavegacionPromociones/BarraNavegacionPromociones"; 
+import PromocionRow from "@/components/ListaPromociones/PromocionRow";
+import { usePromociones } from "@/hooks/usePromociones";
 
-  // Función para formatear moneda
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+export default function PromocionesPage() {
+  // --- 1. ESTADOS DE DATOS ---
+  const [busqueda, setBusqueda] = useState(""); 
+  
+  // --- 2. DATA DESDE EL HOOK ---
+  const { promociones, loading } = usePromociones();
 
-  // Función para formatear fechas
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-AR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit",
-    }).format(date);
-  };
+  // --- 3. LÓGICA DE FILTRADO EN TIEMPO REAL ---
+  const promocionesFiltradas = useMemo(() => {
+    if (!busqueda) return promociones;
 
-  // Lógica para determinar el estado (Activo, Vencido, Programado)
-  const getEstadoPromocion = (inicio: Date, fin: Date) => {
-    const hoy = new Date();
-    // Normalizamos horas para comparar solo fechas si es necesario, 
-    // pero aquí comparamos timestamps directos para precisión.
+    const termino = busqueda.toLowerCase();
     
-    if (hoy > fin) {
-      return { 
-        label: "Vencido", 
-        badgeColor: "bg-red-100 text-red-800 ring-red-600/10",
-        btnColor: "bg-green-600 hover:bg-green-700",
-        btnIcon: "restore",
-        btnText: "Reactivar"
-      };
-    } else if (hoy < inicio) {
-      return { 
-        label: "Programado", 
-        badgeColor: "bg-blue-100 text-blue-800 ring-blue-600/10",
-        btnColor: "bg-black hover:bg-gray-800 dark:bg-white dark:text-black",
-        btnIcon: "edit",
-        btnText: "Actualizar"
-      };
-    } else {
-      return { 
-        label: "Activo", 
-        badgeColor: "bg-emerald-100 text-emerald-800 ring-emerald-600/10",
-        btnColor: "bg-black hover:bg-gray-800 dark:bg-white dark:text-black",
-        btnIcon: "edit",
-        btnText: "Actualizar"
-      };
-    }
-  };
+    return promociones.filter((promo) => {
+      const matches = [
+        promo.nombre, 
+        promo.descripcion
+      ];
+      // Si alguno de los campos incluye el término de búsqueda, retorna true
+      return matches.some(field => field?.toLowerCase().includes(termino));
+    });
+  }, [promociones, busqueda]);
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
+    <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       
-      <main className="flex-1 flex flex-col items-center py-8 px-6 lg:px-12 xl:px-40 w-full">
-        <div className="flex flex-col w-full max-w-[1200px] gap-6">
-          
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm">
-            <Link className="text-[#616f89] dark:text-[#9ca3af] font-medium hover:text-primary transition-colors" href="/">
-              Panel
-            </Link>
-            <span className="material-symbols-outlined text-[#616f89] dark:text-[#9ca3af] text-base">chevron_right</span>
-            <span className="text-[#111318] dark:text-white font-medium">Promociones</span>
-          </nav>
-
-          {/* Header y Botón */}
-          <div className="flex flex-col md:flex-row flex-wrap justify-between gap-4 items-start md:items-center">
-            <div className="flex min-w-72 flex-col gap-1">
-              <h1 className="text-[#111318] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">
-                Listado de Promociones
-              </h1>
-              <p className="text-[#616f89] dark:text-[#9ca3af] text-base font-normal leading-normal">
-                Gestiona tus ofertas activas, precios promocionales y vigencias.
-              </p>
-            </div>
-            <Link 
-              href="/promociones/nuevo"
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-black dark:bg-[#135bec] hover:bg-gray-800 dark:hover:bg-blue-600 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em] gap-2 shadow-sm"
-            >
-              <span className="truncate">+ Nueva Promoción</span>
-            </Link>
-          </div>
-
-          {/* Barra de Búsqueda */}
-          <div className="w-full bg-white dark:bg-[#1a2230] p-4 rounded-xl border border-[#dbdfe6] dark:border-[#2e343d] shadow-sm">
-             <Search placeholder="Buscar por nombre de promoción o descripción..." />
-          </div>
-
-          {/* Tabla */}
-          <div className="flex flex-col overflow-hidden rounded-xl border border-[#dbdfe6] dark:border-[#2e343d] bg-white dark:bg-[#1a2230] shadow-sm min-h-[500px]">
-            <div className="overflow-x-auto h-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              <table className="w-full min-w-[800px] border-collapse">
-                <thead className="sticky top-0 z-10 bg-[#f6f6f8] dark:bg-[#111318]">
-                  <tr className="border-b border-[#dbdfe6] dark:border-[#2e343d]">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-[#9ca3af] w-[20%]">Nombre</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-[#9ca3af] w-[25%]">Descripción</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-[#9ca3af] w-[15%]">Precio Promocional</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-[#9ca3af] w-[20%]">Vigencia</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-[#9ca3af] w-[10%]">Estado</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-[#9ca3af] w-[10%]">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#dbdfe6] dark:divide-[#2e343d]">
-                  
-                  {promociones.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-[#616f89] dark:text-[#9ca3af]">
-                        No hay promociones registradas.
-                      </td>
-                    </tr>
-                  )}
-
-                  {promociones.map((promo) => {
-                    const estado = getEstadoPromocion(promo.fechaInicio, promo.fechaFin);
-
-                    return (
-                      <tr key={promo.id} className="group hover:bg-[#f6f6f8]/50 dark:hover:bg-[#111318]/50 transition-colors">
-                        <td className="px-6 py-4 text-[#111318] dark:text-white text-sm font-medium">
-                          <Link 
-                              href={`/promociones/${promo.id}`} 
-                               className="text-[#111318] dark:text-white text-sm font-bold hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors cursor-pointer"
-                          >
-                              {promo.nombre}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4 text-[#616f89] dark:text-[#9ca3af] text-sm">
-                          {promo.descripcion}
-                        </td>
-                        <td className="px-6 py-4 text-[#111318] dark:text-white text-sm font-bold">
-                          {formatCurrency(promo.precio)}
-                        </td>
-                        <td className="px-6 py-4 text-[#616f89] dark:text-[#9ca3af] text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-                            {formatDate(promo.fechaInicio)} - {formatDate(promo.fechaFin)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${estado.badgeColor}`}>
-                            {estado.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <Link 
-                            href={`/promociones/editar/${promo.id}`}
-                            className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-bold text-white transition-colors shadow-sm w-36 ${estado.btnColor}`}
-                          >
-                            <span className="material-symbols-outlined text-[18px] mr-1">{estado.btnIcon}</span>
-                            {estado.btnText}
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
+      <div className="w-full flex flex-col gap-6 h-full">
+        
+        {/* Breadcrumbs */}
+        <div className="flex flex-wrap gap-2 items-center text-sm shrink-0">
+          <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600">
+            Panel
+          </Link>
+          <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
+          <span className="text-primary dark:text-white font-bold">Promociones</span>
         </div>
-      </main>
-    </div>
+
+        {/* Encabezado */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-primary dark:text-white tracking-tight text-[32px] font-bold leading-tight">
+              Listado de Promociones
+            </h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm font-normal">
+              Gestiona tus ofertas activas, precios promocionales y vigencias.
+            </p>
+          </div>
+          <Link 
+             href="/promociones/nuevo"
+             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
+            <span className="text-sm font-bold truncate">Nueva Promoción</span>
+          </Link>
+        </div>
+
+        {/* Barra de Búsqueda */}
+        <BarraNavegacionPromociones 
+            busqueda={busqueda}
+            onSearchChange={setBusqueda}
+        />
+
+        {/* Tabla */}
+        <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
+          <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-200">
+              <thead className="bg-[#f9f9f9] dark:bg-[#151a25] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%]">Nombre</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[25%]">Descripción</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[15%]">Precio</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%]">Vigencia</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[10%]">Estado</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+                </tr>
+              </thead>
+              
+              <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
+                {loading ? (
+                   <tr>
+                     <td colSpan={6} className="text-center py-20">
+                       <div className="flex flex-col items-center justify-center gap-2">
+                          <span className="material-symbols-outlined animate-spin text-3xl text-primary dark:text-white">progress_activity</span>
+                          <span className="text-neutral-400 text-sm">Cargando promociones...</span>
+                       </div>
+                     </td>
+                   </tr>
+                ) : promocionesFiltradas.length > 0 ? (
+                   promocionesFiltradas.map((promo) => (
+                     <PromocionRow key={promo.id} promo={promo} />
+                   ))
+                ) : (
+                   <tr>
+                       <td colSpan={6} className="text-center py-12 text-neutral-500 text-sm">
+                           <div className="flex flex-col items-center gap-2">
+                               <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
+                               <p>
+                                 {busqueda 
+                                   ? `No se encontraron promociones que coincidan con "${busqueda}"` 
+                                   : "No hay promociones registradas."}
+                               </p>
+                               {busqueda && (
+                                   <button 
+                                     onClick={() => setBusqueda("")}
+                                     className="text-blue-600 hover:underline text-xs font-bold mt-1"
+                                   >
+                                     Limpiar búsqueda
+                                   </button>
+                               )}
+                           </div>
+                       </td>
+                   </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {!loading && (
+            <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
+                <span>Mostrando {promocionesFiltradas.length} promociones</span>
+                <span>Total: {promociones.length}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
   );
 }

@@ -35,17 +35,38 @@ export type State = {
 
 // --- NUEVA FUNCIÓN: BUSCAR PRODUCTOS (CORREGIDA) ---
 export async function buscarProductosParaPromocion(query: string) {
-  if (!query) return [];
+  // Si no hay query (string vacío), devolvemos los últimos 20 productos para llenar la lista al hacer click
+  if (!query || query.trim() === "") {
+     try {
+       const productos = await prisma.producto.findMany({
+         take: 20, // Límite para no saturar
+         orderBy: { createdAt: 'desc' }, // Los más nuevos primero
+         select: { 
+           id: true, 
+           nombre: true, 
+           codigoBarra: true, 
+           precio: true 
+         }
+       });
+       return productos.map((prod) => ({
+         ...prod,
+         precio: Number(prod.precio)
+       }));
+     } catch (error) {
+       return [];
+     }
+  }
   
+  // Búsqueda normal con filtro
   try {
     const productos = await prisma.producto.findMany({
       where: {
         OR: [
           { nombre: { contains: query, mode: "insensitive" } },
-          { codigoBarra: { contains: query } }, 
+          { codigoBarra: { contains: query, mode: "insensitive" } }, 
         ]
       },
-      take: 5,
+      take: 10, // Limitamos resultados para que sea más rápido
       select: { 
         id: true, 
         nombre: true, 
@@ -54,10 +75,9 @@ export async function buscarProductosParaPromocion(query: string) {
       }
     });
 
-    // 👇 SOLUCIÓN: Convertimos el Decimal a Number para que Next.js no falle
     return productos.map((prod) => ({
       ...prod,
-      precio: Number(prod.precio) // o prod.precio.toNumber()
+      precio: Number(prod.precio)
     }));
 
   } catch (error) {
@@ -68,29 +88,30 @@ export async function buscarProductosParaPromocion(query: string) {
 
 // --- OBTENER PROMOCIONES (CORREGIDA) ---
 export async function obtenerPromociones(query: string = "") {
-    try {
-        const promociones = await prisma.promocion.findMany({
-          where: {
-            OR: [
-              { nombre: { contains: query, mode: "insensitive" } },
-              { descripcion: { contains: query, mode: "insensitive" } },
-            ],
-          },
-          include: {
-            productos: true 
-          },
-          orderBy: { fechaInicio: 'desc' }, 
-        });
+  try {
+    const promociones = await prisma.promocion.findMany({
+      // Si hay query, filtramos en DB. Si es "", trae todo.
+      where: query ? {
+        OR: [
+          { nombre: { contains: query, mode: "insensitive" } },
+          { descripcion: { contains: query, mode: "insensitive" } },
+        ],
+      } : undefined,
+      include: {
+        productos: true 
+      },
+      orderBy: { fechaInicio: 'desc' }, 
+    });
 
-        // 👇 SOLUCIÓN: También convertimos aquí por seguridad
-        return promociones.map((promo) => ({
-            ...promo,
-            precio: Number(promo.precio)
-        }));
+    return promociones.map((promo) => ({
+      ...promo,
+      precio: Number(promo.precio) // Conversión segura
+    }));
 
-      } catch (error) {
-        return [];
-      }
+  } catch (error) {
+    console.error("Error obteniendo promociones:", error);
+    return [];
+  }
 }
 
 // --- CREAR PROMOCIÓN ---

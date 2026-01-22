@@ -1,398 +1,614 @@
 "use client";
 
-import { useState, useActionState, useEffect, useTransition, useRef } from "react";
+import { useActionState, useState, useEffect, useRef } from "react";
+import { crearPromocion, buscarProductosParaPromocion, State } from "@/actions/promociones";
 import Link from "next/link";
-import { crearProducto } from "@/actions/productos"; 
-import { obtenerCategorias } from "@/actions/categorias"; 
-import AgregarTipoModal from "@/components/AgregarTipoModal/AgregarTipoModal";
 
-type Categoria = {
-  id: number;
-  nombre: string;
+// Tipo para los productos seleccionados
+type ProductoSeleccionado = {
+    producto: any;
+    cantidad: number;
+    precioPromoUnitario: number;
 };
 
-// Categorías fijas del sistema
-const CATEGORIAS_BASICAS = ["bebidas", "alimentos", "limpieza", "otros"];
-
-function ErrorMessage({ errors }: { errors?: string[] }) {
-  if (!errors || errors.length === 0) return null;
-  return (
-    <p className="text-red-500 text-xs mt-1 font-medium ml-1 flex items-center gap-1">
-      <span className="material-symbols-outlined text-[14px]">error</span>
-      {errors[0]}
-    </p>
-  );
+// --- HOOK DE DEBOUNCE ---
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
 }
 
-export default function AgregarProductoPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  
-  // ESTADOS PARA EL BUSCADOR (COMBOBOX)
-  const [selectedTipo, setSelectedTipo] = useState<string>(""); 
-  const [searchTerm, setSearchTerm] = useState<string>("");     
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);  
+export default function NuevaPromocionPage() {
+    const initialState: State = { message: null, errors: {} };
+    const [state, formAction, isPending] = useActionState(crearPromocion, initialState);
 
-  // NUEVO ESTADO: Contador de caracteres
-  const [descLength, setDescLength] = useState(0);
-
-  const [isPendingCat, startTransitionCat] = useTransition();
-
-  const cargarCategorias = () => {
-    startTransitionCat(async () => {
-      const datos = await obtenerCategorias();
-      setCategorias(datos);
-    });
-  };
-
-  useEffect(() => {
-    cargarCategorias();
-  }, []);
-
-  // Lógica al cerrar el modal con un nuevo tipo
-  const handleCloseModal = (nuevoNombre?: string) => {
-    setIsModalOpen(false);
+    // --- ESTADOS ---
+    const [textoBusqueda, setTextoBusqueda] = useState(""); 
+    const busquedaDebounced = useDebounce(textoBusqueda, 200); 
     
-    if (nuevoNombre) {
-      const nuevaCategoriaTemp = { id: Date.now(), nombre: nuevoNombre };
-      setCategorias((prev) => [...prev, nuevaCategoriaTemp]);
-      
-      // Seleccionamos y mostramos el nuevo valor
-      setSelectedTipo(nuevoNombre);
-      setSearchTerm(nuevoNombre);
-      setIsDropdownOpen(false);
-      
-      cargarCategorias(); 
-    }
-  };
+    const [resultados, setResultados] = useState<any[]>([]);
+    const [productosSeleccionados, setProductosSeleccionados] = useState<ProductoSeleccionado[]>([]);
+    const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
+    const [mostrarResultados, setMostrarResultados] = useState(false);
 
-  // Lógica de selección desde la lista
-  const handleSelectOption = (valor: string) => {
-    setSelectedTipo(valor);
-    setSearchTerm(valor); 
-    setIsDropdownOpen(false);
-  };
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Filtrado de listas
-  const basicasFiltradas = CATEGORIAS_BASICAS.filter(c => 
-    c.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const misCategoriasFiltradas = categorias.filter(c => 
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    // --- VALIDACIÓN CLIENTE ---
+    const [erroresCliente, setErroresCliente] = useState<{
+        nombre?: string;
+        descripcion?: string;
+        fechas?: string;
+        productos?: string;
+    }>({});
 
-  const initialState = { message: null, errors: {} };
-  const [state, dispatch, isPending] = useActionState(crearProducto, initialState);
+    // --- EFECTO DE BÚSQUEDA ---
+    useEffect(() => {
+        const buscar = async () => {
+            setCargandoBusqueda(true);
+            const res = await buscarProductosParaPromocion(busquedaDebounced);
+            setResultados(res);
+            setCargandoBusqueda(false);
+        };
 
-  return (
-    <div className="bg-[#f6f6f8] dark:bg-[#101622] font-sans min-h-screen flex flex-col transition-colors duration-200">
-      
-      {/* Cierre del dropdown al hacer clic fuera */}
-      {isDropdownOpen && (
-        <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)}></div>
-      )}
+        if (mostrarResultados || busquedaDebounced.length > 0) {
+             buscar();
+        }
+    }, [busquedaDebounced, mostrarResultados]);
 
-      <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden text-[#0d121b] dark:text-gray-100">
-        <div className="flex h-full grow flex-col">
-          <div className="flex flex-1 justify-center py-6 px-4 md:px-8">
-            <div className="flex flex-col max-w-240 flex-1 w-full gap-6">
-              
-              {/* Breadcrumbs */}
-              <div className="flex flex-wrap items-center gap-2 px-1">
-                <Link href="/" className="text-gray-500 dark:text-gray-400 text-sm font-medium  hover:text-blue-600  dark:hover:text-white transition-colors">
-                  Panel
-                </Link>
-                <span className="material-symbols-outlined text-gray-400 text-sm">chevron_right</span>
-                <Link href="/inventario" className="text-gray-500 dark:text-gray-400 text-sm font-medium  dark:hover:text-white transition-colors  hover:text-blue-600 ">
-                  Inventario
-                </Link>
-                <span className="material-symbols-outlined text-gray-400 text-sm">chevron_right</span>
-                <span className="text-[#0d121b] dark:text-gray-100 text-sm font-medium">Agregar Producto</span>
-              </div>
+    // Cerrar buscador al hacer click fuera
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setMostrarResultados(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-              <div className="flex flex-col gap-2">
-                <h1 className="text-[#0d121b] dark:text-white text-3xl md:text-4xl font-extrabold tracking-[-0.033em]">
-                  Agregar Nuevo Producto
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 text-base font-normal">
-                  Ingrese los detalles del nuevo artículo.
-                </p>
-              </div>
+    // --- FORMATEADORES ---
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat("es-AR", {
+            style: "currency",
+            currency: "ARS",
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
 
-              {/* FORMULARIO */}
-              <form action={dispatch} className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-[#e5e7eb] dark:border-[#2d3748] overflow-hidden">
+    // --- LÓGICA DE INTERACCIÓN ---
+
+    const handleSearchFocus = () => {
+        setMostrarResultados(true);
+        if (textoBusqueda === "" && resultados.length === 0) {
+            setCargandoBusqueda(true);
+            buscarProductosParaPromocion("").then(res => {
+                setResultados(res);
+                setCargandoBusqueda(false);
+            });
+        }
+    };
+
+    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTextoBusqueda(e.target.value);
+        setMostrarResultados(true);
+    };
+
+    const agregarProducto = (prod: any) => {
+        if (!productosSeleccionados.some((p) => p.producto.id === prod.id)) {
+            setProductosSeleccionados([
+                ...productosSeleccionados,
+                { 
+                    producto: prod, 
+                    cantidad: 1,
+                    precioPromoUnitario: Number(prod.precio) || 0 
+                }
+            ]);
+            setErroresCliente(prev => ({ ...prev, productos: undefined }));
+        }
+        setMostrarResultados(false);
+        setTextoBusqueda(""); 
+    };
+
+    const quitarProducto = (id: number) => {
+        setProductosSeleccionados(productosSeleccionados.filter((p) => p.producto.id !== id));
+    };
+
+    const modificarCantidadBotones = (id: number, delta: number) => {
+        setProductosSeleccionados(prevItems =>
+            prevItems.map(item => {
+                if (item.producto.id === id) {
+                    const nuevaCantidad = item.cantidad + delta;
+                    return { ...item, cantidad: nuevaCantidad > 0 ? nuevaCantidad : 1 };
+                }
+                return item;
+            })
+        );
+    };
+
+    const cambiarCantidadManual = (id: number, valor: string) => {
+        const cantidadNumerica = parseInt(valor);
+        setProductosSeleccionados(prevItems => 
+            prevItems.map(item => {
+                if (item.producto.id === id) {
+                    return { ...item, cantidad: isNaN(cantidadNumerica) ? 0 : cantidadNumerica };
+                }
+                return item;
+            })
+        );
+    };
+    
+    const validarCantidadOnBlur = (id: number) => {
+         setProductosSeleccionados(prevItems => 
+            prevItems.map(item => {
+                if (item.producto.id === id && (item.cantidad <= 0 || !item.cantidad)) {
+                    return { ...item, cantidad: 1 };
+                }
+                return item;
+            })
+        );
+    };
+
+    const actualizarPrecioUnitario = (id: number, valorInput: string) => {
+        const nuevoPrecio = valorInput === "" ? 0 : parseFloat(valorInput);
+        setProductosSeleccionados(prevItems =>
+            prevItems.map(item => {
+                if (item.producto.id === id) {
+                    return { ...item, precioPromoUnitario: isNaN(nuevoPrecio) ? 0 : nuevoPrecio };
+                }
+                return item;
+            })
+        );
+    };
+
+    const totalGeneral = productosSeleccionados.reduce((acc, item) => {
+        const cant = item.cantidad || 0;
+        return acc + (cant * item.precioPromoUnitario);
+    }, 0);
+
+
+    // --- VALIDACIÓN AL SUBMIT ---
+    const handleSubmit = (formData: FormData) => {
+        const errores: typeof erroresCliente = {};
+        let hayError = false;
+
+        const nombre = formData.get("nombre") as string;
+        const descripcion = formData.get("descripcion") as string;
+        const fechaInicio = formData.get("fechaInicio") as string;
+        const fechaFin = formData.get("fechaFin") as string;
+
+        if (!nombre || nombre.trim().length < 3) {
+            errores.nombre = "El nombre es obligatorio (mín. 3 caracteres).";
+            hayError = true;
+        }
+
+        if (!descripcion || descripcion.trim().length < 3) {
+            errores.descripcion = "La descripción es obligatoria.";
+            hayError = true;
+        }
+
+        if (productosSeleccionados.length === 0) {
+            errores.productos = "Debes agregar al menos un producto a la promoción.";
+            hayError = true;
+        }
+
+        if (!fechaInicio || !fechaFin) {
+            errores.fechas = "Ambas fechas son obligatorias.";
+            hayError = true;
+        } else if (fechaInicio > fechaFin) {
+            errores.fechas = "La fecha de inicio no puede ser posterior a la de fin.";
+            hayError = true;
+        }
+
+        if (hayError) {
+            setErroresCliente(errores);
+            return; 
+        }
+
+        setErroresCliente({});
+        formAction(formData);
+    };
+
+    return (
+        <div className="flex flex-col min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] text-slate-800 dark:text-slate-200 font-sans transition-colors duration-200">
+
+            <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
                 
-                <div className="border-b border-[#e5e7eb] dark:border-[#2d3748] px-6 py-4 bg-gray-50/50 dark:bg-[#1e2736]">
-                  <h3 className="text-base font-bold text-[#0d121b] dark:text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined">inventory_2</span>
-                    Información General
-                  </h3>
+                {/* --- BREADCRUMBS (Estilo Nuevo) --- */}
+                <div className="w-full mb-4">
+                    <nav aria-label="Breadcrumb" className="flex items-center text-sm">
+                        <Link href="/" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                            Panel
+                        </Link>
+                        
+                        <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                        
+                        <Link href="/promociones" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                            Promociones
+                        </Link>
+                        
+                        <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                        
+                        <span className="text-slate-900 dark:text-white font-bold">
+                            Agregar Nueva Promoción
+                        </span>
+                    </nav>
                 </div>
 
-                <div className="p-6 md:p-8 flex flex-col gap-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="w-full mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Agregar Nueva Promoción</h1>
+                    <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">Ingrese los detalles de la nueva campaña promocional (Cálculo Automático).</p>
+                </div>
+
+                <div className="w-full bg-white dark:bg-[#1E293B] shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
                     
-                    {/* Nombre */}
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Nombre del producto *</span>
-                      <div className="relative w-full">
-                        <input 
-                          name="nombre"
-                          className={`flex w-full rounded-lg border ${state.errors?.nombre ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="Ej. Coca Cola 2L" 
-                          type="text"
-                        />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-                          <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                        </div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.nombre} />
-                    </label>
-
-                    {/* Código de Barra */}
-                    <label className="flex flex-col gap-2 relative">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de barra *</span>
-                      <div className="relative w-full">
-                        <input 
-                          name="codigoBarra"
-                          className={`flex w-full rounded-lg border ${state.errors?.codigoBarra ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-4 pr-14 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="Escanee o ingrese código" 
-                          type="text"
-                        />
-                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors cursor-pointer">
-                          <span className="material-symbols-outlined text-lg">barcode_scanner</span>
-                        </button>
-                      </div>
-                      <ErrorMessage errors={state.errors?.codigoBarra} />
-                    </label>
-
-                    {/* Descripción con Contador */}
-                    <label className="flex flex-col gap-2 md:col-span-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
-                        {/* AQUÍ ESTÁ EL CONTADOR */}
-                        <span className={`text-xs ${descLength >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                          (Opcional {descLength} de 200)
-                        </span>
-                      </div>
-                      <div className="relative w-full">
-                        <textarea 
-                          name="descripcion"
-                          maxLength={200}
-                          rows={3}
-                          // AQUÍ ACTUALIZAMOS EL ESTADO
-                          onChange={(e) => setDescLength(e.target.value.length)}
-                          className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="Ingrese detalles..." 
-                        />
-                        <div className="pointer-events-none absolute left-3 top-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                          <span className="material-symbols-outlined text-lg">description</span>
-                        </div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.descripcion} />
-                    </label>
-
-                    {/* COMBOBOX TIPO DE PRODUCTO */}
-                    <div className="flex flex-col gap-2 relative z-20">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Tipo de Producto *</span>
-                      <div className="flex gap-2 relative">
-                        <div className="relative w-full">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/50 text-orange-700 pointer-events-none z-10">
-                            <span className="material-symbols-outlined text-lg">category</span>
-                          </div>
-                          
-                          <input type="hidden" name="tipo" value={selectedTipo} />
-
-                          <input
-                            type="text"
-                            placeholder="Buscar o seleccionar..."
-                            className={`flex w-full rounded-lg border ${state.errors?.tipo ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                            value={searchTerm}
-                            onChange={(e) => {
-                              setSearchTerm(e.target.value);
-                              setIsDropdownOpen(true);
-                              if (e.target.value === "") setSelectedTipo("");
-                            }}
-                            onFocus={() => setIsDropdownOpen(true)}
-                            autoComplete="off"
-                          />
-                          
-                          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-black dark:text-gray-400">
-                            <span className="material-symbols-outlined text-xl">expand_more</span>
-                          </div>
-
-                          {/* LISTA DESPLEGABLE */}
-                          {isDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#2d3748] border border-[#e5e7eb] dark:border-[#4a5568] rounded-lg shadow-lg max-h-60 overflow-y-auto z-30 animate-in fade-in zoom-in-95 duration-100">
-                              
-                              {/* Básicos */}
-                              {basicasFiltradas.length > 0 && (
-                                <div>
-                                  <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-[#1a202c]">
-                                    Básicos
-                                  </div>
-                                  {basicasFiltradas.map((opcion) => (
-                                    <button
-                                      key={opcion}
-                                      type="button"
-                                      onClick={() => handleSelectOption(opcion)}
-                                      className="w-full text-left px-4 py-2 text-sm text-[#0d121b] dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#4a5568] capitalize transition-colors"
-                                    >
-                                      {opcion}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Mis Categorías */}
-                              {misCategoriasFiltradas.length > 0 && (
-                                <div>
-                                  <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-[#1a202c] border-t border-gray-100 dark:border-gray-700">
-                                    Mis Categorías
-                                  </div>
-                                  {misCategoriasFiltradas.map((cat) => (
-                                    <button
-                                      key={cat.id}
-                                      type="button"
-                                      onClick={() => handleSelectOption(cat.nombre)}
-                                      className="w-full text-left px-4 py-2 text-sm text-[#0d121b] dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#4a5568] capitalize transition-colors"
-                                    >
-                                      {cat.nombre}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Vacío */}
-                              {basicasFiltradas.length === 0 && misCategoriasFiltradas.length === 0 && (
-                                <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                                  No se encontraron resultados para "{searchTerm}"
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                        </div>
-
-                        {/* Botón Agregar Modal (ANIMADO) */}
-                        <button 
-                          onClick={() => setIsModalOpen(true)} 
-                          className="hover:cursor-pointer flex items-center justify-center shrink-0 h-12 px-4 rounded-lg border border-[#cfd7e7] bg-[#f8f9fc] hover:bg-gray-100 font-bold text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md" 
-                          type="button"
-                        >
-                          <span className="material-symbols-outlined text-[20px] mr-2">add</span>
-                          Agregar
-                        </button>
-                      </div>
-                      <ErrorMessage errors={state.errors?.tipo} />
+                    <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">local_offer</span>
+                        <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Información de la Promoción</h2>
                     </div>
 
-                    {/* Código de Proveedor */}
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de Proveedor *</span>
-                      <div className="relative w-full">
+                    <form action={handleSubmit} className="p-6 md:p-8">
+                        
                         <input 
-                          name="proveedor"
-                          className={`flex w-full rounded-lg border ${state.errors?.proveedor ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="REF-000" 
-                          type="text"
+                            type="hidden" 
+                            name="productosData" 
+                            value={JSON.stringify(
+                                productosSeleccionados.map(p => ({ 
+                                    id: p.producto.id, 
+                                    cantidad: p.cantidad <= 0 ? 1 : p.cantidad
+                                }))
+                            )} 
                         />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700">
-                          <span className="material-symbols-outlined text-lg">local_shipping</span>
-                        </div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.proveedor} />
-                    </label>
-                  </div>
+                        <input type="hidden" name="precio" value={totalGeneral} />
 
-                  <hr className="border-[#e5e7eb] dark:border-[#2d3748]"/>
+                        {state.message && (
+                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900 text-sm font-medium flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[20px]">error</span>
+                                {state.message}
+                            </div>
+                        )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Stock */}
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Stock inicial *</span>
-                      <div className="relative w-full">
-                        <input 
-                          name="stock"
-                          className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="0" 
-                          type="number"
-                        />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
-                          <span className="material-symbols-outlined text-lg">inventory</span>
-                        </div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.stock} />
-                    </label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                            
+                            {/* NOMBRE */}
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="nombre">
+                                    Nombre de la Promoción <span className="text-black dark:text-white">*</span>
+                                </label>
+                                <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.nombre ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
+                                    <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-xl">loyalty</span>
+                                    </div>
+                                    <input 
+                                        className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                        id="nombre" name="nombre" placeholder="Ej. Descuento de Verano 2024" type="text"
+                                        defaultValue={state.payload?.nombre || ""}
+                                    />
+                                </div>
+                                
+                                {erroresCliente.nombre && (
+                                    <p className="text-xs text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {erroresCliente.nombre}
+                                    </p>
+                                )}
+                                {state.errors?.nombre && (
+                                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {state.errors.nombre[0]}
+                                    </p>
+                                )}
+                            </div>
 
-                    {/* Precio */}
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Precio Unitario *</span>
-                      <div className="relative w-full">
-                        <input 
-                          name="precio"
-                          className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="0.00" 
-                          step="0.01" 
-                          type="number"
-                        />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700">
-                          <span className="material-symbols-outlined text-lg">attach_money</span>
+                            {/* DESCRIPCIÓN */}
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="descripcion">
+                                    Descripción <span className="text-black dark:text-white">*</span>
+                                </label>
+                                <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.descripcion ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all h-[54px]`}>
+                                    <div className="flex-shrink-0 h-10 w-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-xl">description</span>
+                                    </div>
+                                    <input 
+                                        className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                        id="descripcion" name="descripcion" placeholder="Breve descripción..." type="text"
+                                        defaultValue={state.payload?.descripcion || ""}
+                                    />
+                                </div>
+                                
+                                {erroresCliente.descripcion && (
+                                    <p className="text-xs text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {erroresCliente.descripcion}
+                                    </p>
+                                )}
+                                {state.errors?.descripcion && (
+                                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {state.errors.descripcion[0]}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* --- SECCIÓN PRODUCTOS --- */}
+                            <div className="col-span-1 md:col-span-2 relative" ref={wrapperRef}>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Productos Incluidos <span className="text-black dark:text-white">*</span>
+                                </label>
+                                
+                                {/* BUSCADOR */}
+                                <div className="relative mb-4">
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.productos ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all`}>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-md flex items-center justify-center">
+                                            {cargandoBusqueda ? (
+                                                 <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+                                            ) : (
+                                                 <span className="material-symbols-outlined text-xl">inventory_2</span>
+                                            )}
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                            placeholder="Haga click para ver lista o escriba para buscar..." 
+                                            type="text"
+                                            value={textoBusqueda}
+                                            onChange={handleSearchInput}
+                                            onFocus={handleSearchFocus}
+                                            autoComplete="off"
+                                        />
+                                        <div className="p-2 text-slate-400">
+                                            <span className="material-symbols-outlined">search</span>
+                                        </div>
+                                    </div>
+
+                                    {/* LISTA DESPLEGABLE RESULTADOS */}
+                                    {mostrarResultados && resultados.length > 0 && (
+                                        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                            {resultados.map((prod) => (
+                                                <div 
+                                                    key={prod.id}
+                                                    onClick={() => agregarProducto(prod)} 
+                                                    className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center border-b border-slate-100 dark:border-slate-700 last:border-0"
+                                                >
+                                                    <div>
+                                                        <p className="font-semibold text-sm text-slate-900 dark:text-white">{prod.nombre}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{prod.codigoBarra}</p>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(prod.precio)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                     {mostrarResultados && resultados.length === 0 && !cargandoBusqueda && textoBusqueda.length > 0 && (
+                                        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl p-4 text-center text-sm text-slate-500">
+                                            No se encontraron productos.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {erroresCliente.productos && (
+                                    <p className="text-xs text-red-500 mb-2 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {erroresCliente.productos}
+                                    </p>
+                                )}
+
+                                {/* LISTA DE PRODUCTOS SELECCIONADOS */}
+                                <div className="space-y-3">
+                                    {productosSeleccionados.length === 0 ? (
+                                         <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-lg border ${erroresCliente.productos ? 'border-red-300' : 'border-slate-200 dark:border-slate-700'} p-8 flex flex-col items-center justify-center text-slate-400`}>
+                                            <span className="material-symbols-outlined text-4xl mb-2 opacity-50">shopping_cart_off</span>
+                                            <span className="text-sm">Agrega productos para calcular la promoción.</span>
+                                        </div>
+                                    ) : (
+                                        productosSeleccionados.map((item, index) => (
+                                            <div key={item.producto.id} className="flex flex-col xl:flex-row items-start xl:items-center justify-between p-4 bg-white dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm gap-4">
+                                                
+                                                {/* Info Producto */}
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <div className="h-8 w-8 rounded bg-slate-100 dark:bg-slate-600/50 flex-shrink-0 flex items-center justify-center text-slate-500 dark:text-slate-300">
+                                                        <span className="text-xs font-bold">{index + 1}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.producto.nombre}</span>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                            <span className="text-xs text-slate-500 dark:text-slate-400">SKU: {item.producto.codigoBarra || "N/A"}</span>
+                                                            <span className="text-xs text-slate-300 dark:text-slate-600 hidden sm:inline">|</span>
+                                                            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 line-through">U.P: {formatCurrency(item.producto.precio)}</span>
+                                                            
+                                                            {/* BADGE DE PRECIO PROMO UNITARIO */}
+                                                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded flex items-center">
+                                                                <span className="material-symbols-outlined text-[10px] mr-1">payments</span>
+                                                                Promo Unit: {formatCurrency(item.precioPromoUnitario)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Controles */}
+                                                <div className="flex items-center justify-between xl:justify-end gap-6 w-full xl:w-auto">
+                                                    
+                                                    {/* INPUT: Precio Promo Unitario */}
+                                                    <div className="flex flex-col items-start xl:items-center">
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-1">Precio Promo</span>
+                                                        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden h-[34px]">
+                                                            <span className="pl-3 pr-1 text-slate-400 text-sm">$</span>
+                                                            <input 
+                                                                className="w-24 p-1 text-sm bg-transparent border-0 text-slate-900 dark:text-white focus:ring-0 font-medium focus:outline-none" 
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                value={item.precioPromoUnitario === 0 ? "" : item.precioPromoUnitario}
+                                                                placeholder="0"
+                                                                onChange={(e) => actualizarPrecioUnitario(item.producto.id, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* INPUT: Cantidad */}
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-1">Cantidad</span>
+                                                        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden">
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => modificarCantidadBotones(item.producto.id, -1)}
+                                                                className="px-2 py-1.5 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors focus:outline-none"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm font-bold">remove</span>
+                                                            </button>
+                                                            <input 
+                                                                className="w-16 p-1 text-center text-sm bg-transparent border-0 text-slate-900 dark:text-white focus:ring-0 font-medium focus:outline-none appearance-none" 
+                                                                type="number"
+                                                                min="1"
+                                                                value={item.cantidad === 0 ? "" : item.cantidad}
+                                                                onChange={(e) => cambiarCantidadManual(item.producto.id, e.target.value)}
+                                                                onBlur={() => validarCantidadOnBlur(item.producto.id)}
+                                                            />
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => modificarCantidadBotones(item.producto.id, 1)}
+                                                                className="px-2 py-1.5 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors focus:outline-none"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm font-bold">add</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* SUBTOTAL */}
+                                                    <div className="flex flex-col items-end min-w-[100px]">
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-1">Subtotal</span>
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                                            {formatCurrency((item.cantidad || 0) * item.precioPromoUnitario)}
+                                                        </span>
+                                                    </div>
+
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => quitarProducto(item.producto.id)}
+                                                        className="h-9 w-9 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-center transition-colors shadow-sm border border-red-100 dark:border-red-900/30" 
+                                                        title="Eliminar"
+                                                    >
+                                                        <span className="material-symbols-outlined text-xl">delete</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* --- PIE DE FORMULARIO (Totales y Fechas) --- */}
+                            <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                
+                                {/* TOTAL FINAL */}
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="display_price">Precio Promocional Final</label>
+                                    <div className="flex items-center bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 transition-all">
+                                        <div className="flex-shrink-0 h-10 w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-xl">attach_money</span>
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white sm:text-sm font-bold focus:ring-0 focus:outline-none" 
+                                            id="display_price" 
+                                            readOnly 
+                                            type="text" 
+                                            value={formatCurrency(totalGeneral)}
+                                        />
+                                    </div>
+                                    <p className="mt-1.5 text-[10px] text-slate-400 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span> 
+                                        Calculado automáticamente de la suma de subtotales
+                                    </p>
+                                </div>
+
+                                {/* FECHA INICIO */}
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="fechaInicio">
+                                        Fecha de Inicio <span className="text-black dark:text-white">*</span>
+                                    </label>
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.fechas ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-md flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-xl">calendar_today</span>
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                            id="fechaInicio" name="fechaInicio" type="date"
+                                            defaultValue={state.payload?.fechaInicio || ""}
+                                        />
+                                    </div>
+                                    
+                                    {erroresCliente.fechas && (
+                                        <p className="text-xs text-red-500 mt-1 flex items-center">
+                                            <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                            {erroresCliente.fechas}
+                                        </p>
+                                    )}
+                                    {state.errors?.fechaInicio && (
+                                        <p className="text-sm text-red-500 mt-1 flex items-center">
+                                            <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                            {state.errors.fechaInicio[0]}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* FECHA FIN */}
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="fechaFin">
+                                        Fecha de Fin <span className="text-black dark:text-white">*</span>
+                                    </label>
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.fechas ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-md flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-xl">event_busy</span>
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                            id="fechaFin" name="fechaFin" type="date"
+                                            defaultValue={state.payload?.fechaFin || ""}
+                                        />
+                                    </div>
+                                    {state.errors?.fechaFin && (
+                                        <p className="text-sm text-red-500 mt-1 flex items-center">
+                                            <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                            {state.errors.fechaFin[0]}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
                         </div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.precio} />
-                    </label>
-                  </div>
+
+                        {/* --- BOTONES ACCIÓN --- */}
+                        <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row justify-end items-center gap-4">
+                            <Link 
+                                href="/promociones"
+                                className="w-full sm:w-auto px-6 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 text-center"
+                            >
+                                Cancelar
+                            </Link>
+                            
+                            <button 
+                                type="submit" 
+                                disabled={isPending}
+                                className="hover:cursor-pointer w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-transparent rounded-lg text-white bg-[#0F172A] hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isPending ? (
+                                    "Guardando..."
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-sm mr-2">save</span>
+                                        Guardar Promoción
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                {/* Footer */}
-                <div className="bg-gray-50 dark:bg-[#1a202c] border-t border-[#e5e7eb] px-6 py-4 flex flex-col items-end gap-2">
-                   {state.message && (
-                      <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">
-                         {state.message}
-                      </div>
-                   )}
-                   <div className="flex flex-col-reverse md:flex-row justify-end items-center gap-4 w-full">
-                    
-                    {/* Botón Cancelar (ANIMADO) */}
-                    <Link 
-                      href="/inventario" 
-                      className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancelar
-                    </Link>
-                    
-                    {/* Botón Guardar (ANIMADO) */}
-                    <button 
-                      type="submit" 
-                      disabled={isPending}
-                      className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
-                        ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black'}
-                      `}
-                    >
-                      {isPending ? (
-                        <>
-                          <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-[18px]">save</span>
-                          Guardar Producto
-                        </>
-                      )}
-                    </button>
-                   </div>
-                </div>
-
-              </form>
-            </div>
-          </div>
-          <div className="h-10"></div>
+            </main>
         </div>
-      </div>
-      
-      <AgregarTipoModal isOpen={isModalOpen} onClose={handleCloseModal} />
-    </div>
-  );
+    );
 }

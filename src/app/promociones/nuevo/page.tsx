@@ -1,346 +1,614 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect, useRef } from "react";
 import { crearPromocion, buscarProductosParaPromocion, State } from "@/actions/promociones";
 import Link from "next/link";
 
-// Definimos un tipo para los ítems seleccionados que incluye la cantidad
+// Tipo para los productos seleccionados
 type ProductoSeleccionado = {
     producto: any;
     cantidad: number;
+    precioPromoUnitario: number;
 };
 
+// --- HOOK DE DEBOUNCE ---
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+}
+
 export default function NuevaPromocionPage() {
-  const initialState: State = { message: null, errors: {} };
-  const [state, formAction, isPending] = useActionState(crearPromocion, initialState);
+    const initialState: State = { message: null, errors: {} };
+    const [state, formAction, isPending] = useActionState(crearPromocion, initialState);
 
-  // --- LÓGICA DE PRODUCTOS ---
-  const [busqueda, setBusqueda] = useState("");
-  const [resultados, setResultados] = useState<any[]>([]);
-  
-  // Ahora el estado guarda objetos con el producto y su cantidad
-  const [productosSeleccionados, setProductosSeleccionados] = useState<ProductoSeleccionado[]>([]);
+    // --- ESTADOS ---
+    const [textoBusqueda, setTextoBusqueda] = useState(""); 
+    const busquedaDebounced = useDebounce(textoBusqueda, 200); 
+    
+    const [resultados, setResultados] = useState<any[]>([]);
+    const [productosSeleccionados, setProductosSeleccionados] = useState<ProductoSeleccionado[]>([]);
+    const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
+    const [mostrarResultados, setMostrarResultados] = useState(false);
 
-  // 1. Buscar productos
-  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
-    setBusqueda(term);
-    if (term.length > 2) {
-      const res = await buscarProductosParaPromocion(term);
-      setResultados(res);
-    } else {
-      setResultados([]);
-    }
-  };
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // 2. Agregar producto (Inicia con cantidad 1)
-  const agregarProducto = (prod: any) => {
-    if (!productosSeleccionados.some((p) => p.producto.id === prod.id)) {
-      setProductosSeleccionados([...productosSeleccionados, { producto: prod, cantidad: 1 }]);
-    }
-    setBusqueda("");
-    setResultados([]);
-  };
+    // --- VALIDACIÓN CLIENTE ---
+    const [erroresCliente, setErroresCliente] = useState<{
+        nombre?: string;
+        descripcion?: string;
+        fechas?: string;
+        productos?: string;
+    }>({});
 
-  // 3. Quitar producto
-  const quitarProducto = (id: number) => {
-    setProductosSeleccionados(productosSeleccionados.filter((p) => p.producto.id !== id));
-  };
+    // --- EFECTO DE BÚSQUEDA ---
+    useEffect(() => {
+        const buscar = async () => {
+            setCargandoBusqueda(true);
+            const res = await buscarProductosParaPromocion(busquedaDebounced);
+            setResultados(res);
+            setCargandoBusqueda(false);
+        };
 
-  // 4. NUEVO: Manejar el cambio de cantidad (+/-)
-  const actualizarCantidad = (id: number, delta: number) => {
-    setProductosSeleccionados(prevItems => 
-        prevItems.map(item => {
-            if (item.producto.id === id) {
-                const nuevaCantidad = item.cantidad + delta;
-                // Aseguramos que la cantidad mínima sea 1
-                return { ...item, cantidad: nuevaCantidad > 0 ? nuevaCantidad : 1 };
+        if (mostrarResultados || busquedaDebounced.length > 0) {
+             buscar();
+        }
+    }, [busquedaDebounced, mostrarResultados]);
+
+    // Cerrar buscador al hacer click fuera
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setMostrarResultados(false);
             }
-            return item;
-        })
-    );
-  };
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-  return (
-    <div className="flex flex-col min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] text-slate-800 dark:text-slate-200">
-      
-      <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 w-full">
-        <div className="w-full max-w-7xl">
-            
-            {/* Breadcrumbs */}
-            <nav aria-label="Breadcrumb" className="flex mb-4 text-sm text-slate-500 dark:text-slate-400">
-            <ol className="inline-flex items-center space-x-1 md:space-x-3">
-                <li className="inline-flex items-center">
-                    <Link className="hover:text-slate-700 dark:hover:text-slate-200" href="/">Panel</Link>
-                </li>
-                <li>
-                <div className="flex items-center">
-                    <span className="material-symbols-outlined text-base mx-1">chevron_right</span>
-                    <Link className="hover:text-slate-700 dark:hover:text-slate-200" href="/promociones">Promociones</Link>
-                </div>
-                </li>
-                <li aria-current="page">
-                <div className="flex items-center">
-                    <span className="material-symbols-outlined text-base mx-1">chevron_right</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-medium">Agregar Nueva Promoción</span>
-                </div>
-                </li>
-            </ol>
-            </nav>
+    // --- FORMATEADORES ---
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat("es-AR", {
+            style: "currency",
+            currency: "ARS",
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
 
-            {/* Título */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Agregar Nueva Promoción</h1>
-                <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">Ingrese los detalles de la nueva campaña promocional.</p>
-            </div>
+    // --- LÓGICA DE INTERACCIÓN ---
 
-            {/* FORMULARIO */}
-            <div className="bg-white dark:bg-[#1E293B] shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+    const handleSearchFocus = () => {
+        setMostrarResultados(true);
+        if (textoBusqueda === "" && resultados.length === 0) {
+            setCargandoBusqueda(true);
+            buscarProductosParaPromocion("").then(res => {
+                setResultados(res);
+                setCargandoBusqueda(false);
+            });
+        }
+    };
+
+    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTextoBusqueda(e.target.value);
+        setMostrarResultados(true);
+    };
+
+    const agregarProducto = (prod: any) => {
+        if (!productosSeleccionados.some((p) => p.producto.id === prod.id)) {
+            setProductosSeleccionados([
+                ...productosSeleccionados,
+                { 
+                    producto: prod, 
+                    cantidad: 1,
+                    precioPromoUnitario: Number(prod.precio) || 0 
+                }
+            ]);
+            setErroresCliente(prev => ({ ...prev, productos: undefined }));
+        }
+        setMostrarResultados(false);
+        setTextoBusqueda(""); 
+    };
+
+    const quitarProducto = (id: number) => {
+        setProductosSeleccionados(productosSeleccionados.filter((p) => p.producto.id !== id));
+    };
+
+    const modificarCantidadBotones = (id: number, delta: number) => {
+        setProductosSeleccionados(prevItems =>
+            prevItems.map(item => {
+                if (item.producto.id === id) {
+                    const nuevaCantidad = item.cantidad + delta;
+                    return { ...item, cantidad: nuevaCantidad > 0 ? nuevaCantidad : 1 };
+                }
+                return item;
+            })
+        );
+    };
+
+    const cambiarCantidadManual = (id: number, valor: string) => {
+        const cantidadNumerica = parseInt(valor);
+        setProductosSeleccionados(prevItems => 
+            prevItems.map(item => {
+                if (item.producto.id === id) {
+                    return { ...item, cantidad: isNaN(cantidadNumerica) ? 0 : cantidadNumerica };
+                }
+                return item;
+            })
+        );
+    };
+    
+    const validarCantidadOnBlur = (id: number) => {
+         setProductosSeleccionados(prevItems => 
+            prevItems.map(item => {
+                if (item.producto.id === id && (item.cantidad <= 0 || !item.cantidad)) {
+                    return { ...item, cantidad: 1 };
+                }
+                return item;
+            })
+        );
+    };
+
+    const actualizarPrecioUnitario = (id: number, valorInput: string) => {
+        const nuevoPrecio = valorInput === "" ? 0 : parseFloat(valorInput);
+        setProductosSeleccionados(prevItems =>
+            prevItems.map(item => {
+                if (item.producto.id === id) {
+                    return { ...item, precioPromoUnitario: isNaN(nuevoPrecio) ? 0 : nuevoPrecio };
+                }
+                return item;
+            })
+        );
+    };
+
+    const totalGeneral = productosSeleccionados.reduce((acc, item) => {
+        const cant = item.cantidad || 0;
+        return acc + (cant * item.precioPromoUnitario);
+    }, 0);
+
+
+    // --- VALIDACIÓN AL SUBMIT ---
+    const handleSubmit = (formData: FormData) => {
+        const errores: typeof erroresCliente = {};
+        let hayError = false;
+
+        const nombre = formData.get("nombre") as string;
+        const descripcion = formData.get("descripcion") as string;
+        const fechaInicio = formData.get("fechaInicio") as string;
+        const fechaFin = formData.get("fechaFin") as string;
+
+        if (!nombre || nombre.trim().length < 3) {
+            errores.nombre = "El nombre es obligatorio (mín. 3 caracteres).";
+            hayError = true;
+        }
+
+        if (!descripcion || descripcion.trim().length < 3) {
+            errores.descripcion = "La descripción es obligatoria.";
+            hayError = true;
+        }
+
+        if (productosSeleccionados.length === 0) {
+            errores.productos = "Debes agregar al menos un producto a la promoción.";
+            hayError = true;
+        }
+
+        if (!fechaInicio || !fechaFin) {
+            errores.fechas = "Ambas fechas son obligatorias.";
+            hayError = true;
+        } else if (fechaInicio > fechaFin) {
+            errores.fechas = "La fecha de inicio no puede ser posterior a la de fin.";
+            hayError = true;
+        }
+
+        if (hayError) {
+            setErroresCliente(errores);
+            return; 
+        }
+
+        setErroresCliente({});
+        formAction(formData);
+    };
+
+    return (
+        <div className="flex flex-col min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] text-slate-800 dark:text-slate-200 font-sans transition-colors duration-200">
+
+            <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
                 
-                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">local_offer</span>
-                    <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Información de la Promoción</h2>
+                {/* --- BREADCRUMBS (Estilo Nuevo) --- */}
+                <div className="w-full mb-4">
+                    <nav aria-label="Breadcrumb" className="flex items-center text-sm">
+                        <Link href="/" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                            Panel
+                        </Link>
+                        
+                        <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                        
+                        <Link href="/promociones" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                            Promociones
+                        </Link>
+                        
+                        <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                        
+                        <span className="text-slate-900 dark:text-white font-bold">
+                            Agregar Nueva Promoción
+                        </span>
+                    </nav>
                 </div>
 
-                <form action={formAction} className="p-6 md:p-8">
+                <div className="w-full mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Agregar Nueva Promoción</h1>
+                    <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">Ingrese los detalles de la nueva campaña promocional (Cálculo Automático).</p>
+                </div>
+
+                <div className="w-full bg-white dark:bg-[#1E293B] shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
                     
-                    {/* INPUT OCULTO: Envía solo los IDs por ahora */}
-                    <input 
-                        type="hidden" 
-                        name="productosData" 
-                        value={JSON.stringify(
-                            productosSeleccionados.map(p => ({ 
-                                id: p.producto.id, 
-                                cantidad: p.cantidad 
-                            }))
-                        )} 
-                    />
+                    <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">local_offer</span>
+                        <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Información de la Promoción</h2>
+                    </div>
 
-                    {/* Mensaje Global de Error */}
-                    {state.message && (
-                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900 text-sm font-medium flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[20px]">error</span>
-                            {state.message}
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <form action={handleSubmit} className="p-6 md:p-8">
                         
-                        {/* NOMBRE */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="nombre">Nombre de la Promoción</label>
-                            <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all">
-                                <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-xl">loyalty</span>
-                                </div>
-                                <input 
-                                    className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                    id="nombre" name="nombre" placeholder="Ej. Descuento de Verano" type="text"
-                                    defaultValue={state.payload?.nombre}
-                                />
-                            </div>
-                            {state.errors?.nombre && <p className="text-sm text-red-500 mt-1">{state.errors.nombre[0]}</p>}
-                        </div>
+                        <input 
+                            type="hidden" 
+                            name="productosData" 
+                            value={JSON.stringify(
+                                productosSeleccionados.map(p => ({ 
+                                    id: p.producto.id, 
+                                    cantidad: p.cantidad <= 0 ? 1 : p.cantidad
+                                }))
+                            )} 
+                        />
+                        <input type="hidden" name="precio" value={totalGeneral} />
 
-                        {/* DESCRIPCIÓN */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="descripcion">Descripción</label>
-                            <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all h-[54px]">
-                                <div className="flex-shrink-0 h-10 w-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-xl">description</span>
-                                </div>
-                                <input 
-                                    className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                    id="descripcion" name="descripcion" placeholder="Breve descripción..." type="text"
-                                    defaultValue={state.payload?.descripcion}
-                                />
+                        {state.message && (
+                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900 text-sm font-medium flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[20px]">error</span>
+                                {state.message}
                             </div>
-                            {state.errors?.descripcion && <p className="text-sm text-red-500 mt-1">{state.errors.descripcion[0]}</p>}
-                        </div>
+                        )}
 
-                        {/* --- SECCIÓN DE PRODUCTOS (DISEÑO NUEVO) --- */}
-                        <div className="col-span-1 md:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Productos Incluidos</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             
-                            {/* BUSCADOR (Estilo más claro) */}
-                            <div className="relative mb-4">
-                                <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus-within:ring-2 focus-within:ring-blue-500 dark:focus-within:ring-blue-600 transition-all shadow-sm">
-                                    <div className="flex-shrink-0 h-10 w-10 bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-md flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-xl">search</span>
+                            {/* NOMBRE */}
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="nombre">
+                                    Nombre de la Promoción <span className="text-black dark:text-white">*</span>
+                                </label>
+                                <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.nombre ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
+                                    <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-xl">loyalty</span>
                                     </div>
                                     <input 
-                                        type="text"
-                                        value={busqueda}
-                                        onChange={handleSearch}
                                         className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                        placeholder="Buscar y agregar producto..." 
+                                        id="nombre" name="nombre" placeholder="Ej. Descuento de Verano 2024" type="text"
+                                        defaultValue={state.payload?.nombre || ""}
                                     />
-                                     <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center text-slate-400">
-                                        <span className="material-symbols-outlined text-xl">add_circle</span>
-                                    </div>
                                 </div>
-
-                                {/* LISTA FLOTANTE DE RESULTADOS */}
-                                {resultados.length > 0 && (
-                                    <div className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                                        {resultados.map((prod) => (
-                                            <div 
-                                                key={prod.id}
-                                                onClick={() => agregarProducto(prod)} 
-                                                className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center border-b border-slate-100 dark:border-slate-700 last:border-0"
-                                            >
-                                                <div>
-                                                    <p className="font-semibold text-sm text-slate-900 dark:text-white">{prod.nombre}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{prod.codigoBarra}</p>
-                                                </div>
-                                                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">${prod.precio}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                
+                                {erroresCliente.nombre && (
+                                    <p className="text-xs text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {erroresCliente.nombre}
+                                    </p>
+                                )}
+                                {state.errors?.nombre && (
+                                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {state.errors.nombre[0]}
+                                    </p>
                                 )}
                             </div>
 
-                            {/* LISTA DE SELECCIONADOS (DISEÑO IDENTICO A LA FOTO) */}
-                            <div className="space-y-3">
-                                {productosSeleccionados.length === 0 ? (
-                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-6 flex flex-col items-center justify-center text-slate-400">
-                                        <span className="material-symbols-outlined text-3xl mb-2 opacity-50">inventory_2</span>
-                                        <span className="text-sm">No hay productos agregados.</span>
+                            {/* DESCRIPCIÓN */}
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="descripcion">
+                                    Descripción <span className="text-black dark:text-white">*</span>
+                                </label>
+                                <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.descripcion ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all h-[54px]`}>
+                                    <div className="flex-shrink-0 h-10 w-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-xl">description</span>
                                     </div>
-                                ) : (
-                                    productosSeleccionados.map((item, index) => (
-                                        <div key={item.producto.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                                            
-                                            {/* Izquierda: Numeración e Info */}
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-8 w-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-500 dark:text-slate-400">
-                                                    {index + 1}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{item.producto.nombre}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">SKU: {item.producto.codigoBarra || "N/A"}</p>
-                                                </div>
-                                            </div>
+                                    <input 
+                                        className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                        id="descripcion" name="descripcion" placeholder="Breve descripción..." type="text"
+                                        defaultValue={state.payload?.descripcion || ""}
+                                    />
+                                </div>
+                                
+                                {erroresCliente.descripcion && (
+                                    <p className="text-xs text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {erroresCliente.descripcion}
+                                    </p>
+                                )}
+                                {state.errors?.descripcion && (
+                                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {state.errors.descripcion[0]}
+                                    </p>
+                                )}
+                            </div>
 
-                                            {/* Derecha: Controles y Eliminar */}
-                                            <div className="flex items-center gap-4">
+                            {/* --- SECCIÓN PRODUCTOS --- */}
+                            <div className="col-span-1 md:col-span-2 relative" ref={wrapperRef}>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Productos Incluidos <span className="text-black dark:text-white">*</span>
+                                </label>
+                                
+                                {/* BUSCADOR */}
+                                <div className="relative mb-4">
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.productos ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all`}>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-md flex items-center justify-center">
+                                            {cargandoBusqueda ? (
+                                                 <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+                                            ) : (
+                                                 <span className="material-symbols-outlined text-xl">inventory_2</span>
+                                            )}
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                            placeholder="Haga click para ver lista o escriba para buscar..." 
+                                            type="text"
+                                            value={textoBusqueda}
+                                            onChange={handleSearchInput}
+                                            onFocus={handleSearchFocus}
+                                            autoComplete="off"
+                                        />
+                                        <div className="p-2 text-slate-400">
+                                            <span className="material-symbols-outlined">search</span>
+                                        </div>
+                                    </div>
+
+                                    {/* LISTA DESPLEGABLE RESULTADOS */}
+                                    {mostrarResultados && resultados.length > 0 && (
+                                        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                            {resultados.map((prod) => (
+                                                <div 
+                                                    key={prod.id}
+                                                    onClick={() => agregarProducto(prod)} 
+                                                    className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center border-b border-slate-100 dark:border-slate-700 last:border-0"
+                                                >
+                                                    <div>
+                                                        <p className="font-semibold text-sm text-slate-900 dark:text-white">{prod.nombre}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{prod.codigoBarra}</p>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(prod.precio)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                     {mostrarResultados && resultados.length === 0 && !cargandoBusqueda && textoBusqueda.length > 0 && (
+                                        <div className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl p-4 text-center text-sm text-slate-500">
+                                            No se encontraron productos.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {erroresCliente.productos && (
+                                    <p className="text-xs text-red-500 mb-2 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                        {erroresCliente.productos}
+                                    </p>
+                                )}
+
+                                {/* LISTA DE PRODUCTOS SELECCIONADOS */}
+                                <div className="space-y-3">
+                                    {productosSeleccionados.length === 0 ? (
+                                         <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-lg border ${erroresCliente.productos ? 'border-red-300' : 'border-slate-200 dark:border-slate-700'} p-8 flex flex-col items-center justify-center text-slate-400`}>
+                                            <span className="material-symbols-outlined text-4xl mb-2 opacity-50">shopping_cart_off</span>
+                                            <span className="text-sm">Agrega productos para calcular la promoción.</span>
+                                        </div>
+                                    ) : (
+                                        productosSeleccionados.map((item, index) => (
+                                            <div key={item.producto.id} className="flex flex-col xl:flex-row items-start xl:items-center justify-between p-4 bg-white dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm gap-4">
                                                 
-                                                {/* Control de Cantidad */}
-                                                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
-                                                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 pl-2">Unidades</span>
-                                                    <div className="flex items-center bg-white dark:bg-slate-800 rounded-md shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => actualizarCantidad(item.producto.id, -1)}
-                                                            className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                                        >
-                                                            <span className="material-symbols-outlined text-sm">remove</span>
-                                                        </button>
-                                                        <span className="w-10 text-center text-sm font-bold text-slate-900 dark:text-white">
-                                                            {item.cantidad}
-                                                        </span>
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => actualizarCantidad(item.producto.id, 1)}
-                                                            className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                                        >
-                                                            <span className="material-symbols-outlined text-sm">add</span>
-                                                        </button>
+                                                {/* Info Producto */}
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <div className="h-8 w-8 rounded bg-slate-100 dark:bg-slate-600/50 flex-shrink-0 flex items-center justify-center text-slate-500 dark:text-slate-300">
+                                                        <span className="text-xs font-bold">{index + 1}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.producto.nombre}</span>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                            <span className="text-xs text-slate-500 dark:text-slate-400">SKU: {item.producto.codigoBarra || "N/A"}</span>
+                                                            <span className="text-xs text-slate-300 dark:text-slate-600 hidden sm:inline">|</span>
+                                                            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 line-through">U.P: {formatCurrency(item.producto.precio)}</span>
+                                                            
+                                                            {/* BADGE DE PRECIO PROMO UNITARIO */}
+                                                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded flex items-center">
+                                                                <span className="material-symbols-outlined text-[10px] mr-1">payments</span>
+                                                                Promo Unit: {formatCurrency(item.precioPromoUnitario)}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Botón Eliminar (Estilo Rojo Claro) */}
-                                                <button 
-                                                    type="button" 
-                                                    onClick={() => quitarProducto(item.producto.id)}
-                                                    className="h-9 w-9 flex items-center justify-center bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-500 rounded-lg transition-colors"
-                                                    title="Eliminar"
-                                                >
-                                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                                </button>
+                                                {/* Controles */}
+                                                <div className="flex items-center justify-between xl:justify-end gap-6 w-full xl:w-auto">
+                                                    
+                                                    {/* INPUT: Precio Promo Unitario */}
+                                                    <div className="flex flex-col items-start xl:items-center">
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-1">Precio Promo</span>
+                                                        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden h-[34px]">
+                                                            <span className="pl-3 pr-1 text-slate-400 text-sm">$</span>
+                                                            <input 
+                                                                className="w-24 p-1 text-sm bg-transparent border-0 text-slate-900 dark:text-white focus:ring-0 font-medium focus:outline-none" 
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                value={item.precioPromoUnitario === 0 ? "" : item.precioPromoUnitario}
+                                                                placeholder="0"
+                                                                onChange={(e) => actualizarPrecioUnitario(item.producto.id, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* INPUT: Cantidad */}
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-1">Cantidad</span>
+                                                        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden">
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => modificarCantidadBotones(item.producto.id, -1)}
+                                                                className="px-2 py-1.5 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors focus:outline-none"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm font-bold">remove</span>
+                                                            </button>
+                                                            <input 
+                                                                className="w-16 p-1 text-center text-sm bg-transparent border-0 text-slate-900 dark:text-white focus:ring-0 font-medium focus:outline-none appearance-none" 
+                                                                type="number"
+                                                                min="1"
+                                                                value={item.cantidad === 0 ? "" : item.cantidad}
+                                                                onChange={(e) => cambiarCantidadManual(item.producto.id, e.target.value)}
+                                                                onBlur={() => validarCantidadOnBlur(item.producto.id)}
+                                                            />
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => modificarCantidadBotones(item.producto.id, 1)}
+                                                                className="px-2 py-1.5 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors focus:outline-none"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm font-bold">add</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* SUBTOTAL */}
+                                                    <div className="flex flex-col items-end min-w-[100px]">
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mb-1">Subtotal</span>
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                                            {formatCurrency((item.cantidad || 0) * item.precioPromoUnitario)}
+                                                        </span>
+                                                    </div>
+
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => quitarProducto(item.producto.id)}
+                                                        className="h-9 w-9 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-center transition-colors shadow-sm border border-red-100 dark:border-red-900/30" 
+                                                        title="Eliminar"
+                                                    >
+                                                        <span className="material-symbols-outlined text-xl">delete</span>
+                                                    </button>
+                                                </div>
                                             </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* --- PIE DE FORMULARIO (Totales y Fechas) --- */}
+                            <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                
+                                {/* TOTAL FINAL */}
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="display_price">Precio Promocional Final</label>
+                                    <div className="flex items-center bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 transition-all">
+                                        <div className="flex-shrink-0 h-10 w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-xl">attach_money</span>
                                         </div>
-                                    ))
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white sm:text-sm font-bold focus:ring-0 focus:outline-none" 
+                                            id="display_price" 
+                                            readOnly 
+                                            type="text" 
+                                            value={formatCurrency(totalGeneral)}
+                                        />
+                                    </div>
+                                    <p className="mt-1.5 text-[10px] text-slate-400 flex items-center">
+                                        <span className="material-symbols-outlined text-xs mr-1">info</span> 
+                                        Calculado automáticamente de la suma de subtotales
+                                    </p>
+                                </div>
+
+                                {/* FECHA INICIO */}
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="fechaInicio">
+                                        Fecha de Inicio <span className="text-black dark:text-white">*</span>
+                                    </label>
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.fechas ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-md flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-xl">calendar_today</span>
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                            id="fechaInicio" name="fechaInicio" type="date"
+                                            defaultValue={state.payload?.fechaInicio || ""}
+                                        />
+                                    </div>
+                                    
+                                    {erroresCliente.fechas && (
+                                        <p className="text-xs text-red-500 mt-1 flex items-center">
+                                            <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                            {erroresCliente.fechas}
+                                        </p>
+                                    )}
+                                    {state.errors?.fechaInicio && (
+                                        <p className="text-sm text-red-500 mt-1 flex items-center">
+                                            <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                            {state.errors.fechaInicio[0]}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* FECHA FIN */}
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="fechaFin">
+                                        Fecha de Fin <span className="text-black dark:text-white">*</span>
+                                    </label>
+                                    <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.fechas ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-md flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-xl">event_busy</span>
+                                        </div>
+                                        <input 
+                                            className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
+                                            id="fechaFin" name="fechaFin" type="date"
+                                            defaultValue={state.payload?.fechaFin || ""}
+                                        />
+                                    </div>
+                                    {state.errors?.fechaFin && (
+                                        <p className="text-sm text-red-500 mt-1 flex items-center">
+                                            <span className="material-symbols-outlined text-xs mr-1">info</span>
+                                            {state.errors.fechaFin[0]}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* --- BOTONES ACCIÓN --- */}
+                        <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row justify-end items-center gap-4">
+                            <Link 
+                                href="/promociones"
+                                className="w-full sm:w-auto px-6 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 text-center"
+                            >
+                                Cancelar
+                            </Link>
+                            
+                            <button 
+                                type="submit" 
+                                disabled={isPending}
+                                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-transparent rounded-lg text-white bg-[#0F172A] hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isPending ? (
+                                    "Guardando..."
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-sm mr-2">save</span>
+                                        Guardar Promoción
+                                    </>
                                 )}
-                            </div>
+                            </button>
                         </div>
-
-                        {/* PRECIO */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="precio">Precio Promocional</label>
-                            <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all">
-                                <div className="flex-shrink-0 h-10 w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-xl">attach_money</span>
-                                </div>
-                                <input 
-                                    className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                    id="precio" name="precio" placeholder="0.00" step="0.01" type="number"
-                                    defaultValue={state.payload?.precio}
-                                />
-                            </div>
-                            {state.errors?.precio && <p className="text-sm text-red-500 mt-1">{state.errors.precio[0]}</p>}
-                        </div>
-
-                        {/* FECHAS */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="fechaInicio">Fecha de Inicio</label>
-                            <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all">
-                                <div className="flex-shrink-0 h-10 w-10 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-md flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-xl">calendar_today</span>
-                                </div>
-                                <input 
-                                    className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                    id="fechaInicio" name="fechaInicio" type="date"
-                                    defaultValue={state.payload?.fechaInicio}
-                                />
-                            </div>
-                            {state.errors?.fechaInicio && <p className="text-sm text-red-500 mt-1">{state.errors.fechaInicio[0]}</p>}
-                        </div>
-
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="fechaFin">Fecha de Fin</label>
-                            <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 focus-within:border-slate-400 transition-all">
-                                <div className="flex-shrink-0 h-10 w-10 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-md flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-xl">event_busy</span>
-                                </div>
-                                <input 
-                                    className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                    id="fechaFin" name="fechaFin" type="date"
-                                    defaultValue={state.payload?.fechaFin}
-                                />
-                            </div>
-                            {state.errors?.fechaFin && <p className="text-sm text-red-500 mt-1">{state.errors.fechaFin[0]}</p>}
-                        </div>
-
-                    </div>
-
-                    <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row justify-end items-center gap-4">
-                        <Link 
-                            href="/promociones"
-                            className="w-full sm:w-auto px-6 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors shadow-sm text-center"
-                        >
-                            Cancelar
-                        </Link>
-                        <button 
-                            type="submit" 
-                            disabled={isPending || productosSeleccionados.length === 0}
-                            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-transparent rounded-lg text-white bg-[#0F172A] hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isPending ? (
-                                <>Guardando...</>
-                            ) : (
-                                <>
-                                    <span className="material-symbols-outlined text-sm mr-2">save</span>
-                                    Guardar Promoción
-                                </>
-                            )}
-                        </button>
-                    </div>
-
-                </form>
-            </div>
+                    </form>
+                </div>
+            </main>
         </div>
-      </main>
-    </div>
-  );
+    );
 }
