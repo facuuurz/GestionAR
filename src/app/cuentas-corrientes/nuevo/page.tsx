@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react"; 
-import { crearCliente, State } from "@/actions/cuentas-corrientes";
+import { crearCliente, State } from "@/actions/cuentas-corrientes"; // Asegúrate de que apunte a "cuentas.ts" o "cuentas-corrientes.ts" según tu archivo real
 import Link from "next/link";
 
 export default function NuevoClientePage() {
@@ -16,13 +16,11 @@ export default function NuevoClientePage() {
         <div className="w-full max-w-4xl">
           
           {/* Breadcrumbs */}
-          {/* Breadcrumbs */}
           <nav className="text-sm text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
             <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600">Panel</Link>
             <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
             <Link href="/cuentas-corrientes" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600">Cuentas Corrientes</Link>
             <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
-            {/* AQUÍ SE CAMBIÓ text-primary POR text-black */}
             <p className="text-black dark:text-white font-bold">Agregar Cuenta</p>
           </nav>
 
@@ -52,7 +50,6 @@ export default function NuevoClientePage() {
                     Nombre o Razón Social <span className="text-slate-900 dark:text-slate-200">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    {/* CAMBIO: rounded-lg -> rounded-full */}
                     <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
                       <span className="material-symbols-outlined text-sm">person</span>
                     </div>
@@ -82,7 +79,6 @@ export default function NuevoClientePage() {
                     CUIT / CUIL <span className="text-slate-900 dark:text-slate-200">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    {/* CAMBIO: rounded-lg -> rounded-full */}
                     <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400">
                       <span className="material-symbols-outlined text-sm">id_card</span>
                     </div>
@@ -116,7 +112,6 @@ export default function NuevoClientePage() {
                     Correo Electrónico <span className="text-slate-900 dark:text-slate-200">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    {/* CAMBIO: rounded-lg -> rounded-full */}
                     <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400">
                       <span className="material-symbols-outlined text-sm">mail</span>
                     </div>
@@ -146,7 +141,6 @@ export default function NuevoClientePage() {
                     Teléfono <span className="text-slate-900 dark:text-slate-200">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    {/* CAMBIO: rounded-lg -> rounded-full */}
                     <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400">
                       <span className="material-symbols-outlined text-sm">call</span>
                     </div>
@@ -173,16 +167,15 @@ export default function NuevoClientePage() {
 
               <div className="border-b border-slate-200 dark:border-slate-600"></div>
 
-              {/* FILA 3: Dirección y Saldo Inicial */}
+              {/* FILA 3: Dirección y Ciudad */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* Campo: Dirección (Sin asterisco) */}
+                {/* Campo: Dirección */}
                 <div className="space-y-2">
                   <label htmlFor="direccion" className="block text-sm font-medium text-slate-900 dark:text-slate-200">
                     Dirección Física
                   </label>
                   <div className="relative flex items-center">
-                    {/* CAMBIO: rounded-lg -> rounded-full */}
                     <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
                       <span className="material-symbols-outlined text-sm">location_on</span>
                     </div>
@@ -191,7 +184,7 @@ export default function NuevoClientePage() {
                       id="direccion"
                       type="text" 
                       defaultValue={state.payload?.direccion}
-                      placeholder="Calle Falsa 123, Ciudad" 
+                      placeholder="Calle Falsa 123" 
                       className={`w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-700 border rounded-lg text-sm text-slate-700 dark:text-slate-200 focus:outline-none transition-all placeholder:text-slate-400
                         ${state.errors?.direccion 
                             ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
@@ -206,13 +199,38 @@ export default function NuevoClientePage() {
                   )}
                 </div>
 
-                {/* Campo: Saldo Inicial (Sin asterisco, Opcional) */}
+                {/* ✅ NUEVO CAMPO: Ciudad */}
+                <div className="space-y-2">
+                  <label htmlFor="ciudad" className="block text-sm font-medium text-slate-900 dark:text-slate-200">
+                    Ciudad / Localidad
+                  </label>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400">
+                      <span className="material-symbols-outlined text-sm">map</span>
+                    </div>
+                    <input 
+                      name="ciudad"
+                      id="ciudad"
+                      type="text" 
+                      defaultValue={state.payload?.ciudad}
+                      placeholder="Ej. Paraná" 
+                      className={`w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-700 border rounded-lg text-sm text-slate-700 dark:text-slate-200 focus:outline-none transition-all placeholder:text-slate-400
+                        ${state.errors?.ciudad 
+                            ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
+                            : 'border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500'}`}
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* FILA 4: Saldo Inicial */}
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="saldo" className="block text-sm font-medium text-slate-900 dark:text-slate-200">
                     Saldo Inicial
                   </label>
                   <div className="relative flex items-center">
-                    {/* CAMBIO: rounded-lg -> rounded-full */}
                     <div className="absolute left-2 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
                       <span className="material-symbols-outlined text-sm">attach_money</span>
                     </div>
@@ -236,8 +254,8 @@ export default function NuevoClientePage() {
                     </div>
                   )}
                 </div>
-
               </div>
+
             </div>
 
             {/* ZONA DE BOTONES */}

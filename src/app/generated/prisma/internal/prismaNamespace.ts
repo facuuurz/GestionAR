@@ -1023,6 +1023,7 @@ export const Cuenta_corrienteScalarFieldEnum = {
   telefono: 'telefono',
   email: 'email',
   direccion: 'direccion',
+  ciudad: 'ciudad',
   saldo: 'saldo',
   estado: 'estado',
   createdAt: 'createdAt',

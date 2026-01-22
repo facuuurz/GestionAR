@@ -30,6 +30,8 @@ const clienteSchema = z.object({
     
   direccion: z.string().trim().optional().or(z.literal("")), 
 
+  ciudad: z.string().trim().optional().or(z.literal("")),
+
   saldo: z.coerce.number().optional(),
 });
 
@@ -41,6 +43,7 @@ export type State = {
     telefono?: string[];
     email?: string[];
     direccion?: string[];
+    ciudad?: string[];
     saldo?: string[];
   };
   message?: string | null;
@@ -90,6 +93,7 @@ export async function crearCliente(prevState: State, formData: FormData) {
     telefono: formData.get("telefono"),
     email: formData.get("email"),
     direccion: formData.get("direccion"),
+    ciudad: formData.get("ciudad"),
     saldo: formData.get("saldo"),
   };
 
@@ -114,6 +118,7 @@ export async function crearCliente(prevState: State, formData: FormData) {
         telefono: validatedFields.data.telefono,
         email: validatedFields.data.email,
         direccion: validatedFields.data.direccion || null,
+        ciudad: validatedFields.data.ciudad || null,
         saldo: saldoInicial,
         estado: estadoInicial
       },
@@ -142,6 +147,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
     telefono: formData.get("telefono"),
     email: formData.get("email"),
     direccion: formData.get("direccion"),
+    ciudad: formData.get("ciudad"),
     saldo: formData.get("saldo"),
   };
 
@@ -167,6 +173,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
         telefono: validatedFields.data.telefono,
         email: validatedFields.data.email,
         direccion: validatedFields.data.direccion || null,
+        ciudad: validatedFields.data.ciudad || null,
         saldo: nuevoSaldo,
         estado: nuevoEstado,
       },
@@ -216,7 +223,6 @@ export async function eliminarCliente(id: number) {
     throw new Error("No se pudo eliminar");
   }
 
-  // ✅ CORRECCIÓN: Redirect fuera del try/catch
   revalidatePath("/cuentas-corrientes");
   redirect("/cuentas-corrientes");
 }

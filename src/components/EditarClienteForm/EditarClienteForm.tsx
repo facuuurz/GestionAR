@@ -14,6 +14,12 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
   const initialState: State = { message: null, errors: {} };
   const [state, formAction, isPending] = useActionState(actualizarAction, initialState);
 
+  const handleDelete = async () => {
+    if (confirm("¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.")) {
+        await eliminarAction();
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-[#1A202C] rounded-xl border border-[#dbdfe6] dark:border-gray-700 shadow-sm overflow-hidden">
       
@@ -53,6 +59,7 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
                 type="text"
               />
             </div>
+             {state.errors?.cuit && <p className="text-red-500 text-xs">{state.errors.cuit[0]}</p>}
           </div>
 
           {/* Dirección */}
@@ -65,6 +72,23 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
               <input 
                 name="direccion"
                 defaultValue={cliente.direccion || ""}
+                className="w-full h-12 pl-14 pr-4 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-gray-800 text-[#111318] dark:text-white placeholder-[#9ca3af] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" 
+                type="text"
+              />
+            </div>
+             {state.errors?.direccion && <p className="text-red-500 text-xs">{state.errors.direccion[0]}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-[#111318] dark:text-gray-200">Ciudad</label>
+            <div className="relative flex items-center group">
+              <div className="absolute left-3 flex items-center justify-center size-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
+                <span className="material-symbols-outlined text-[18px]">map</span>
+              </div>
+              <input 
+                name="ciudad"
+                defaultValue={cliente.ciudad || ""}
+                placeholder="Ej: Paraná"
                 className="w-full h-12 pl-14 pr-4 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-gray-800 text-[#111318] dark:text-white placeholder-[#9ca3af] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" 
                 type="text"
               />
@@ -85,13 +109,14 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
                 type="tel"
               />
             </div>
+             {state.errors?.telefono && <p className="text-red-500 text-xs">{state.errors.telefono[0]}</p>}
           </div>
 
           {/* Email */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[#111318] dark:text-gray-200">Email</label>
             <div className="relative flex items-center group">
-              <div className="absolute left-3 flex items-center justify-center size-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
+              <div className="absolute left-3 flex items-center justify-center size-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
                 <span className="material-symbols-outlined text-[18px]">mail</span>
               </div>
               <input 
@@ -101,10 +126,11 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
                 type="email"
               />
             </div>
+             {state.errors?.email && <p className="text-red-500 text-xs">{state.errors.email[0]}</p>}
           </div>
 
           {/* SALDO */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 md:col-span-2">
             <label className="text-sm font-medium text-[#111318] dark:text-gray-200">Saldo</label>
             <div className="relative flex items-center group">
               <div className="absolute left-3 flex items-center justify-center size-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300">
@@ -118,8 +144,9 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
                 step="0.01"
               />
             </div>
+             {state.errors?.saldo && <p className="text-red-500 text-xs">{state.errors.saldo[0]}</p>}
             
-            {/* ICONO WARNING AGREGADO AQUÍ */}
+            {/* ICONO WARNING */}
             <div className="text-xs text-[#616f89] dark:text-gray-400 mt-1 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[16px] text-amber-500 fill-1">warning</span>
                 <span>Modificar esto altera la deuda.</span>
@@ -134,7 +161,7 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
           
           <button
             type="button" 
-            onClick={() => eliminarAction()}
+            onClick={handleDelete}
             className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">delete</span>
