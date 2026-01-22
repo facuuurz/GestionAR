@@ -126,7 +126,7 @@ export default async function DetalleClientePage({ params }: PageProps) {
                 </div>
 
                 {/* Dirección */}
-                <div className={`${infoCardClass} md:col-span-2`}>
+                <div className={infoCardClass}>
                   <div className="size-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined">location_on</span>
                   </div>
@@ -135,6 +135,17 @@ export default async function DetalleClientePage({ params }: PageProps) {
                     <p className="text-[#111318] dark:text-white font-medium text-lg">{cliente.direccion || "-"}</p>
                   </div>
                 </div>
+
+                <div className={infoCardClass}>
+                  <div className="size-10 rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-300 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined">map</span>
+                  </div>
+                  <div>
+                    <p className="text-[#616f89] dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Ciudad</p>
+                    <p className="text-[#111318] dark:text-white font-medium text-lg">{cliente.ciudad || "-"}</p>
+                  </div>
+                </div>
+
               </div>
 
               {/* COLUMNA DERECHA: SALDO COOL */}

@@ -43,6 +43,7 @@ export type Cuenta_corrienteMinAggregateOutputType = {
   telefono: string | null
   email: string | null
   direccion: string | null
+  ciudad: string | null
   saldo: runtime.Decimal | null
   estado: string | null
   createdAt: Date | null
@@ -56,6 +57,7 @@ export type Cuenta_corrienteMaxAggregateOutputType = {
   telefono: string | null
   email: string | null
   direccion: string | null
+  ciudad: string | null
   saldo: runtime.Decimal | null
   estado: string | null
   createdAt: Date | null
@@ -69,6 +71,7 @@ export type Cuenta_corrienteCountAggregateOutputType = {
   telefono: number
   email: number
   direccion: number
+  ciudad: number
   saldo: number
   estado: number
   createdAt: number
@@ -94,6 +97,7 @@ export type Cuenta_corrienteMinAggregateInputType = {
   telefono?: true
   email?: true
   direccion?: true
+  ciudad?: true
   saldo?: true
   estado?: true
   createdAt?: true
@@ -107,6 +111,7 @@ export type Cuenta_corrienteMaxAggregateInputType = {
   telefono?: true
   email?: true
   direccion?: true
+  ciudad?: true
   saldo?: true
   estado?: true
   createdAt?: true
@@ -120,6 +125,7 @@ export type Cuenta_corrienteCountAggregateInputType = {
   telefono?: true
   email?: true
   direccion?: true
+  ciudad?: true
   saldo?: true
   estado?: true
   createdAt?: true
@@ -220,6 +226,7 @@ export type Cuenta_corrienteGroupByOutputType = {
   telefono: string | null
   email: string | null
   direccion: string | null
+  ciudad: string | null
   saldo: runtime.Decimal
   estado: string
   createdAt: Date
@@ -256,6 +263,7 @@ export type Cuenta_corrienteWhereInput = {
   telefono?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
   email?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
   direccion?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
+  ciudad?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
   saldo?: Prisma.DecimalFilter<"Cuenta_corriente"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringFilter<"Cuenta_corriente"> | string
   createdAt?: Prisma.DateTimeFilter<"Cuenta_corriente"> | Date | string
@@ -269,6 +277,7 @@ export type Cuenta_corrienteOrderByWithRelationInput = {
   telefono?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   direccion?: Prisma.SortOrderInput | Prisma.SortOrder
+  ciudad?: Prisma.SortOrderInput | Prisma.SortOrder
   saldo?: Prisma.SortOrder
   estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -285,6 +294,7 @@ export type Cuenta_corrienteWhereUniqueInput = Prisma.AtLeast<{
   telefono?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
   email?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
   direccion?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
+  ciudad?: Prisma.StringNullableFilter<"Cuenta_corriente"> | string | null
   saldo?: Prisma.DecimalFilter<"Cuenta_corriente"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringFilter<"Cuenta_corriente"> | string
   createdAt?: Prisma.DateTimeFilter<"Cuenta_corriente"> | Date | string
@@ -298,6 +308,7 @@ export type Cuenta_corrienteOrderByWithAggregationInput = {
   telefono?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   direccion?: Prisma.SortOrderInput | Prisma.SortOrder
+  ciudad?: Prisma.SortOrderInput | Prisma.SortOrder
   saldo?: Prisma.SortOrder
   estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -319,6 +330,7 @@ export type Cuenta_corrienteScalarWhereWithAggregatesInput = {
   telefono?: Prisma.StringNullableWithAggregatesFilter<"Cuenta_corriente"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"Cuenta_corriente"> | string | null
   direccion?: Prisma.StringNullableWithAggregatesFilter<"Cuenta_corriente"> | string | null
+  ciudad?: Prisma.StringNullableWithAggregatesFilter<"Cuenta_corriente"> | string | null
   saldo?: Prisma.DecimalWithAggregatesFilter<"Cuenta_corriente"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringWithAggregatesFilter<"Cuenta_corriente"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Cuenta_corriente"> | Date | string
@@ -331,6 +343,7 @@ export type Cuenta_corrienteCreateInput = {
   telefono?: string | null
   email?: string | null
   direccion?: string | null
+  ciudad?: string | null
   saldo?: runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: string
   createdAt?: Date | string
@@ -344,6 +357,7 @@ export type Cuenta_corrienteUncheckedCreateInput = {
   telefono?: string | null
   email?: string | null
   direccion?: string | null
+  ciudad?: string | null
   saldo?: runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: string
   createdAt?: Date | string
@@ -356,6 +370,7 @@ export type Cuenta_corrienteUpdateInput = {
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   direccion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ciudad?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   saldo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -369,6 +384,7 @@ export type Cuenta_corrienteUncheckedUpdateInput = {
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   direccion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ciudad?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   saldo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -382,6 +398,7 @@ export type Cuenta_corrienteCreateManyInput = {
   telefono?: string | null
   email?: string | null
   direccion?: string | null
+  ciudad?: string | null
   saldo?: runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: string
   createdAt?: Date | string
@@ -394,6 +411,7 @@ export type Cuenta_corrienteUpdateManyMutationInput = {
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   direccion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ciudad?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   saldo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -407,6 +425,7 @@ export type Cuenta_corrienteUncheckedUpdateManyInput = {
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   direccion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ciudad?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   saldo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -420,6 +439,7 @@ export type Cuenta_corrienteCountOrderByAggregateInput = {
   telefono?: Prisma.SortOrder
   email?: Prisma.SortOrder
   direccion?: Prisma.SortOrder
+  ciudad?: Prisma.SortOrder
   saldo?: Prisma.SortOrder
   estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -438,6 +458,7 @@ export type Cuenta_corrienteMaxOrderByAggregateInput = {
   telefono?: Prisma.SortOrder
   email?: Prisma.SortOrder
   direccion?: Prisma.SortOrder
+  ciudad?: Prisma.SortOrder
   saldo?: Prisma.SortOrder
   estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -451,6 +472,7 @@ export type Cuenta_corrienteMinOrderByAggregateInput = {
   telefono?: Prisma.SortOrder
   email?: Prisma.SortOrder
   direccion?: Prisma.SortOrder
+  ciudad?: Prisma.SortOrder
   saldo?: Prisma.SortOrder
   estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -471,6 +493,7 @@ export type Cuenta_corrienteSelect<ExtArgs extends runtime.Types.Extensions.Inte
   telefono?: boolean
   email?: boolean
   direccion?: boolean
+  ciudad?: boolean
   saldo?: boolean
   estado?: boolean
   createdAt?: boolean
@@ -484,6 +507,7 @@ export type Cuenta_corrienteSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   telefono?: boolean
   email?: boolean
   direccion?: boolean
+  ciudad?: boolean
   saldo?: boolean
   estado?: boolean
   createdAt?: boolean
@@ -497,6 +521,7 @@ export type Cuenta_corrienteSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   telefono?: boolean
   email?: boolean
   direccion?: boolean
+  ciudad?: boolean
   saldo?: boolean
   estado?: boolean
   createdAt?: boolean
@@ -510,13 +535,14 @@ export type Cuenta_corrienteSelectScalar = {
   telefono?: boolean
   email?: boolean
   direccion?: boolean
+  ciudad?: boolean
   saldo?: boolean
   estado?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type Cuenta_corrienteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "cuit" | "telefono" | "email" | "direccion" | "saldo" | "estado" | "createdAt" | "updatedAt", ExtArgs["result"]["cuenta_corriente"]>
+export type Cuenta_corrienteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "cuit" | "telefono" | "email" | "direccion" | "ciudad" | "saldo" | "estado" | "createdAt" | "updatedAt", ExtArgs["result"]["cuenta_corriente"]>
 
 export type $Cuenta_corrientePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Cuenta_corriente"
@@ -528,6 +554,7 @@ export type $Cuenta_corrientePayload<ExtArgs extends runtime.Types.Extensions.In
     telefono: string | null
     email: string | null
     direccion: string | null
+    ciudad: string | null
     saldo: runtime.Decimal
     estado: string
     createdAt: Date
@@ -961,6 +988,7 @@ export interface Cuenta_corrienteFieldRefs {
   readonly telefono: Prisma.FieldRef<"Cuenta_corriente", 'String'>
   readonly email: Prisma.FieldRef<"Cuenta_corriente", 'String'>
   readonly direccion: Prisma.FieldRef<"Cuenta_corriente", 'String'>
+  readonly ciudad: Prisma.FieldRef<"Cuenta_corriente", 'String'>
   readonly saldo: Prisma.FieldRef<"Cuenta_corriente", 'Decimal'>
   readonly estado: Prisma.FieldRef<"Cuenta_corriente", 'String'>
   readonly createdAt: Prisma.FieldRef<"Cuenta_corriente", 'DateTime'>

@@ -73,6 +73,7 @@ model Cuenta_corriente {
   telefono        String?
   email           String?
   direccion       String?
+  ciudad    String?
   
   saldo           Decimal  @default(0.00) @db.Decimal(10, 2) 
   estado          String   @default("Al Día")
