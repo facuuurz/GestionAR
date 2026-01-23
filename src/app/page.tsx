@@ -1,6 +1,18 @@
 import Link from "next/link"
+import { obtenerMetricasDashboard } from "@/actions/dashboard";
 
-export default function Panel() {
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 0,
+  }).format(Math.abs(amount));
+};
+
+export default async function Panel() {
+  
+  const metricas = await obtenerMetricasDashboard();
+
   return (
     <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-8">
       <div className="layout-content-container flex flex-col max-w-7xl flex-1">
@@ -64,7 +76,9 @@ export default function Panel() {
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Gestiona inventario, almacenes y seguimiento en tiempo real.</p>
               <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
-                <p className="text-primary dark:text-white text-sm font-bold">1,240 Ítems Totales</p>
+                <p className="text-primary dark:text-white text-sm font-bold">
+                    {metricas.totalProductos} Ítems Totales
+                </p>
                 <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </div>
             </div>
@@ -79,8 +93,8 @@ export default function Panel() {
               <div className="absolute inset-0 from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
                 <span className="inline-flex items-center rounded-full bg-blue-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
-                  <span className="material-symbols-outlined text-[14px] mr-1">pending</span> 5 Pendientes
-                </span>
+                  <span className="material-symbols-outlined text-[14px] mr-1">pending</span> {metricas.clientesDeudores} Pendientes 
+                  </span> 
               </div>
             </div>
             <div className="p-5 flex-1 flex flex-col">
@@ -90,7 +104,9 @@ export default function Panel() {
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Monitorea saldos de clientes, facturación e historial de pagos.</p>
               <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
-                <p className="text-primary dark:text-white text-sm font-bold">$12.5k Pendiente</p>
+                <p className="text-primary dark:text-white text-sm font-bold">
+                    {formatCurrency(metricas.deudaTotal)} Pendiente
+                </p>
                 <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </div>
             </div>
@@ -116,7 +132,9 @@ export default function Panel() {
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Crea descuentos, gestiona campañas y ofertas especiales.</p>
               <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
-                <p className="text-primary dark:text-white text-sm font-bold">3 Promociones Activas</p>
+                <p className="text-primary dark:text-white text-sm font-bold">
+                    {metricas.promocionesActivas} Promociones Activas
+                </p>
                 <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </div>
             </div>
@@ -141,7 +159,9 @@ export default function Panel() {
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Gestiona proveedores, pedidos y logística de entrega.</p>
               <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
-                <p className="text-primary dark:text-white text-sm font-bold">15 Distribuidores</p>
+                <p className="text-primary dark:text-white text-sm font-bold">
+                    {metricas.totalProveedores} Distribuidores
+                </p>
                 <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </div>
             </div>
