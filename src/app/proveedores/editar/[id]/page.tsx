@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import EditarProveedorForm from "@/components/EditarProveedorForm/EditarProveedorForm";
+import EditarProveedorForm from "@/components/Proveedores/EditarProveedorForm";
 
 export default async function EditarProveedorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

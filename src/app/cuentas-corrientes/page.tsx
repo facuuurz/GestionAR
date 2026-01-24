@@ -4,10 +4,10 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 
 // Componentes
-import FiltroCuentas from "@/components/FiltroCuentas/FiltroCuentas"; 
-import OrdenarCuentas from "@/components/Ordenar/OrdenarCuentas";
-import FilaCliente from "@/components/FilaCliente/FilaCliente";
-import BarraNavegacionCuentas from "@/components/BarraNavegacionCuentas/BarraNavegacionCuentas"; 
+import FiltroCuentas from "@/components/Cuentas-corrientes/FiltroCuentas/FiltroCuentas"; 
+import OrdenarCuentas from "@/components/Cuentas-corrientes/OrdenarCuentas";
+import FilaCliente from "@/components/Cuentas-corrientes/FilaCliente/FilaCliente";
+import BarraNavegacionCuentas from "@/components/Cuentas-corrientes/BarraNavegacionCuentas"; 
 import { useClientes } from "@/hooks/useClientes";
 
 export default function CuentasCorrientesPage() {

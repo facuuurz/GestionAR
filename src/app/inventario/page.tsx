@@ -4,10 +4,10 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 
 // Componentes
-import FilterModal from "@/components/FiltroProducto/FiltroProducto"; 
-import Ordenar from "@/components/Ordenar/OrdenarProductos";
-import ProductRow from "@/components/ListaProductos/ListaProductos";
-import BarraNavegacionInventario from "@/components/BarraNavegacionInventario/BarraNavegacionInventario"; 
+import FilterModal from "@/components/Inventario/FiltroProducto"; 
+import Ordenar from "@/components/Inventario/OrdenarProductos";
+import ProductRow from "@/components/Inventario/ListaProductos";
+import BarraNavegacionInventario from "@/components/Inventario/BarraNavegacionInventario"; 
 import { useProductos } from "@/hooks/useProductos";
 
 export default function InventarioPage() {

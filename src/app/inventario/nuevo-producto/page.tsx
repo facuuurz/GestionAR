@@ -4,7 +4,7 @@ import { useState, useActionState, useEffect, useTransition, useRef } from "reac
 import Link from "next/link";
 import { crearProducto } from "@/actions/productos"; 
 import { obtenerCategorias } from "@/actions/categorias"; 
-import AgregarTipoModal from "@/components/AgregarTipoModal/AgregarTipoModal";
+import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTipoModal";
 
 type Categoria = {
   id: number;

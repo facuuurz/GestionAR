@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import OrdenarProveedores from "@/components/Ordenar/OrdenarProveedores";
+import OrdenarProveedores from "@/components/Proveedores/OrdenarProveedores";
 
 export default function SortProveedoresWrapper() {
   const [isOpen, setIsOpen] = useState(false);
