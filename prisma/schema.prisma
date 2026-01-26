@@ -96,6 +96,8 @@ model Promocion {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("promociones")
 }
 
 model PromocionProducto {
@@ -108,6 +110,8 @@ model PromocionProducto {
 
   // La llave primaria es la combinación de ambos IDs
   @@id([promocionId, productoId])
+
+  @@map("promocion_productos")
 }
 
 

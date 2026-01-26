@@ -1,6 +1,6 @@
 import { obtenerProveedores } from "@/actions/proveedores";
 import Link from "next/link";
-import Search from "@/components/Search/Search";
+import Search from "@/components/Proveedores/Search";
 import SortProveedoresWrapper from "./ProveedoresWrapper/page";
 
 export default async function ProveedoresPage(props: {

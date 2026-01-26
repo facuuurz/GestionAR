@@ -1,7 +1,7 @@
 import { obtenerClientePorId, actualizarCliente, eliminarCliente } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import EditarClienteForm from "@/components/EditarClienteForm/EditarClienteForm"; // Asegúrate de importar el componente creado arriba
+import EditarClienteForm from "@/components/Cuentas-corrientes/EditarClienteForm"; // Asegúrate de importar el componente creado arriba
 
 interface PageProps {
   params: Promise<{ id: string }>;

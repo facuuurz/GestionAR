@@ -3,7 +3,7 @@
 import { useState, useActionState, useRef } from "react";
 import Link from "next/link";
 import { actualizarProducto, eliminarProducto, State } from "@/actions/productos";
-import AgregarTipoModal from "@/components/AgregarTipoModal/AgregarTipoModal"; 
+import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTipoModal"; 
 
 // --- TIPOS ---
 interface ProductFormProps {

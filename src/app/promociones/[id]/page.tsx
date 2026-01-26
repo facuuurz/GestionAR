@@ -1,7 +1,7 @@
 import { obtenerPromocionPorId } from "@/actions/promociones";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import EliminarPromocion from "@/components/BotonEliminar/EliminarPromocion";
+import EliminarPromocion from "@/components/promociones/EliminarPromocion";
 
 // Helper para formatear moneda
 const formatCurrency = (amount: number) => {

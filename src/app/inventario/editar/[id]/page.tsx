@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import EditProductForm from "../../../../components/EditarProducto/EditarProducto";
+import EditProductForm from "../../../../components/Inventario/EditarProducto";
 
 export default async function EditarProductoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

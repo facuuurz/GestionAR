@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import OrdenarClientes from "@/components/Ordenar/OrdenarCuentas";
+import OrdenarClientes from "@/components/Cuentas-corrientes/OrdenarCuentas";
 
 export default function SortClientesWrapper() {
   const [isOpen, setIsOpen] = useState(false);

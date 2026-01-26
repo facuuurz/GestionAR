@@ -4,8 +4,8 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 
 // Componentes y Hooks
-import BarraNavegacionPromociones from "@/components/BarraNavegacionPromociones/BarraNavegacionPromociones"; 
-import PromocionRow from "@/components/ListaPromociones/PromocionRow";
+import BarraNavegacionPromociones from "@/components/promociones/BarraNavegacionPromociones"; 
+import PromocionRow from "@/components/promociones/PromocionRow";
 import { usePromociones } from "@/hooks/usePromociones";
 
 export default function PromocionesPage() {
