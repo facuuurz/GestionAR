@@ -37,9 +37,11 @@ export default async function Panel() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-6 p-4">
           
           {/* Tarjeta: Venta */}
-          <Link className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl hover:border-primary/20 transition-all duration-300 transform hover:-translate-y-1" href="#">
-            <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAor2_y2nb9-anaEp92zSpzkodj1DBI0oiLvg0XIsnGFOmTrOWvmSBCVsiAStpmzuQs7cIj1HIPTd-XuvfyYdttg-96vAWHF4l-N14VntKcyclhzQs5rhX436MGRv3PF0XsOaRalyKKbyq3H8dswShgNhHKRLzdacARpgSpLz5m3Jfe6o11JFjyvv7qOLOw6mnkO8ofBhSg9008fzMurDvJfb2MJygMJJZrEziK9zzq20iE_J2RieR3dJsmvZTMYWrAAh4p7D6j03tk')`}}>
-              <div className="absolute inset-0 from-black/60 to-transparent"></div>
+          <Link 
+            className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl hover:border-primary/20 transition-all duration-300 transform hover:-translate-y-1" 
+            href="/ventas"
+            >
+              <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAor2_y2nb9-anaEp92zSpzkodj1DBI0oiLvg0XIsnGFOmTrOWvmSBCVsiAStpmzuQs7cIj1HIPTd-XuvfyYdttg-96vAWHF4l-N14VntKcyclhzQs5rhX436MGRv3PF0XsOaRalyKKbyq3H8dswShgNhHKRLzdacARpgSpLz5m3Jfe6o11JFjyvv7qOLOw6mnkO8ofBhSg9008fzMurDvJfb2MJygMJJZrEziK9zzq20iE_J2RieR3dJsmvZTMYWrAAh4p7D6j03tk')`}}>              <div className="absolute inset-0 from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
                 <span className="inline-flex items-center rounded-full bg-indigo-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
                   <span className="material-symbols-outlined text-[14px] mr-1">point_of_sale</span> Caja Abierta
