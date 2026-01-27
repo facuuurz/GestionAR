@@ -1,11 +1,26 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import SaldarModal from "../SaldarModal";
+import { actualizarSaldoCliente } from "@/actions/cuentas-corrientes";
 
 interface ClienteRowProps {
   cliente: any; 
 }
 
 export default function FilaCliente({ cliente }: ClienteRowProps) {
-  // Helper para formato de moneda
+  const [showSaldarModal, setShowSaldarModal] = useState(false);
+
+  // --- ESTADOS PARA ACTUALIZACIÓN EN TIEMPO REAL ---
+  const [saldoVisual, setSaldoVisual] = useState(Number(cliente.saldo));
+  const [estadoVisual, setEstadoVisual] = useState(cliente.estado);
+
+  useEffect(() => {
+    setSaldoVisual(Number(cliente.saldo));
+    setEstadoVisual(cliente.estado);
+  }, [cliente.saldo, cliente.estado]);
+
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -13,11 +28,10 @@ export default function FilaCliente({ cliente }: ClienteRowProps) {
     }).format(amount);
   };
 
-  // Helper para estilos
   let badgeClass = "";
   let iconName = "";
 
-  switch (cliente.estado) {
+  switch (estadoVisual) {
     case "Al Día":
         badgeClass = "bg-[#dcfce7] text-[#166534] dark:bg-green-900/30 dark:text-green-300";
         iconName = "check_circle";
@@ -35,56 +49,97 @@ export default function FilaCliente({ cliente }: ClienteRowProps) {
         iconName = "help";
   }
 
+  const handleConfirmarSaldo = async (monto: number) => {
+    const nuevoSaldo = saldoVisual + monto;
+    setSaldoVisual(nuevoSaldo);
+    
+    if (nuevoSaldo >= 0 && estadoVisual === "Deudor") {
+        setEstadoVisual("Al Día");
+    }
+
+    const result = await actualizarSaldoCliente(cliente.id, monto);
+    
+    if (!result.success) {
+        setSaldoVisual(Number(cliente.saldo));
+        setEstadoVisual(cliente.estado);
+        alert("Hubo un error al guardar el saldo. Se han revertido los cambios.");
+    }
+  };
+
+  // --- CORRECCIÓN AQUÍ: Eliminamos el fragmento <> y ponemos el Modal DENTRO del último td ---
   return (
     <tr className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
-      
-      {/* ID CLIENTE */}
-      <td className="px-4 py-3 text-sm font-bold dark:text-neutral-400 font-mono hover:underline hover:text-blue-600 cursor-pointer text-[#135bec]">
-        <Link href={`/cuentas-corrientes/${cliente.id}`}>
-          CC-{cliente.id.toString().padStart(5, '0')}
-        </Link>
-      </td>
+    
+        {/* ID CLIENTE */}
+        <td className="px-4 py-3 text-sm font-bold dark:text-neutral-400 font-mono hover:underline hover:text-blue-600 cursor-pointer text-[#135bec]">
+            <Link href={`/cuentas-corrientes/${cliente.id}`}>
+            CC-{cliente.id.toString().padStart(5, '0')}
+            </Link>
+        </td>
 
-      {/* CLIENTE / RAZÓN SOCIAL */}
-      <td className="px-4 py-3">
-        <div className="flex flex-col">
-          <Link 
-            href={`/cuentas-corrientes/${cliente.id}`}
-            className="text-left text-sm font-bold text-neutral-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer hover:underline hover:underline-offset-2 transition-colors"
-          >
-            {cliente.nombre}
-          </Link>
-          <span className="text-xs text-neutral-500 mt-0.5">
-              CUIT: {cliente.cuit || "-"}
-          </span>
-        </div>
-      </td>
+        {/* CLIENTE / RAZÓN SOCIAL */}
+        <td className="px-4 py-3">
+            <div className="flex flex-col">
+            <Link 
+                href={`/cuentas-corrientes/${cliente.id}`}
+                className="text-left text-sm font-bold text-neutral-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer hover:underline hover:underline-offset-2 transition-colors"
+            >
+                {cliente.nombre}
+            </Link>
+            <span className="text-xs text-neutral-500 mt-0.5">
+                CUIT: {cliente.cuit || "-"}
+            </span>
+            </div>
+        </td>
 
-      {/* ESTADO */}
-      <td className="px-4 py-3">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}`}>
-          <span className="material-symbols-outlined text-[16px] mr-1.5">{iconName}</span>
-          {cliente.estado}
-        </span>
-      </td>
+        {/* ESTADO */}
+        <td className="px-4 py-3">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}`}>
+            <span className="material-symbols-outlined text-[16px] mr-1.5">{iconName}</span>
+            {estadoVisual}
+            </span>
+        </td>
 
-      {/* SALDO ACTUAL */}
-      <td className={`px-4 py-3 text-sm font-medium ${Number(cliente.saldo) < 0 ? 'text-[#991b1b] dark:text-red-400' : 'text-[#166534] dark:text-green-400'}`}>
-        {formatMoney(Number(cliente.saldo))}
-      </td>
+        {/* SALDO ACTUAL */}
+        <td className={`px-4 py-3 text-sm font-medium ${saldoVisual < 0 ? 'text-[#991b1b] dark:text-red-400' : 'text-[#166534] dark:text-green-400'}`}>
+            {formatMoney(saldoVisual)}
+        </td>
 
-      {/* ACCIONES */}
-      <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-[#222] group-hover:bg-neutral-50 dark:group-hover:bg-[#333] transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
-        <Link 
-          href={`/cuentas-corrientes/editar/${cliente.id}`}
-          className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
-        >
-          <span className="material-symbols-outlined text-[16px] transition-transform duration-500 ease-in-out">
-            edit 
-          </span>
-          <span>Actualizar</span>
-        </Link>
-      </td>
+        {/* ACCIONES + MODAL (El modal ahora vive dentro de este td para validar HTML) */}
+        <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-[#222] group-hover:bg-neutral-50 dark:group-hover:bg-[#333] transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
+            <div className="flex items-center justify-center gap-2">
+                
+                <button 
+                    onClick={() => setShowSaldarModal(true)}
+                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                >
+                    <span className="material-symbols-outlined text-[18px] transition-transform duration-500 ease-in-out group-hover:rotate-12">
+                        attach_money 
+                    </span>
+                    <span>Saldar</span>
+                </button>
+
+                <Link 
+                href={`/cuentas-corrientes/editar/${cliente.id}`}
+                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
+                >
+                <span className="material-symbols-outlined text-[16px] transition-transform duration-500 ease-in-out group-hover:rotate-12">
+                    edit 
+                </span>
+                <span>Actualizar</span>
+                </Link>
+
+            </div>
+
+            {/* ✅ MODAL MOVIDO AQUÍ DENTRO DEL TD */}
+            <SaldarModal 
+                isOpen={showSaldarModal}
+                onClose={() => setShowSaldarModal(false)}
+                onConfirm={handleConfirmarSaldo}
+                clienteNombre={cliente.nombre}
+                saldoActual={saldoVisual}
+            />
+        </td>
     </tr>
   );
 }

@@ -268,6 +268,7 @@ export type Cuenta_corrienteWhereInput = {
   estado?: Prisma.StringFilter<"Cuenta_corriente"> | string
   createdAt?: Prisma.DateTimeFilter<"Cuenta_corriente"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Cuenta_corriente"> | Date | string
+  movimientos?: Prisma.MovimientoListRelationFilter
 }
 
 export type Cuenta_corrienteOrderByWithRelationInput = {
@@ -282,6 +283,7 @@ export type Cuenta_corrienteOrderByWithRelationInput = {
   estado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  movimientos?: Prisma.MovimientoOrderByRelationAggregateInput
 }
 
 export type Cuenta_corrienteWhereUniqueInput = Prisma.AtLeast<{
@@ -299,6 +301,7 @@ export type Cuenta_corrienteWhereUniqueInput = Prisma.AtLeast<{
   estado?: Prisma.StringFilter<"Cuenta_corriente"> | string
   createdAt?: Prisma.DateTimeFilter<"Cuenta_corriente"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Cuenta_corriente"> | Date | string
+  movimientos?: Prisma.MovimientoListRelationFilter
 }, "id" | "cuit">
 
 export type Cuenta_corrienteOrderByWithAggregationInput = {
@@ -348,6 +351,7 @@ export type Cuenta_corrienteCreateInput = {
   estado?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  movimientos?: Prisma.MovimientoCreateNestedManyWithoutCuentaInput
 }
 
 export type Cuenta_corrienteUncheckedCreateInput = {
@@ -362,6 +366,7 @@ export type Cuenta_corrienteUncheckedCreateInput = {
   estado?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  movimientos?: Prisma.MovimientoUncheckedCreateNestedManyWithoutCuentaInput
 }
 
 export type Cuenta_corrienteUpdateInput = {
@@ -375,6 +380,7 @@ export type Cuenta_corrienteUpdateInput = {
   estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  movimientos?: Prisma.MovimientoUpdateManyWithoutCuentaNestedInput
 }
 
 export type Cuenta_corrienteUncheckedUpdateInput = {
@@ -389,6 +395,7 @@ export type Cuenta_corrienteUncheckedUpdateInput = {
   estado?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  movimientos?: Prisma.MovimientoUncheckedUpdateManyWithoutCuentaNestedInput
 }
 
 export type Cuenta_corrienteCreateManyInput = {
@@ -484,6 +491,124 @@ export type Cuenta_corrienteSumOrderByAggregateInput = {
   saldo?: Prisma.SortOrder
 }
 
+export type Cuenta_corrienteScalarRelationFilter = {
+  is?: Prisma.Cuenta_corrienteWhereInput
+  isNot?: Prisma.Cuenta_corrienteWhereInput
+}
+
+export type Cuenta_corrienteCreateNestedOneWithoutMovimientosInput = {
+  create?: Prisma.XOR<Prisma.Cuenta_corrienteCreateWithoutMovimientosInput, Prisma.Cuenta_corrienteUncheckedCreateWithoutMovimientosInput>
+  connectOrCreate?: Prisma.Cuenta_corrienteCreateOrConnectWithoutMovimientosInput
+  connect?: Prisma.Cuenta_corrienteWhereUniqueInput
+}
+
+export type Cuenta_corrienteUpdateOneRequiredWithoutMovimientosNestedInput = {
+  create?: Prisma.XOR<Prisma.Cuenta_corrienteCreateWithoutMovimientosInput, Prisma.Cuenta_corrienteUncheckedCreateWithoutMovimientosInput>
+  connectOrCreate?: Prisma.Cuenta_corrienteCreateOrConnectWithoutMovimientosInput
+  upsert?: Prisma.Cuenta_corrienteUpsertWithoutMovimientosInput
+  connect?: Prisma.Cuenta_corrienteWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.Cuenta_corrienteUpdateToOneWithWhereWithoutMovimientosInput, Prisma.Cuenta_corrienteUpdateWithoutMovimientosInput>, Prisma.Cuenta_corrienteUncheckedUpdateWithoutMovimientosInput>
+}
+
+export type Cuenta_corrienteCreateWithoutMovimientosInput = {
+  nombre: string
+  cuit?: string | null
+  telefono?: string | null
+  email?: string | null
+  direccion?: string | null
+  ciudad?: string | null
+  saldo?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  estado?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type Cuenta_corrienteUncheckedCreateWithoutMovimientosInput = {
+  id?: number
+  nombre: string
+  cuit?: string | null
+  telefono?: string | null
+  email?: string | null
+  direccion?: string | null
+  ciudad?: string | null
+  saldo?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  estado?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type Cuenta_corrienteCreateOrConnectWithoutMovimientosInput = {
+  where: Prisma.Cuenta_corrienteWhereUniqueInput
+  create: Prisma.XOR<Prisma.Cuenta_corrienteCreateWithoutMovimientosInput, Prisma.Cuenta_corrienteUncheckedCreateWithoutMovimientosInput>
+}
+
+export type Cuenta_corrienteUpsertWithoutMovimientosInput = {
+  update: Prisma.XOR<Prisma.Cuenta_corrienteUpdateWithoutMovimientosInput, Prisma.Cuenta_corrienteUncheckedUpdateWithoutMovimientosInput>
+  create: Prisma.XOR<Prisma.Cuenta_corrienteCreateWithoutMovimientosInput, Prisma.Cuenta_corrienteUncheckedCreateWithoutMovimientosInput>
+  where?: Prisma.Cuenta_corrienteWhereInput
+}
+
+export type Cuenta_corrienteUpdateToOneWithWhereWithoutMovimientosInput = {
+  where?: Prisma.Cuenta_corrienteWhereInput
+  data: Prisma.XOR<Prisma.Cuenta_corrienteUpdateWithoutMovimientosInput, Prisma.Cuenta_corrienteUncheckedUpdateWithoutMovimientosInput>
+}
+
+export type Cuenta_corrienteUpdateWithoutMovimientosInput = {
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  cuit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  direccion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ciudad?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  saldo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type Cuenta_corrienteUncheckedUpdateWithoutMovimientosInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  cuit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  direccion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ciudad?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  saldo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type Cuenta_corrienteCountOutputType
+ */
+
+export type Cuenta_corrienteCountOutputType = {
+  movimientos: number
+}
+
+export type Cuenta_corrienteCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  movimientos?: boolean | Cuenta_corrienteCountOutputTypeCountMovimientosArgs
+}
+
+/**
+ * Cuenta_corrienteCountOutputType without action
+ */
+export type Cuenta_corrienteCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Cuenta_corrienteCountOutputType
+   */
+  select?: Prisma.Cuenta_corrienteCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * Cuenta_corrienteCountOutputType without action
+ */
+export type Cuenta_corrienteCountOutputTypeCountMovimientosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MovimientoWhereInput
+}
 
 
 export type Cuenta_corrienteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -498,6 +623,8 @@ export type Cuenta_corrienteSelect<ExtArgs extends runtime.Types.Extensions.Inte
   estado?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  movimientos?: boolean | Prisma.Cuenta_corriente$movimientosArgs<ExtArgs>
+  _count?: boolean | Prisma.Cuenta_corrienteCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["cuenta_corriente"]>
 
 export type Cuenta_corrienteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -543,10 +670,18 @@ export type Cuenta_corrienteSelectScalar = {
 }
 
 export type Cuenta_corrienteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "cuit" | "telefono" | "email" | "direccion" | "ciudad" | "saldo" | "estado" | "createdAt" | "updatedAt", ExtArgs["result"]["cuenta_corriente"]>
+export type Cuenta_corrienteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  movimientos?: boolean | Prisma.Cuenta_corriente$movimientosArgs<ExtArgs>
+  _count?: boolean | Prisma.Cuenta_corrienteCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type Cuenta_corrienteIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type Cuenta_corrienteIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $Cuenta_corrientePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Cuenta_corriente"
-  objects: {}
+  objects: {
+    movimientos: Prisma.$MovimientoPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     nombre: string
@@ -953,6 +1088,7 @@ readonly fields: Cuenta_corrienteFieldRefs;
  */
 export interface Prisma__Cuenta_corrienteClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  movimientos<T extends Prisma.Cuenta_corriente$movimientosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Cuenta_corriente$movimientosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MovimientoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1010,6 +1146,10 @@ export type Cuenta_corrienteFindUniqueArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
+  /**
    * Filter, which Cuenta_corriente to fetch.
    */
   where: Prisma.Cuenta_corrienteWhereUniqueInput
@@ -1028,6 +1168,10 @@ export type Cuenta_corrienteFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
+  /**
    * Filter, which Cuenta_corriente to fetch.
    */
   where: Prisma.Cuenta_corrienteWhereUniqueInput
@@ -1045,6 +1189,10 @@ export type Cuenta_corrienteFindFirstArgs<ExtArgs extends runtime.Types.Extensio
    * Omit specific fields from the Cuenta_corriente
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
   /**
    * Filter, which Cuenta_corriente to fetch.
    */
@@ -1094,6 +1242,10 @@ export type Cuenta_corrienteFindFirstOrThrowArgs<ExtArgs extends runtime.Types.E
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
+  /**
    * Filter, which Cuenta_corriente to fetch.
    */
   where?: Prisma.Cuenta_corrienteWhereInput
@@ -1142,6 +1294,10 @@ export type Cuenta_corrienteFindManyArgs<ExtArgs extends runtime.Types.Extension
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
+  /**
    * Filter, which Cuenta_corrientes to fetch.
    */
   where?: Prisma.Cuenta_corrienteWhereInput
@@ -1184,6 +1340,10 @@ export type Cuenta_corrienteCreateArgs<ExtArgs extends runtime.Types.Extensions.
    * Omit specific fields from the Cuenta_corriente
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
   /**
    * The data needed to create a Cuenta_corriente.
    */
@@ -1232,6 +1392,10 @@ export type Cuenta_corrienteUpdateArgs<ExtArgs extends runtime.Types.Extensions.
    * Omit specific fields from the Cuenta_corriente
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
   /**
    * The data needed to update a Cuenta_corriente.
    */
@@ -1299,6 +1463,10 @@ export type Cuenta_corrienteUpsertArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
+  /**
    * The filter to search for the Cuenta_corriente to update in case it exists.
    */
   where: Prisma.Cuenta_corrienteWhereUniqueInput
@@ -1325,6 +1493,10 @@ export type Cuenta_corrienteDeleteArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
+  /**
    * Filter which Cuenta_corriente to delete.
    */
   where: Prisma.Cuenta_corrienteWhereUniqueInput
@@ -1345,6 +1517,30 @@ export type Cuenta_corrienteDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
 }
 
 /**
+ * Cuenta_corriente.movimientos
+ */
+export type Cuenta_corriente$movimientosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Movimiento
+   */
+  select?: Prisma.MovimientoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Movimiento
+   */
+  omit?: Prisma.MovimientoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MovimientoInclude<ExtArgs> | null
+  where?: Prisma.MovimientoWhereInput
+  orderBy?: Prisma.MovimientoOrderByWithRelationInput | Prisma.MovimientoOrderByWithRelationInput[]
+  cursor?: Prisma.MovimientoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MovimientoScalarFieldEnum | Prisma.MovimientoScalarFieldEnum[]
+}
+
+/**
  * Cuenta_corriente without action
  */
 export type Cuenta_corrienteDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1356,4 +1552,8 @@ export type Cuenta_corrienteDefaultArgs<ExtArgs extends runtime.Types.Extensions
    * Omit specific fields from the Cuenta_corriente
    */
   omit?: Prisma.Cuenta_corrienteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.Cuenta_corrienteInclude<ExtArgs> | null
 }

@@ -170,50 +170,6 @@ export default async function Panel() {
           </Link>
         </div>
 
-        {/* --- ACTIVIDAD RECIENTE --- */}
-        <div className="px-5 pb-10 mt-8">
-          <div className="rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#222] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-[#ededed] dark:border-[#333]">
-              <h3 className="font-bold text-lg text-primary dark:text-white">Actividad Reciente</h3>
-              <Link className="group flex items-center gap-1 text-sm font-bold text-neutral-500 hover:text-primary dark:hover:text-white transition-all duration-300 hover:text-blue-600"  
-              href="/historial">
-                Ver Todo
-                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-1">
-                  chevron_right
-                </span>
-              </Link>
-            </div>
-            <div className="flex flex-col">
-              {/* Item 1 */}
-              <div className="flex items-center justify-between p-4 hover:bg-[#f7f7f7] dark:hover:bg-[#333] transition-colors border-b border-[#ededed] dark:border-[#333] last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                    <span className="material-symbols-outlined text-[20px]">inventory</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-primary dark:text-white">Stock Actualizado</p>
-                    <p className="text-xs text-neutral-500">Nike Air Max 90 - Talla 10</p>
-                  </div>
-                </div>
-                <span className="text-xs text-neutral-400">hace 2 mins</span>
-              </div>
-              {/* Item 2 */}
-              <div className="flex items-center justify-between p-4 hover:bg-[#f7f7f7] dark:hover:bg-[#333] transition-colors border-b border-[#ededed] dark:border-[#333] last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
-                    <span className="material-symbols-outlined text-[20px]">payments</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-primary dark:text-white">Pago Recibido</p>
-                    <p className="text-xs text-neutral-500">Factura #4029 - Cliente A</p>
-                  </div>
-                </div>
-                <span className="text-xs text-neutral-400">hace 1 hora</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );

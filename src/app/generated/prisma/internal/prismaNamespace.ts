@@ -395,6 +395,7 @@ export const ModelName = {
   Categoria: 'Categoria',
   Proveedor: 'Proveedor',
   Cuenta_corriente: 'Cuenta_corriente',
+  Movimiento: 'Movimiento',
   Promocion: 'Promocion',
   PromocionProducto: 'PromocionProducto'
 } as const
@@ -412,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "producto" | "categoria" | "proveedor" | "cuenta_corriente" | "promocion" | "promocionProducto"
+    modelProps: "user" | "producto" | "categoria" | "proveedor" | "cuenta_corriente" | "movimiento" | "promocion" | "promocionProducto"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -786,6 +787,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Movimiento: {
+      payload: Prisma.$MovimientoPayload<ExtArgs>
+      fields: Prisma.MovimientoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MovimientoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MovimientoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>
+        }
+        findFirst: {
+          args: Prisma.MovimientoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MovimientoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>
+        }
+        findMany: {
+          args: Prisma.MovimientoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>[]
+        }
+        create: {
+          args: Prisma.MovimientoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>
+        }
+        createMany: {
+          args: Prisma.MovimientoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MovimientoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>[]
+        }
+        delete: {
+          args: Prisma.MovimientoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>
+        }
+        update: {
+          args: Prisma.MovimientoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>
+        }
+        deleteMany: {
+          args: Prisma.MovimientoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MovimientoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MovimientoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>[]
+        }
+        upsert: {
+          args: Prisma.MovimientoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MovimientoPayload>
+        }
+        aggregate: {
+          args: Prisma.MovimientoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMovimiento>
+        }
+        groupBy: {
+          args: Prisma.MovimientoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MovimientoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MovimientoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MovimientoCountAggregateOutputType> | number
+        }
+      }
+    }
     Promocion: {
       payload: Prisma.$PromocionPayload<ExtArgs>
       fields: Prisma.PromocionFieldRefs
@@ -1039,6 +1114,18 @@ export const Cuenta_corrienteScalarFieldEnum = {
 export type Cuenta_corrienteScalarFieldEnum = (typeof Cuenta_corrienteScalarFieldEnum)[keyof typeof Cuenta_corrienteScalarFieldEnum]
 
 
+export const MovimientoScalarFieldEnum = {
+  id: 'id',
+  fecha: 'fecha',
+  descripcion: 'descripcion',
+  monto: 'monto',
+  tipo: 'tipo',
+  cuentaCorrienteId: 'cuentaCorrienteId'
+} as const
+
+export type MovimientoScalarFieldEnum = (typeof MovimientoScalarFieldEnum)[keyof typeof MovimientoScalarFieldEnum]
+
+
 export const PromocionScalarFieldEnum = {
   id: 'id',
   nombre: 'nombre',
@@ -1253,6 +1340,7 @@ export type GlobalOmitConfig = {
   categoria?: Prisma.CategoriaOmit
   proveedor?: Prisma.ProveedorOmit
   cuenta_corriente?: Prisma.Cuenta_corrienteOmit
+  movimiento?: Prisma.MovimientoOmit
   promocion?: Prisma.PromocionOmit
   promocionProducto?: Prisma.PromocionProductoOmit
 }

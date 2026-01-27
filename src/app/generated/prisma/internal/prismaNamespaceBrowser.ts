@@ -54,6 +54,7 @@ export const ModelName = {
   Categoria: 'Categoria',
   Proveedor: 'Proveedor',
   Cuenta_corriente: 'Cuenta_corriente',
+  Movimiento: 'Movimiento',
   Promocion: 'Promocion',
   PromocionProducto: 'PromocionProducto'
 } as const
@@ -138,6 +139,18 @@ export const Cuenta_corrienteScalarFieldEnum = {
 } as const
 
 export type Cuenta_corrienteScalarFieldEnum = (typeof Cuenta_corrienteScalarFieldEnum)[keyof typeof Cuenta_corrienteScalarFieldEnum]
+
+
+export const MovimientoScalarFieldEnum = {
+  id: 'id',
+  fecha: 'fecha',
+  descripcion: 'descripcion',
+  monto: 'monto',
+  tipo: 'tipo',
+  cuentaCorrienteId: 'cuentaCorrienteId'
+} as const
+
+export type MovimientoScalarFieldEnum = (typeof MovimientoScalarFieldEnum)[keyof typeof MovimientoScalarFieldEnum]
 
 
 export const PromocionScalarFieldEnum = {

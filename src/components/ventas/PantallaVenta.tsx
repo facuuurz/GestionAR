@@ -36,6 +36,9 @@ export default function PantallaVenta() {
   const debouncedCliente = useDebounce(queryCliente, 300);
 
   const [procesando, setProcesando] = useState(false);
+  
+  // 🆕 NUEVO ESTADO PARA EL MENSAJE DE ÉXITO
+  const [mostrarExito, setMostrarExito] = useState(false);
 
   // --- EFECTOS ---
   useEffect(() => {
@@ -115,6 +118,13 @@ export default function PantallaVenta() {
         setCarrito([]);
         setCliente(null);
         setQueryCliente("");
+        
+        // 🆕 LÓGICA DEL CARTELITO DE ÉXITO
+        setMostrarExito(true);
+        setTimeout(() => {
+            setMostrarExito(false);
+        }, 3000); // Desaparece a los 3 segundos
+
     } else {
         alert("Error: " + resultado.message);
     }
@@ -124,7 +134,7 @@ export default function PantallaVenta() {
   const formatMoney = (n: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n);
 
   return (
-    <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 h-full bg-[#f6f6f8] dark:bg-[#101622] p-4">
+    <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 h-full bg-[#f6f6f8] dark:bg-[#101622] p-4 relative">
       
       {/* --- COLUMNA IZQUIERDA: PRODUCTOS --- */}
       <div className="lg:col-span-8 flex flex-col gap-4 h-full min-h-0">
@@ -132,7 +142,7 @@ export default function PantallaVenta() {
         {/* BUSCADOR */}
         <div className="flex-none bg-white dark:bg-[#1e2736] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm">
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
+            <div className="relative grow">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">search</span>
               <input 
                 className="w-full pl-10 pr-4 py-2.5 bg-[#f9f9f9] dark:bg-[#151a25] border border-[#ededed] dark:border-[#333] rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder-neutral-500" 
@@ -179,9 +189,14 @@ export default function PantallaVenta() {
                         </td>
                         <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{formatMoney(prod.precio)}</td>
                         <td className="px-6 py-4 text-right">
-                            {/* Botón Agregar estilizado */}
-                            <button className="text-white bg-[#1e2736] hover:bg-black dark:bg-white dark:text-black dark:hover:bg-neutral-200 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ml-auto shadow-sm">
-                                <span className="material-symbols-outlined text-sm">add</span> Agregar
+                            <button 
+                              className="group flex items-center gap-1.5 ml-auto px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
+                              onClick={(e) => { e.stopPropagation(); agregarAlCarrito(prod); }}
+                            >
+                              <span className="material-symbols-outlined text-sm transition-transform duration-500 ease-in-out group-hover:rotate-90">
+                                add
+                              </span>
+                              <span>Agregar</span>
                             </button>
                         </td>
                     </tr>
@@ -234,8 +249,9 @@ export default function PantallaVenta() {
             </div>
         </div>
 
-        {/* LISTA ITEMS CARRITO */}
-        <div className="flex-1 min-h-0 bg-white dark:bg-[#1e2736] rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col overflow-hidden">
+        {/* LISTA ITEMS CARRITO - MODIFICADO PARA ADAPTARSE A CONTENIDO */}
+        {/* Se cambió flex-1 por h-auto y se añadió max-h para scroll si hay muchos */}
+        <div className="h-auto max-h-[55vh] shrink-0 bg-white dark:bg-[#1e2736] rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col overflow-hidden transition-all duration-300">
             <div className="flex-none p-4 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#151a25]">
                 <h3 className="font-bold text-sm text-gray-800 dark:text-neutral-200">Carrito de Compra</h3>
                 <span className="text-xs bg-white dark:bg-[#1e2736] text-neutral-600 dark:text-neutral-300 px-2 py-1 rounded border border-[#ededed] dark:border-[#333] font-medium">
@@ -243,9 +259,9 @@ export default function PantallaVenta() {
                 </span>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            <div className="overflow-y-auto p-4 space-y-4 custom-scrollbar">
                 {carrito.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-neutral-400 opacity-50">
+                    <div className="py-8 flex flex-col items-center justify-center text-neutral-400 opacity-50">
                         <span className="material-symbols-outlined text-5xl mb-3">shopping_cart</span>
                         <p className="text-sm font-medium">El carrito está vacío</p>
                     </div>
@@ -253,7 +269,7 @@ export default function PantallaVenta() {
                     carrito.map((item) => (
                         <div key={item.id} className="group relative bg-[#f9f9f9] dark:bg-[#151a25] p-3 rounded-xl border border-transparent hover:border-[#ededed] dark:hover:border-[#333] transition-all">
                             <div className="flex justify-between items-start">
-                                <div className="flex-grow pr-2 pl-5">
+                                <div className="grow pr-2 pl-5">
                                     <p className="text-base font-bold text-gray-900 dark:text-white line-clamp-1">{item.nombre}</p>
                                     <p className="text-xs text-neutral-500 mt-1">{formatMoney(item.precio)} unidad</p>
                                 </div>
@@ -332,6 +348,23 @@ export default function PantallaVenta() {
         </div>
 
       </div>
+
+      {/* 🆕 TOAST NOTIFICATION (CARTELITO FLOTANTE) */}
+      <div 
+        className={`fixed bottom-6 left-6 z-50 transform transition-all duration-500 ease-in-out
+        ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}
+      >
+        <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
+            <div className="bg-white/20 p-1 rounded-full">
+                <span className="material-symbols-outlined text-xl">check</span>
+            </div>
+            <div>
+                <p className="font-bold text-sm">¡Venta exitosa!</p>
+                <p className="text-xs text-green-100">La operación se registró correctamente.</p>
+            </div>
+        </div>
+      </div>
+
     </div>
   );
 }

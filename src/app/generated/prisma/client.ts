@@ -70,6 +70,11 @@ export type Proveedor = Prisma.ProveedorModel
  */
 export type Cuenta_corriente = Prisma.Cuenta_corrienteModel
 /**
+ * Model Movimiento
+ * 
+ */
+export type Movimiento = Prisma.MovimientoModel
+/**
  * Model Promocion
  * 
  */

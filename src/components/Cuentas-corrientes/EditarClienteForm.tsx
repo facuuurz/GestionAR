@@ -55,11 +55,21 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
               <input 
                 name="cuit"
                 defaultValue={cliente.cuit || ""}
-                className="w-full h-12 pl-14 pr-4 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-gray-800 text-[#111318] dark:text-white placeholder-[#9ca3af] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" 
+                className={`w-full h-12 pl-14 pr-4 rounded-lg border bg-white dark:bg-gray-800 text-[#111318] dark:text-white placeholder-[#9ca3af] focus:outline-none transition-all
+                  ${state.errors?.cuit 
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
+                    : 'border-[#dbdfe6] dark:border-gray-600 focus:border-primary focus:ring-1 focus:ring-primary'}`} 
                 type="text"
               />
             </div>
-             {state.errors?.cuit && <p className="text-red-500 text-xs">{state.errors.cuit[0]}</p>}
+            
+            {/* Mensaje de error estilizado */}
+            {state.errors?.cuit && (
+              <div className="flex items-center gap-1.5 mt-1 text-red-500">
+                <span className="material-symbols-outlined text-[18px]">error</span>
+                <p className="text-sm font-medium">{state.errors.cuit[0]}</p>
+              </div>
+            )}
           </div>
 
           {/* Dirección */}
@@ -128,31 +138,7 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
             </div>
              {state.errors?.email && <p className="text-red-500 text-xs">{state.errors.email[0]}</p>}
           </div>
-
-          {/* SALDO */}
-          <div className="flex flex-col gap-2 md:col-span-2">
-            <label className="text-sm font-medium text-[#111318] dark:text-gray-200">Saldo</label>
-            <div className="relative flex items-center group">
-              <div className="absolute left-3 flex items-center justify-center size-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300">
-                <span className="material-symbols-outlined text-[18px]">attach_money</span>
-              </div>
-              <input 
-                name="saldo"
-                defaultValue={cliente.saldo?.toString() || "0"}
-                className="w-full h-12 pl-14 pr-4 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-gray-800 text-[#111318] dark:text-white placeholder-[#9ca3af] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all font-mono" 
-                type="number"
-                step="0.01"
-              />
-            </div>
-             {state.errors?.saldo && <p className="text-red-500 text-xs">{state.errors.saldo[0]}</p>}
-            
-            {/* ICONO WARNING */}
-            <div className="text-xs text-[#616f89] dark:text-gray-400 mt-1 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px] text-amber-500 fill-1">warning</span>
-                <span>Modificar esto altera la deuda.</span>
-            </div>
-
-          </div>
+          
 
         </div>
 

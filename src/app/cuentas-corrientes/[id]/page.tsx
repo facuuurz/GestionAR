@@ -1,4 +1,4 @@
-import { obtenerClientePorId } from "@/actions/cuentas-corrientes";
+import { obtenerClientePorId, obtenerMovimientosCliente } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -12,9 +12,15 @@ export default async function DetalleClientePage({ params }: PageProps) {
   const clienteId = parseInt(id);
   if (isNaN(clienteId)) return notFound();
 
-  const cliente = await obtenerClientePorId(clienteId);
+  // 1. Cargar Cliente y Movimientos en paralelo
+  const [cliente, movimientos] = await Promise.all([
+    obtenerClientePorId(clienteId),
+    obtenerMovimientosCliente(clienteId)
+  ]);
+
   if (!cliente) return notFound();
 
+  // Helpers de formato
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -22,10 +28,16 @@ export default async function DetalleClientePage({ params }: PageProps) {
     }).format(amount);
   };
 
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("es-AR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    }).format(new Date(date));
+  };
+
   const saldo = Number(cliente.saldo);
   const esDeudor = saldo < 0;
-
-  // Clase reutilizable para las tarjetas de información con el efecto hover
   const infoCardClass = "bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg flex items-start gap-4 transition-all duration-300 hover:shadow-lg hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-1";
 
   return (
@@ -55,7 +67,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
             <p className="text-[#616f89] dark:text-gray-400">Detalle de Cuenta Corriente</p>
           </div>
           
-          {/* BOTÓN ACTUALIZADO CON ESTILO Y ANIMACIÓN */}
           <Link 
             href={`/cuentas-corrientes/editar/${cliente.id}`}
             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
@@ -75,7 +86,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
               {/* COLUMNA IZQUIERDA: DATOS PERSONALES */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                 
-                {/* Razón Social */}
                 <div className={infoCardClass}>
                   <div className="size-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined">person</span>
@@ -86,7 +96,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {/* CUIT */}
                 <div className={infoCardClass}>
                   <div className="size-10 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined">badge</span>
@@ -97,7 +106,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {/* Email */}
                 <div className={infoCardClass}>
                   <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined">mail</span>
@@ -114,7 +122,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {/* Teléfono */}
                 <div className={infoCardClass}>
                   <div className="size-10 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined">call</span>
@@ -125,7 +132,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {/* Dirección */}
                 <div className={infoCardClass}>
                   <div className="size-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined">location_on</span>
@@ -148,16 +154,13 @@ export default async function DetalleClientePage({ params }: PageProps) {
 
               </div>
 
-              {/* COLUMNA DERECHA: SALDO COOL */}
+              {/* COLUMNA DERECHA: SALDO */}
               <div className="shrink-0 lg:w-1/3 flex flex-col">
-                
                 <div className={`relative h-full overflow-hidden rounded-xl border p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-lg
                     ${esDeudor 
                         ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' 
                         : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`
                 }>
-                  
-                  {/* ICONO DE FONDO (WATERMARK) */}
                   <div className={`absolute -bottom-6 -right-6 pointer-events-none select-none opacity-[0.07] dark:opacity-[0.05]
                       ${esDeudor ? 'text-red-900 dark:text-red-500' : 'text-emerald-900 dark:text-emerald-500'}`}
                   >
@@ -166,9 +169,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                       </span>
                   </div>
 
-                  {/* CONTENIDO */}
-                  
-                  {/* Header de la tarjeta */}
                   <div className={`relative z-10 flex items-center gap-2 mb-4 
                       ${esDeudor ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}
                   >
@@ -178,7 +178,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                     <p className="text-sm font-bold uppercase tracking-wider">Saldo Actual</p>
                   </div>
                   
-                  {/* Número Grande */}
                   <div className="relative z-10">
                       <p className={`text-4xl md:text-5xl font-extrabold tracking-tight
                           ${esDeudor ? 'text-red-900 dark:text-white' : 'text-emerald-900 dark:text-white'}`}
@@ -187,7 +186,6 @@ export default async function DetalleClientePage({ params }: PageProps) {
                       </p>
                   </div>
                   
-                  {/* Footer con Icono y Mensaje */}
                   <div className={`relative z-10 mt-6 flex items-center gap-2 text-sm font-semibold
                       ${esDeudor ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'}`}
                   >
@@ -203,23 +201,20 @@ export default async function DetalleClientePage({ params }: PageProps) {
                         </>
                     )}
                   </div>
-
                 </div>
-
               </div>
             </div>
           </div>
         </div>
 
-        {/* HISTORIAL DE MOVIMIENTOS */}
+        {/* HISTORIAL DE MOVIMIENTOS FUNCIONAL */}
         <div className="flex flex-col gap-4 min-h-100 flex-1">
             <div className="flex items-center justify-between shrink-0">
                 <h3 className="text-xl font-bold text-[#111318] dark:text-white">Historial de Movimientos</h3>
-                {/* Botones eliminados aquí */}
             </div>
 
             <div className="bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col h-full">
-                <div className="overflow-x-auto flex-1">
+                <div className="overflow-x-auto flex-1 custom-scrollbar">
                     <table className="w-full text-sm text-left relative border-collapse">
                         <thead className="bg-slate-50 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700">
                             <tr>
@@ -230,28 +225,46 @@ export default async function DetalleClientePage({ params }: PageProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">24 Oct 2023</td>
-                                <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">Pago Recibido - Transferencia #9932</td>
-                                <td className="px-6 py-4">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
-                                        <span className="material-symbols-outlined text-[14px]">arrow_downward</span>
-                                        Crédito
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-green-600 dark:text-green-400 font-bold text-right">+$50,000.00</td>
-                            </tr>
-                            <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">20 Oct 2023</td>
-                                <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">Factura #001-230 - Compra de Insumos</td>
-                                <td className="px-6 py-4">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
-                                        <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
-                                        Débito
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-red-600 dark:text-red-400 font-bold text-right">-$15,000.00</td>
-                            </tr>
+                            {movimientos.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="material-symbols-outlined text-4xl opacity-50">history</span>
+                                            <p>No hay movimientos registrados.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                movimientos.map((mov) => {
+                                    const isCredito = mov.tipo === "CREDITO";
+                                    return (
+                                        <tr key={mov.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap capitalize">
+                                                {formatDate(mov.fecha)}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">
+                                                {mov.descripcion}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {isCredito ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
+                                                        <span className="material-symbols-outlined text-[14px]">arrow_downward</span>
+                                                        Crédito
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
+                                                        <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
+                                                        Débito
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className={`px-6 py-4 font-bold text-right ${isCredito ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                {isCredito ? "+" : "-"}{formatMoney(mov.monto)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>
