@@ -1,7 +1,7 @@
 import { obtenerPromocionPorId } from "@/actions/promociones";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import EliminarPromocion from "@/components/promociones/EliminarPromocion";
+// Se eliminó la importación de EliminarPromocion
 
 // Helper para formatear moneda
 const formatCurrency = (amount: number) => {
@@ -57,15 +57,23 @@ export default async function DetallePromocionPage(props: { params: Promise<{ id
     <div className="flex flex-col min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 font-sans transition-colors duration-200">
       
       <main className="flex-1 flex flex-col items-center py-8 px-5 md:px-10 lg:px-20 w-full">
-        <div className="w-full max-w-[1200px] flex flex-col">
+        <div className="w-full max-w-300 flex flex-col">
           
           {/* Breadcrumbs */}
           <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-slate-500 dark:text-slate-400">
-            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Panel</Link>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <Link href="/promociones" className="hover:text-slate-900 dark:hover:text-white transition-colors">Promociones</Link>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span className="text-slate-900 dark:text-white font-medium">{promocion.nombre}</span>
+            <Link href="/" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                Panel
+            </Link>
+                                    
+            <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                                    
+            <Link href="/promociones" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                Promociones
+            </Link>
+                                    
+            <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                      
+            <span className="text-slate-900 dark:text-white font-bold">{promocion.nombre}</span>
           </div>
 
           {/* Header */}
@@ -74,17 +82,19 @@ export default async function DetallePromocionPage(props: { params: Promise<{ id
               <h1 className="text-slate-900 dark:text-white text-3xl md:text-4xl font-bold tracking-tight">{promocion.nombre}</h1>
               <p className="text-slate-500 dark:text-slate-400 text-base font-normal">Detalles de la campaña promocional y estado actual del inventario.</p>
             </div>
+            
             <div className="flex items-center gap-3">
-              {/* Botón Eliminar */}
-              <EliminarPromocion id={promocion.id} />
+              {/* Botón Eliminar ELIMINADO */}
               
-              {/* Botón Editar */}
+              {/* Botón Editar ACTUALIZADO */}
               <Link 
                 href={`/promociones/editar/${promocion.id}`}
-                className="flex items-center justify-center gap-2 bg-[#111827] hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors shadow-sm"
+                className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
               >
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-                <span>Editar Promoción</span>
+                <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110">
+                  edit
+                </span>
+                <span className="text-sm font-bold truncate">Editar Promoción</span>
               </Link>
             </div>
           </div>
@@ -203,17 +213,7 @@ export default async function DetallePromocionPage(props: { params: Promise<{ id
                     </div>
                   </div>
                 </div>
-                
-                {/* Estado Footer */}
-                <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col gap-4 mt-2">
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Estado</h4>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
-                    <span className="text-slate-500 dark:text-slate-400 text-sm">Estado de Campaña</span>
-                    <span className={`font-bold text-sm ${esVencida ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                        {estadoLabel}
-                    </span>
-                  </div>
-                </div>
+              
 
               </div>
 

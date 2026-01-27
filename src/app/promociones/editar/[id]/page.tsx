@@ -26,23 +26,24 @@ export default async function EditarPromocionPage(props: { params: Promise<{ id:
             
             {/* Breadcrumbs */}
             <nav aria-label="Breadcrumb" className="flex mb-4 text-sm text-slate-500 dark:text-slate-400">
-            <ol className="inline-flex items-center space-x-1 md:space-x-3">
-                <li className="inline-flex items-center">
-                    <Link className="hover:text-slate-700 dark:hover:text-slate-200" href="/">Panel</Link>
-                </li>
-                <li>
-                <div className="flex items-center">
-                    <span className="material-symbols-outlined text-base mx-1">chevron_right</span>
-                    <Link className="hover:text-slate-700 dark:hover:text-slate-200" href="/promociones">Promociones</Link>
-                </div>
-                </li>
-                <li aria-current="page">
-                <div className="flex items-center">
-                    <span className="material-symbols-outlined text-base mx-1">chevron_right</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-medium">Editar Promoción</span>
-                </div>
-                </li>
-            </ol>
+            <div className="inline-flex items-center space-x-1 md:space-x-3">
+                <Link href="/" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                                            Panel
+                                        </Link>
+                                        
+                                        <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                                        
+                                        <Link href="/promociones" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                                            Promociones
+                                        </Link>
+                                        
+                                        <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                                        
+                                        <span className="text-slate-900 dark:text-white font-bold">
+                                            Editar Promoción
+                                        </span>
+      
+            </div>
             </nav>
 
             {/* Título */}

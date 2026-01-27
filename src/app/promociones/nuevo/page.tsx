@@ -488,13 +488,14 @@ export default function NuevaPromocionPage() {
                                                     </div>
 
                                                     <button 
-                                                        type="button"
-                                                        onClick={() => quitarProducto(item.producto.id)}
-                                                        className="h-9 w-9 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-center transition-colors shadow-sm border border-red-100 dark:border-red-900/30" 
-                                                        title="Eliminar"
-                                                    >
-                                                        <span className="material-symbols-outlined text-xl">delete</span>
-                                                    </button>
+    type="button"
+    onClick={() => quitarProducto(item.producto.id)}
+    // Se agregó 'cursor-pointer' al inicio de las clases
+    className="cursor-pointer h-9 w-9 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-center transition-colors shadow-sm border border-red-100 dark:border-red-900/30" 
+    title="Eliminar"
+>
+    <span className="material-symbols-outlined text-xl">delete</span>
+</button>
                                                 </div>
                                             </div>
                                         ))

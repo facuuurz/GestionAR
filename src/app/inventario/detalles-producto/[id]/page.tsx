@@ -32,6 +32,17 @@ export default async function ProductDetailsPage({ params }: PageProps) {
   // Calculamos porcentaje para la barra (máximo 100%)
   const porcentajeStock = Math.min((producto.stock / 200) * 100, 100); 
 
+  // --- SOLUCIÓN DEFINITIVA DE FECHA (Extracción Manual UTC) ---
+  const formatDateUTC = (dateString: Date | string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    // getUTCDate() obtiene el día exacto en UTC, ignorando tu zona horaria local (-3)
+    const day = date.getUTCDate().toString().padStart(2, "0");
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   // --- NUEVA LÓGICA DE SEMÁFORO (ROJO / AMARILLO / VERDE) ---
   let stockColorClass = "";
   let barColorClass = "";
@@ -68,27 +79,26 @@ export default async function ProductDetailsPage({ params }: PageProps) {
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
-  <div className="space-y-1">
-    <div className="flex items-center gap-3">
-      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-display">
-        {producto.nombre}
-      </h2>
-      {/* AGREGADO: 'mt-1' para compensar visualmente la altura */}
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold mt-1 ${stockColorClass}`}>
-        {textoEstado}
-      </span>
-    </div>
-    <p className="text-slate-500 dark:text-slate-400 text-base max-w-2xl">
-      Detalle completo del producto y gestión de stock actual.
-    </p>
-  </div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-display">
+              {producto.nombre}
+            </h2>
+            {/* AGREGADO: 'mt-1' para compensar visualmente la altura */}
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold mt-1 ${stockColorClass}`}>
+              {textoEstado}
+            </span>
+          </div>
+          <p className="text-slate-500 dark:text-slate-400 text-base max-w-2xl">
+            Detalle completo del producto y gestión de stock actual.
+          </p>
+        </div>
         
-        {/* --- NUEVO BOTÓN CON ESTILO PERSONALIZADO --- */}
+        {/* --- BOTÓN ACTUALIZAR --- */}
         <Link 
             href={`/inventario/editar/${producto.id}`} 
             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
         >
-          {/* Quitamos 'group-hover:rotate-90' para que no gire, solo escala */}
           <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110">
             edit
           </span>
@@ -184,8 +194,8 @@ export default async function ProductDetailsPage({ params }: PageProps) {
             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
               <p className="text-xs text-slate-400 flex items-center gap-1 font-display">
                 <span className="material-symbols-outlined text-[14px]">update</span>
-                {/* RESPUESTA A TU DUDA: Usamos updatedAt */}
-                Última act.: {new Date(producto.updatedAt).toLocaleDateString()}
+                {/* --- APLICANDO HELPER MANUAL DE UTC --- */}
+                Última act.: {formatDateUTC(producto.updatedAt)}
               </p>
             </div>
           </div>
@@ -198,7 +208,6 @@ export default async function ProductDetailsPage({ params }: PageProps) {
             <div>
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide font-display">Stock Actual</p>
   
-              {/* CAMBIO AQUÍ: Cambié 'items-baseline' por 'items-center' */}
               <div className="flex items-center gap-2">
                 <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">{producto.stock}</span>
     

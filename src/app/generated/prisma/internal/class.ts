@@ -11,39 +11,65 @@
  * Please import the `PrismaClient` class from the `client.ts` file instead.
  */
 
-import * as runtime from "@prisma/client/runtime/client"
+import * as runtime from "@prisma/client/runtime/library"
 import type * as Prisma from "./prismaNamespace"
 
 
 const config: runtime.GetPrismaClientConfig = {
-  "previewFeatures": [],
-  "clientVersion": "7.2.0",
-  "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
+  "generator": {
+    "name": "client",
+    "provider": {
+      "fromEnvVar": null,
+      "value": "prisma-client"
+    },
+    "output": {
+      "value": "C:\\Users\\Alumno\\GestionAR\\src\\app\\generated\\prisma",
+      "fromEnvVar": null
+    },
+    "config": {
+      "engineType": "library"
+    },
+    "binaryTargets": [
+      {
+        "fromEnvVar": null,
+        "value": "windows",
+        "native": true
+      }
+    ],
+    "previewFeatures": [],
+    "sourceFilePath": "C:\\Users\\Alumno\\GestionAR\\prisma\\schema.prisma",
+    "isCustomOutput": true
+  },
+  "relativePath": "../../../../prisma",
+  "clientVersion": "6.19.0",
+  "engineVersion": "2ba551f319ab1df4bc874a89965d8b3641056773",
+  "datasourceNames": [
+    "db"
+  ],
   "activeProvider": "postgresql",
-  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/app/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  // NOTA: Para hacer migraciones (npx prisma migrate), Prisma necesita la URL aquí.\n  // Si usas un setup personalizado, asegúrate de que el comando migrate sepa dónde conectarse.\n}\n\n// Modelo de Usuario (sin cambios)\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  name      String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// Modelo Producto corregido\nmodel Producto {\n  id     Int    @id @default(autoincrement()) @map(\"id_producto\")\n  nombre String @map(\"nombre_producto\")\n\n  // ✅ SOLUCIÓN: Cambiado de Int a String para soportar códigos largos y ceros iniciales\n  codigoBarra String? @unique @map(\"codigo_barra\")\n\n  // ✅ NUEVO CAMPO: Descripción (Opcional)\n  descripcion String? @map(\"descripcion\")\n\n  tipo      String? @map(\"tipo_producto\")\n  proveedor String? @map(\"codigo_proveedor\")\n\n  stock Int @default(0) @map(\"stock_inicial\")\n\n  // Decimal es perfecto para dinero (evita errores de redondeo de float)\n  precio Decimal @default(0.00) @map(\"precio_unitario\") @db.Decimal(10, 2)\n\n  promociones PromocionProducto[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"productos\")\n}\n\n//para los tipos de productos\nmodel Categoria {\n  id     Int    @id @default(autoincrement())\n  nombre String @unique // @unique evita duplicados\n}\n\nmodel Proveedor {\n  id          Int     @id @default(autoincrement())\n  codigo      String  @unique // Ej: PROV-1024\n  razonSocial String\n  contacto    String? // Ej: Roberto Gómez\n  telefono    String?\n  email       String?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"proveedores\")\n}\n\nmodel Cuenta_corriente {\n  id        Int     @id @default(autoincrement())\n  nombre    String  @map(\"razon_social\")\n  cuit      String? @unique\n  telefono  String?\n  email     String?\n  direccion String?\n  ciudad    String?\n\n  saldo  Decimal @default(0.00) @db.Decimal(10, 2)\n  estado String  @default(\"Al Día\")\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"Cuentas_corrientes\")\n}\n\nmodel Promocion {\n  id          Int      @id @default(autoincrement())\n  nombre      String\n  descripcion String\n  precio      Float // Precio promocional\n  fechaInicio DateTime\n  fechaFin    DateTime\n\n  productos PromocionProducto[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"promociones\")\n}\n\nmodel PromocionProducto {\n  promocionId Int\n  productoId  Int\n  cantidad    Int @default(1)\n\n  promocion Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)\n  producto  Producto  @relation(fields: [productoId], references: [id])\n\n  // La llave primaria es la combinación de ambos IDs\n  @@id([promocionId, productoId])\n  @@map(\"promocion_productos\")\n}\n",
+  "inlineDatasources": {
+    "db": {
+      "url": {
+        "fromEnvVar": "DATABASE_URL",
+        "value": null
+      }
+    }
+  },
+  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/app/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\") // <--- TIENE QUE ESTAR ESTA LÍNEA\n  // NOTA: Para hacer migraciones (npx prisma migrate), Prisma necesita la URL aquí.\n  // Si usas un setup personalizado, asegúrate de que el comando migrate sepa dónde conectarse.\n}\n\n// Modelo de Usuario (sin cambios)\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  name      String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// Modelo Producto corregido\nmodel Producto {\n  id     Int    @id @default(autoincrement()) @map(\"id_producto\")\n  nombre String @map(\"nombre_producto\")\n\n  // ✅ SOLUCIÓN: Cambiado de Int a String para soportar códigos largos y ceros iniciales\n  codigoBarra String? @unique @map(\"codigo_barra\")\n\n  // ✅ NUEVO CAMPO: Descripción (Opcional)\n  descripcion String? @map(\"descripcion\")\n\n  tipo      String? @map(\"tipo_producto\")\n  proveedor String? @map(\"codigo_proveedor\")\n\n  stock Int @default(0) @map(\"stock_inicial\")\n\n  // Decimal es perfecto para dinero (evita errores de redondeo de float)\n  precio Decimal @default(0.00) @map(\"precio_unitario\") @db.Decimal(10, 2)\n\n  promociones PromocionProducto[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"productos\")\n}\n\n//para los tipos de productos\nmodel Categoria {\n  id     Int    @id @default(autoincrement())\n  nombre String @unique // @unique evita duplicados\n}\n\nmodel Proveedor {\n  id          Int     @id @default(autoincrement())\n  codigo      String  @unique // Ej: PROV-1024\n  razonSocial String\n  contacto    String? // Ej: Roberto Gómez\n  telefono    String?\n  email       String?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"proveedores\")\n}\n\nmodel Cuenta_corriente {\n  id        Int     @id @default(autoincrement())\n  nombre    String  @map(\"razon_social\")\n  cuit      String? @unique\n  telefono  String?\n  email     String?\n  direccion String?\n  ciudad    String?\n\n  saldo  Decimal @default(0.00) @db.Decimal(10, 2)\n  estado String  @default(\"Al Día\")\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"Cuentas_corrientes\")\n}\n\nmodel Promocion {\n  id          Int      @id @default(autoincrement())\n  nombre      String\n  descripcion String\n  precio      Float // Precio promocional\n  fechaInicio DateTime\n  fechaFin    DateTime\n\n  productos PromocionProducto[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@map(\"promociones\")\n}\n\nmodel PromocionProducto {\n  promocionId Int\n  productoId  Int\n  cantidad    Int @default(1)\n\n  promocion Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)\n  producto  Producto  @relation(fields: [productoId], references: [id])\n\n  // La llave primaria es la combinación de ambos IDs\n  @@id([promocionId, productoId])\n  @@map(\"promocion_productos\")\n}\n",
+  "inlineSchemaHash": "234fa3fea7b22324d049b63f47a210a3ca04ca3380eb1e62567adcb67f468405",
+  "copyEngine": true,
   "runtimeDataModel": {
     "models": {},
     "enums": {},
     "types": {}
-  }
+  },
+  "dirname": ""
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Producto\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"id_producto\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"nombre_producto\"},{\"name\":\"codigoBarra\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"codigo_barra\"},{\"name\":\"descripcion\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"descripcion\"},{\"name\":\"tipo\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"tipo_producto\"},{\"name\":\"proveedor\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"codigo_proveedor\"},{\"name\":\"stock\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"stock_inicial\"},{\"name\":\"precio\",\"kind\":\"scalar\",\"type\":\"Decimal\",\"dbName\":\"precio_unitario\"},{\"name\":\"promociones\",\"kind\":\"object\",\"type\":\"PromocionProducto\",\"relationName\":\"ProductoToPromocionProducto\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"productos\"},\"Categoria\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\"}],\"dbName\":null},\"Proveedor\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"codigo\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"razonSocial\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"contacto\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"telefono\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"proveedores\"},\"Cuenta_corriente\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"razon_social\"},{\"name\":\"cuit\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"telefono\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"direccion\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"ciudad\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"saldo\",\"kind\":\"scalar\",\"type\":\"Decimal\"},{\"name\":\"estado\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"Cuentas_corrientes\"},\"Promocion\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"nombre\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"descripcion\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"precio\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"fechaInicio\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"fechaFin\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"productos\",\"kind\":\"object\",\"type\":\"PromocionProducto\",\"relationName\":\"PromocionToPromocionProducto\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"promociones\"},\"PromocionProducto\":{\"fields\":[{\"name\":\"promocionId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"productoId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"cantidad\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"promocion\",\"kind\":\"object\",\"type\":\"Promocion\",\"relationName\":\"PromocionToPromocionProducto\"},{\"name\":\"producto\",\"kind\":\"object\",\"type\":\"Producto\",\"relationName\":\"ProductoToPromocionProducto\"}],\"dbName\":\"promocion_productos\"}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":{\"name\":\"autoincrement\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"email\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":true,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"name\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"Producto\":{\"dbName\":\"productos\",\"schema\":null,\"fields\":[{\"name\":\"id\",\"dbName\":\"id_producto\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":{\"name\":\"autoincrement\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"nombre\",\"dbName\":\"nombre_producto\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"codigoBarra\",\"dbName\":\"codigo_barra\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":true,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"descripcion\",\"dbName\":\"descripcion\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"tipo\",\"dbName\":\"tipo_producto\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"proveedor\",\"dbName\":\"codigo_proveedor\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"stock\",\"dbName\":\"stock_inicial\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":0,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"precio\",\"dbName\":\"precio_unitario\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Decimal\",\"nativeType\":[\"Decimal\",[\"10\",\"2\"]],\"default\":0,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"promociones\",\"kind\":\"object\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"PromocionProducto\",\"nativeType\":null,\"relationName\":\"ProductoToPromocionProducto\",\"relationFromFields\":[],\"relationToFields\":[],\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"Categoria\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":{\"name\":\"autoincrement\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"nombre\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":true,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"Proveedor\":{\"dbName\":\"proveedores\",\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":{\"name\":\"autoincrement\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"codigo\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":true,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"razonSocial\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"contacto\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"telefono\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"email\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"Cuenta_corriente\":{\"dbName\":\"Cuentas_corrientes\",\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":{\"name\":\"autoincrement\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"nombre\",\"dbName\":\"razon_social\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"cuit\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":true,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"telefono\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"email\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"direccion\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"ciudad\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"saldo\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Decimal\",\"nativeType\":[\"Decimal\",[\"10\",\"2\"]],\"default\":0,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"estado\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"String\",\"nativeType\":null,\"default\":\"Al Día\",\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"Promocion\":{\"dbName\":\"promociones\",\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":{\"name\":\"autoincrement\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"nombre\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"descripcion\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"precio\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Float\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"fechaInicio\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"fechaFin\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"productos\",\"kind\":\"object\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"PromocionProducto\",\"nativeType\":null,\"relationName\":\"PromocionToPromocionProducto\",\"relationFromFields\":[],\"relationToFields\":[],\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"PromocionProducto\":{\"dbName\":\"promocion_productos\",\"schema\":null,\"fields\":[{\"name\":\"promocionId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":true,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"productoId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":true,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"cantidad\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Int\",\"nativeType\":null,\"default\":1,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"promocion\",\"kind\":\"object\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Promocion\",\"nativeType\":null,\"relationName\":\"PromocionToPromocionProducto\",\"relationFromFields\":[\"promocionId\"],\"relationToFields\":[\"id\"],\"relationOnDelete\":\"Cascade\",\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"producto\",\"kind\":\"object\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Producto\",\"nativeType\":null,\"relationName\":\"ProductoToPromocionProducto\",\"relationFromFields\":[\"productoId\"],\"relationToFields\":[\"id\"],\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":{\"name\":null,\"fields\":[\"promocionId\",\"productoId\"]},\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false}},\"enums\":{},\"types\":{}}")
+config.engineWasm = undefined
+config.compilerWasm = undefined
 
-async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
-  const { Buffer } = await import('node:buffer')
-  const wasmArray = Buffer.from(wasmBase64, 'base64')
-  return new WebAssembly.Module(wasmArray)
-}
-
-config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.mjs"),
-
-  getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs")
-    return await decodeBase64AsWasm(wasm)
-  }
-}
 
 
 
@@ -62,7 +88,7 @@ export interface PrismaClientConstructor {
    * const users = await prisma.user.findMany()
    * ```
    * 
-   * Read more in our [docs](https://pris.ly/d/client).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
    */
 
   new <
@@ -70,7 +96,7 @@ export interface PrismaClientConstructor {
     LogOpts extends LogOptions<Options> = LogOptions<Options>,
     OmitOpts extends Prisma.PrismaClientOptions['omit'] = Options extends { omit: infer U } ? U : Prisma.PrismaClientOptions['omit'],
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-  >(options: Prisma.Subset<Options, Prisma.PrismaClientOptions> ): PrismaClient<LogOpts, OmitOpts, ExtArgs>
+  >(options?: Prisma.Subset<Options, Prisma.PrismaClientOptions> ): PrismaClient<LogOpts, OmitOpts, ExtArgs>
 }
 
 /**
@@ -84,12 +110,12 @@ export interface PrismaClientConstructor {
  * const users = await prisma.user.findMany()
  * ```
  * 
- * Read more in our [docs](https://pris.ly/d/client).
+ * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
  */
 
 export interface PrismaClient<
   in LogOpts extends Prisma.LogLevel = never,
-  in out OmitOpts extends Prisma.PrismaClientOptions['omit'] = undefined,
+  in out OmitOpts extends Prisma.PrismaClientOptions['omit'] = Prisma.PrismaClientOptions['omit'],
   in out ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > {
   [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['other'] }
@@ -113,7 +139,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRaw`UPDATE User SET cool = ${true} WHERE email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -125,7 +151,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRawUnsafe('UPDATE User SET cool = $1 WHERE email = $2 ;', true, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -136,7 +162,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${1} OR email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -148,7 +174,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRawUnsafe('SELECT * FROM User WHERE id = $1 OR email = $2;', 1, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -169,6 +195,7 @@ export interface PrismaClient<
   $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): runtime.Types.Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
   $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => runtime.Types.Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): runtime.Types.Utils.JsPromise<R>
+
 
   $extends: runtime.Types.Extensions.ExtendsHook<"extends", Prisma.TypeMapCb<OmitOpts>, ExtArgs, runtime.Types.Utils.Call<Prisma.TypeMapCb<OmitOpts>, {
     extArgs: ExtArgs
@@ -245,6 +272,7 @@ export interface PrismaClient<
   get promocionProducto(): Prisma.PromocionProductoDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
-export function getPrismaClientClass(): PrismaClientConstructor {
+export function getPrismaClientClass(dirname: string): PrismaClientConstructor {
+  config.dirname = dirname
   return runtime.getPrismaClient(config) as unknown as PrismaClientConstructor
 }

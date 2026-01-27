@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")  // <--- TIENE QUE ESTAR ESTA LÍNEA
   // NOTA: Para hacer migraciones (npx prisma migrate), Prisma necesita la URL aquí.
   // Si usas un setup personalizado, asegúrate de que el comando migrate sepa dónde conectarse.
 }
