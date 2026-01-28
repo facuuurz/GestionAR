@@ -35,10 +35,10 @@ export default function ModalPromociones({ isOpen, onClose, promociones, onSelec
         {/* Encabezado */}
         <div className="p-4 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#151a25]">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-indigo-600">local_offer</span>
+            <span className="material-symbols-outlined text-neutral-500">local_offer</span>
             Seleccionar Promoción
           </h2>
-          <button onClick={onClose} className="text-neutral-500 hover:text-red-500">
+          <button onClick={onClose} className="text-neutral-500 hover:cursor-pointer">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>

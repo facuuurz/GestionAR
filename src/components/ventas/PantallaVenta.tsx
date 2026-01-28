@@ -299,12 +299,14 @@ export default function PantallaVenta() {
                 </button>
 
                 <button 
-                    onClick={() => setShowModalPromos(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white border border-transparent rounded-lg text-sm font-bold transition-colors shadow-sm"
-                >
-                    <span className="material-symbols-outlined text-lg">local_offer</span> 
-                    <span className="hidden sm:inline">Promociones</span>
-                </button>
+    onClick={() => setShowModalPromos(true)}
+    className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-400 dark:hover:bg-emerald-500 whitespace-nowrap"
+>
+    <span className="material-symbols-outlined text-[20px] transition-transform duration-500 ease-in-out group-hover:rotate-12">
+        local_offer
+    </span> 
+    <span className="hidden sm:inline">Promociones</span>
+</button>
             </div>
           </div>
         </div>
