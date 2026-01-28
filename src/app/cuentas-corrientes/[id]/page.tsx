@@ -1,6 +1,8 @@
 import { obtenerClientePorId, obtenerMovimientosCliente } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+// IMPORTAMOS EL COMPONENTE CLIENTE
+import HistorialCliente from "@/components/Cuentas-corrientes/historial-cliente"; 
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +22,7 @@ export default async function DetalleClientePage({ params }: PageProps) {
 
   if (!cliente) return notFound();
 
-  // Helpers de formato
+  // Helper de formato (Solo para el Saldo principal, la tabla tiene el suyo propio)
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -28,16 +30,10 @@ export default async function DetalleClientePage({ params }: PageProps) {
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-AR", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-    }).format(new Date(date));
-  };
-
   const saldo = Number(cliente.saldo);
   const esDeudor = saldo < 0;
+  
+  // Clases compartidas
   const infoCardClass = "bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg flex items-start gap-4 transition-all duration-300 hover:shadow-lg hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-1";
 
   return (
@@ -158,8 +154,8 @@ export default async function DetalleClientePage({ params }: PageProps) {
               <div className="shrink-0 lg:w-1/3 flex flex-col">
                 <div className={`relative h-full overflow-hidden rounded-xl border p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-lg
                     ${esDeudor 
-                        ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' 
-                        : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`
+                      ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' 
+                      : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`
                 }>
                   <div className={`absolute -bottom-6 -right-6 pointer-events-none select-none opacity-[0.07] dark:opacity-[0.05]
                       ${esDeudor ? 'text-red-900 dark:text-red-500' : 'text-emerald-900 dark:text-emerald-500'}`}
@@ -173,7 +169,7 @@ export default async function DetalleClientePage({ params }: PageProps) {
                       ${esDeudor ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}
                   >
                     <div className={`p-2 rounded-lg flex items-center justify-center ${esDeudor ? 'bg-red-100 dark:bg-red-900/40' : 'bg-emerald-100 dark:bg-emerald-900/40'}`}>
-                       <span className="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+                        <span className="material-symbols-outlined text-[24px]">account_balance_wallet</span>
                     </div>
                     <p className="text-sm font-bold uppercase tracking-wider">Saldo Actual</p>
                   </div>
@@ -207,69 +203,15 @@ export default async function DetalleClientePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* HISTORIAL DE MOVIMIENTOS FUNCIONAL */}
-        <div className="flex flex-col gap-4 min-h-100 flex-1">
-            <div className="flex items-center justify-between shrink-0">
-                <h3 className="text-xl font-bold text-[#111318] dark:text-white">Historial de Movimientos</h3>
-            </div>
-
-            <div className="bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col h-full">
-                <div className="overflow-x-auto flex-1 custom-scrollbar">
-                    <table className="w-full text-sm text-left relative border-collapse">
-                        <thead className="bg-slate-50 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap w-3.75">Fecha</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap">Descripción</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap w-45">Tipo</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap text-right w-45">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {movimientos.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <span className="material-symbols-outlined text-4xl opacity-50">history</span>
-                                            <p>No hay movimientos registrados.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                movimientos.map((mov) => {
-                                    const isCredito = mov.tipo === "CREDITO";
-                                    return (
-                                        <tr key={mov.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap capitalize">
-                                                {formatDate(mov.fecha)}
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">
-                                                {mov.descripcion}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {isCredito ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
-                                                        <span className="material-symbols-outlined text-[14px]">arrow_downward</span>
-                                                        Crédito
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
-                                                        <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
-                                                        Débito
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className={`px-6 py-4 font-bold text-right ${isCredito ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                {isCredito ? "+" : "-"}{formatMoney(mov.monto)}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        {/* COMPONENTE DE HISTORIAL INTERACTIVO */}
+        {/* Aquí pasamos los datos del servidor al cliente */}
+        <HistorialCliente 
+          movimientos={movimientos} 
+          cliente={{ 
+            nombre: cliente.nombre, 
+            cuit: cliente.cuit || "Sin CUIT" 
+          }} 
+        />
 
       </main>
     </div>
