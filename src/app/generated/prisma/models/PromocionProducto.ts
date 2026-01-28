@@ -254,7 +254,7 @@ export type PromocionProductoScalarWhereWithAggregatesInput = {
 
 export type PromocionProductoCreateInput = {
   cantidad?: number
-  promocion: Prisma.PromocionCreateNestedOneWithoutProductosInput
+  promocion: Prisma.PromocionCreateNestedOneWithoutItemsInput
   producto: Prisma.ProductoCreateNestedOneWithoutPromocionesInput
 }
 
@@ -266,7 +266,7 @@ export type PromocionProductoUncheckedCreateInput = {
 
 export type PromocionProductoUpdateInput = {
   cantidad?: Prisma.IntFieldUpdateOperationsInput | number
-  promocion?: Prisma.PromocionUpdateOneRequiredWithoutProductosNestedInput
+  promocion?: Prisma.PromocionUpdateOneRequiredWithoutItemsNestedInput
   producto?: Prisma.ProductoUpdateOneRequiredWithoutPromocionesNestedInput
 }
 
@@ -423,7 +423,7 @@ export type PromocionProductoUncheckedUpdateManyWithoutPromocionNestedInput = {
 
 export type PromocionProductoCreateWithoutProductoInput = {
   cantidad?: number
-  promocion: Prisma.PromocionCreateNestedOneWithoutProductosInput
+  promocion: Prisma.PromocionCreateNestedOneWithoutItemsInput
 }
 
 export type PromocionProductoUncheckedCreateWithoutProductoInput = {
@@ -509,7 +509,7 @@ export type PromocionProductoCreateManyProductoInput = {
 
 export type PromocionProductoUpdateWithoutProductoInput = {
   cantidad?: Prisma.IntFieldUpdateOperationsInput | number
-  promocion?: Prisma.PromocionUpdateOneRequiredWithoutProductosNestedInput
+  promocion?: Prisma.PromocionUpdateOneRequiredWithoutItemsNestedInput
 }
 
 export type PromocionProductoUncheckedUpdateWithoutProductoInput = {
