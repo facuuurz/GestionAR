@@ -13,7 +13,7 @@ export default function EliminarPromocion({ id }: { id: number }) {
       setIsDeleting(true);
       try {
         
-          await eliminarPromocion(id, new FormData()); 
+          await eliminarPromocion(id); 
           
           router.push("/promociones");
           router.refresh();

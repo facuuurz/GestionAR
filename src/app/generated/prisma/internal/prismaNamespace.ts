@@ -1131,6 +1131,7 @@ export const PromocionScalarFieldEnum = {
   nombre: 'nombre',
   descripcion: 'descripcion',
   precio: 'precio',
+  activo: 'activo',
   fechaInicio: 'fechaInicio',
   fechaFin: 'fechaFin',
   createdAt: 'createdAt',
@@ -1232,6 +1233,13 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

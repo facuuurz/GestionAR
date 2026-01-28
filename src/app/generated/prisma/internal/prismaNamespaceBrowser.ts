@@ -158,6 +158,7 @@ export const PromocionScalarFieldEnum = {
   nombre: 'nombre',
   descripcion: 'descripcion',
   precio: 'precio',
+  activo: 'activo',
   fechaInicio: 'fechaInicio',
   fechaFin: 'fechaFin',
   createdAt: 'createdAt',

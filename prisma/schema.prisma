@@ -98,10 +98,13 @@ model Promocion {
   id          Int      @id @default(autoincrement())
   nombre      String
   descripcion String
-  precio      Float
+  precio      Decimal
+  activo      Boolean  @default(true)
   fechaInicio DateTime
   fechaFin    DateTime
-  productos   PromocionProducto[]
+
+  items       PromocionProducto[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -113,6 +116,7 @@ model PromocionProducto {
   promocionId Int
   productoId  Int
   cantidad    Int       @default(1)
+
   promocion   Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)
   producto    Producto  @relation(fields: [productoId], references: [id])
 
