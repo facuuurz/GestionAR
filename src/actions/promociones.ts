@@ -8,13 +8,15 @@ import { z } from "zod";
 // 1. Esquema de Validación
 const promocionSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  descripcion: z.string().min(1, "La descripción es obligatoria"),
+  descripcion: z.string().optional(), // Puede ser opcional según tu DB
   
-  // Convertimos el texto a número/fecha automáticamente con coerce
+  // Convertimos el texto a número automáticamente
   precio: z.coerce.number().min(0, "El precio no puede ser negativo"),
   
+  // El checkbox no envía "false", envía null si no está marcado. Lo manejamos manual fuera del schema o así:
+  activo: z.boolean().optional().default(true),
+
   fechaInicio: z.coerce.date(),
-  
   fechaFin: z.coerce.date(),
 }).refine((data) => data.fechaFin >= data.fechaInicio, {
   message: "La fecha de fin debe ser posterior al inicio",
@@ -33,14 +35,14 @@ export type State = {
   payload?: any;
 };
 
-// --- NUEVA FUNCIÓN: BUSCAR PRODUCTOS (CORREGIDA) ---
+// --- BUSCAR PRODUCTOS (Para el buscador del formulario) ---
 export async function buscarProductosParaPromocion(query: string) {
-  // Si no hay query (string vacío), devolvemos los últimos 20 productos para llenar la lista al hacer click
+  // Si no hay query, devolvemos los últimos 20
   if (!query || query.trim() === "") {
      try {
        const productos = await prisma.producto.findMany({
-         take: 20, // Límite para no saturar
-         orderBy: { createdAt: 'desc' }, // Los más nuevos primero
+         take: 20,
+         orderBy: { createdAt: 'desc' },
          select: { 
            id: true, 
            nombre: true, 
@@ -57,7 +59,7 @@ export async function buscarProductosParaPromocion(query: string) {
      }
   }
   
-  // Búsqueda normal con filtro
+  // Búsqueda con filtro
   try {
     const productos = await prisma.producto.findMany({
       where: {
@@ -66,7 +68,7 @@ export async function buscarProductosParaPromocion(query: string) {
           { codigoBarra: { contains: query, mode: "insensitive" } }, 
         ]
       },
-      take: 10, // Limitamos resultados para que sea más rápido
+      take: 10,
       select: { 
         id: true, 
         nombre: true, 
@@ -86,26 +88,42 @@ export async function buscarProductosParaPromocion(query: string) {
   }
 }
 
-// --- OBTENER PROMOCIONES (CORREGIDA) ---
-export async function obtenerPromociones(query: string = "") {
+// --- OBTENER PROMOCIONES (Para el Modal y la Lista) ---
+export async function obtenerPromociones(query: string = "", soloActivas: boolean = false) {
   try {
     const promociones = await prisma.promocion.findMany({
-      // Si hay query, filtramos en DB. Si es "", trae todo.
-      where: query ? {
-        OR: [
-          { nombre: { contains: query, mode: "insensitive" } },
-          { descripcion: { contains: query, mode: "insensitive" } },
-        ],
-      } : undefined,
+      where: {
+        // Solo traemos las ACTIVAS por defecto para el modal de ventas
+        ...(soloActivas ? { activo: true } : {}),
+
+        ...(query ? {
+            OR: [
+                { nombre: { contains: query, mode: "insensitive" } },
+                { descripcion: { contains: query, mode: "insensitive" } },
+            ],
+        } : {})
+      },
+      // 👇 INCLUDE PROFUNDO: Traemos la tabla intermedia Y el producto real
       include: {
-        productos: true 
+        items: {
+          include: {
+            producto: true 
+          }
+        }
       },
       orderBy: { fechaInicio: 'desc' }, 
     });
 
     return promociones.map((promo) => ({
       ...promo,
-      precio: Number(promo.precio) // Conversión segura
+      precio: Number(promo.precio),
+      items: promo.items.map(item => ({
+        ...item,
+        producto: {
+            ...item.producto,
+            precio: Number(item.producto.precio)
+        }
+      }))
     }));
 
   } catch (error) {
@@ -122,10 +140,10 @@ export async function crearPromocion(prevState: State, formData: FormData) {
     precio: formData.get("precio"),
     fechaInicio: formData.get("fechaInicio"),
     fechaFin: formData.get("fechaFin"),
+    // En HTML, si el checkbox está on envía "on", si no, envía null
+    activo: formData.get("activo") === "on", 
   };
 
-  // 1. EXTRAER PRODUCTOS Y CANTIDADES (Formato JSON)
-  // El frontend enviará un JSON string en el campo "productosData"
   const productosDataRaw = formData.get("productosData") as string;
   let productosParaInsertar: { id: number; cantidad: number }[] = [];
 
@@ -137,7 +155,11 @@ export async function crearPromocion(prevState: State, formData: FormData) {
     console.error("Error parseando JSON de productos", e);
   }
 
-  const validatedFields = promocionSchema.safeParse(rawData);
+  // Validamos con Zod (pasando activo manualmente)
+  const validatedFields = promocionSchema.safeParse({
+      ...rawData,
+      activo: rawData.activo
+  });
 
   if (!validatedFields.success) {
     return {
@@ -155,20 +177,20 @@ export async function crearPromocion(prevState: State, formData: FormData) {
   }
 
   try {
-    // 2. CREAR Y CONECTAR CON CANTIDADES
     await prisma.promocion.create({
       data: {
         nombre: validatedFields.data.nombre,
-        descripcion: validatedFields.data.descripcion,
+        descripcion: validatedFields.data.descripcion || "",
         precio: validatedFields.data.precio,
         fechaInicio: validatedFields.data.fechaInicio,
         fechaFin: validatedFields.data.fechaFin,
+        activo: validatedFields.data.activo, // ✅ Guardamos el estado
         
-        // Aquí guardamos el ID y la CANTIDAD en la tabla intermedia
-        productos: {
+        // Relación Many-to-Many
+        items: {
             create: productosParaInsertar.map((item) => ({
-                producto: { connect: { id: item.id } },
-                cantidad: item.cantidad // ✅ Guardamos la cantidad
+                productoId: item.id, // Usamos el ID directo que es más eficiente
+                cantidad: item.cantidad
             }))
         }
       },
@@ -185,6 +207,7 @@ export async function crearPromocion(prevState: State, formData: FormData) {
   redirect("/promociones");
 }
 
+// --- ACTUALIZAR PROMOCIÓN ---
 export async function actualizarPromocion(id: number, prevState: State, formData: FormData) {
   const rawData = {
     nombre: formData.get("nombre"),
@@ -192,9 +215,9 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     precio: formData.get("precio"),
     fechaInicio: formData.get("fechaInicio"),
     fechaFin: formData.get("fechaFin"),
+    activo: formData.get("activo") === "on", // ✅ Lógica checkbox
   };
 
-  // Extraer productos y cantidades
   const productosDataRaw = formData.get("productosData") as string;
   let productosParaInsertar: { id: number; cantidad: number }[] = [];
 
@@ -202,48 +225,47 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     if (productosDataRaw) {
       productosParaInsertar = JSON.parse(productosDataRaw);
     }
-  } catch (e) {
-    console.error("Error parseando JSON de productos", e);
-  }
+  } catch (e) { console.error(e); }
 
-  const validatedFields = promocionSchema.safeParse(rawData);
+  const validatedFields = promocionSchema.safeParse({
+      ...rawData,
+      activo: rawData.activo
+  });
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Faltan datos o las fechas son incorrectas.",
+      message: "Datos inválidos.",
       payload: rawData,
     };
   }
 
   if (productosParaInsertar.length === 0) {
-    return {
-      message: "Debes agregar al menos un producto a la promoción.",
-      payload: rawData,
-    };
+    return { message: "Debe haber al menos un producto.", payload: rawData };
   }
 
   try {
-    // Usamos una transacción para asegurar integridad
     await prisma.$transaction(async (tx) => {
-      // 1. Actualizar datos básicos de la promoción
+      // 1. Actualizar datos básicos
       await tx.promocion.update({
         where: { id },
         data: {
           nombre: validatedFields.data.nombre,
-          descripcion: validatedFields.data.descripcion,
+          descripcion: validatedFields.data.descripcion || "",
           precio: validatedFields.data.precio,
           fechaInicio: validatedFields.data.fechaInicio,
           fechaFin: validatedFields.data.fechaFin,
+          activo: validatedFields.data.activo,
         },
       });
 
-      // 2. Eliminar relaciones de productos existentes
+      // 2. Borrar items viejos (Estrategia simple: borrar todo y crear de nuevo)
+      // Nota: Usamos 'promocionProducto' (camelCase) que es como Prisma nombra la tabla intermedia por defecto
       await tx.promocionProducto.deleteMany({
         where: { promocionId: id },
       });
 
-      // 3. Crear nuevas relaciones con cantidades
+      // 3. Insertar items nuevos
       await tx.promocionProducto.createMany({
         data: productosParaInsertar.map((item) => ({
           promocionId: id,
@@ -256,7 +278,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
   } catch (error) {
     console.error("Error actualizando promoción:", error);
     return {
-      message: "Error de base de datos al actualizar la promoción.",
+      message: "Error al actualizar la promoción.",
       payload: rawData,
     };
   }
@@ -265,33 +287,26 @@ export async function actualizarPromocion(id: number, prevState: State, formData
   redirect("/promociones");
 }
 
-// --- ELIMINAR PROMOCIÓN ---
-export async function eliminarPromocion(id: number, formData: FormData) {
+// --- ELIMINAR ---
+export async function eliminarPromocion(id: number) {
   try {
-    await prisma.promocion.delete({
-      where: { id },
-    });
-    
+    await prisma.promocion.delete({ where: { id } });
     revalidatePath("/promociones");
   } catch (error) {
     console.error("Error al eliminar:", error);
-    // En producción podrías retornar un error para mostrarlo
   }
-  
-  // Redirigimos fuera del try/catch para evitar errores de Next.js
   redirect("/promociones");
 }
 
-
-// --- OBTENER PROMOCIÓN POR ID ---
+// --- OBTENER POR ID (Para editar) ---
 export async function obtenerPromocionPorId(id: number) {
   try {
     const promocion = await prisma.promocion.findUnique({
       where: { id },
       include: {
-        productos: {
+        items: {
           include: {
-            producto: true, // Incluimos detalles del producto
+            producto: true,
           },
         },
       },
@@ -302,8 +317,16 @@ export async function obtenerPromocionPorId(id: number) {
     return {
       ...promocion,
       precio: Number(promocion.precio),
-      // Mapeamos los productos al formato que usa el frontend
-      productos: promocion.productos.map((p) => ({
+
+      items: promocion.items.map((item) => ({
+        ...item,
+        producto: {
+            ...item.producto,
+            precio: Number(item.producto.precio) // Convertimos precio del producto
+        }
+      })),
+      // Mapeamos para que el frontend lo lea fácil
+      productos: promocion.items.map((p) => ({
         producto: {
             ...p.producto,
             precio: Number(p.producto.precio)
@@ -316,5 +339,3 @@ export async function obtenerPromocionPorId(id: number) {
     return null;
   }
 }
-
-

@@ -51,11 +51,11 @@ export async function procesarVenta(
   try {
     await prisma.$transaction(async (tx) => {
       
-      // A. Descontar Stock de Productos
+      // 1. DESCONTAR STOCK DE PRODUCTOS
       for (const item of items) {
-        const productoActual = await tx.producto.findUnique({ where: { id: item.id } });
+        const producto = await tx.producto.findUnique({ where: { id: item.id } });
         
-        if (!productoActual || productoActual.stock < item.cantidad) {
+        if (!producto || producto.stock < item.cantidad) {
           throw new Error(`Stock insuficiente para el producto ID: ${item.id}`);
         }
 
@@ -65,51 +65,33 @@ export async function procesarVenta(
         });
       }
 
-      // B. Lógica de Cliente (Cuenta Corriente)
+      // 2. SI HAY CLIENTE -> DESCONTAR SALDO Y CREAR MOVIMIENTO
       if (clienteId) {
-        // 1. Descontar el saldo (Aumentar la deuda)
+        // A. Descontar el dinero de la cuenta (decrement)
+        // NOTA: Asumiendo que el saldo positivo es dinero a favor del cliente.
+        // Si "saldo" representa deuda, deberías usar 'increment'.
         await tx.cuenta_corriente.update({
           where: { id: clienteId },
           data: { saldo: { decrement: total } } 
         });
 
-        // 2. REGISTRAR EL MOVIMIENTO DE DÉBITO [NUEVO]
-        // Esto asegura que la venta aparezca en el historial
+        // B. Registrar el movimiento en el historial
+        // IMPORTANTE: Aquí usamos 'movimiento' (minuscula) porque así lo genera Prisma
         await tx.movimiento.create({
-            data: {
-                cuentaCorrienteId: clienteId,
-                tipo: "DEBITO", 
-                monto: total, // Guardamos el valor absoluto
-                descripcion: `Compra de productos (${items.length} ítems)`, 
-            }
+          data: {
+            cuentaCorrienteId: clienteId,
+            descripcion: "Compra de productos / Venta Mostrador",
+            monto: total,
+            tipo: "DEBITO" // O "VENTA", según como prefieras clasificarlo
+          }
         });
-
-        // 3. Actualizar Estado del Cliente
-        const cuentaActualizada = await tx.cuenta_corriente.findUnique({ where: { id: clienteId } });
-        
-        if (cuentaActualizada) {
-            const saldoNumerico = cuentaActualizada.saldo.toNumber();
-            const nuevoEstado = saldoNumerico < 0 ? "Deudor" : "Al Día";
-
-            if (cuentaActualizada.estado !== nuevoEstado) {
-                await tx.cuenta_corriente.update({
-                    where: { id: clienteId },
-                    data: { estado: nuevoEstado }
-                });
-            }
-        }
       }
     });
 
-    // Revalidación de rutas
+    // 3. Revalidar todas las pantallas afectadas
     revalidatePath("/inventario");
     revalidatePath("/venta"); 
-    revalidatePath("/cuentas-corrientes");
-    
-    // Si hubo un cliente, revalidamos su página de detalle específica
-    if (clienteId) {
-        revalidatePath(`/cuentas-corrientes/${clienteId}`);
-    }
+    revalidatePath("/cuentas-corrientes"); 
     
     return { success: true, message: "Venta procesada correctamente" };
 

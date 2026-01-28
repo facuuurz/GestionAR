@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { buscarProductosVenta, buscarClienteVenta, procesarVenta } from "@/actions/ventas";
+import { obtenerPromociones } from "@/actions/promociones";
+import ModalPromociones from "@/components/ventas/ModalPromociones";
 import { useDebounce } from "@/hooks/useDebounce";
 
+// --- TIPOS ---
 type Producto = {
   id: number;
   nombre: string;
@@ -13,12 +16,36 @@ type Producto = {
   categoria?: string; 
 };
 
-type ItemCarrito = Producto & { cantidad: number };
+// ⚠️ MODIFICADO: ItemCarrito ahora soporta Productos y Promos
+type ItemCarrito = {
+  id: number;         // ID positivo = Producto, ID negativo = Promoción
+  nombre: string;
+  precio: number;
+  cantidad: number;
+  tipo: "PRODUCTO" | "PROMOCION"; 
+  
+  // Para validar stock
+  stockMaximo: number; 
+
+  // Solo si es promo, guardamos qué tiene adentro para descontar luego
+  contenido?: { productoId: number; cantidad: number }[];
+};
 
 type Cliente = {
   id: number;
   nombre: string;
   saldo: number;
+};
+
+type PromocionBackend = {
+    id: number;
+    nombre: string;
+    descripcion: string | null;
+    precio: number; // Asegúrate de que tu backend mande esto
+    items: {
+        cantidad: number;
+        producto: Producto;
+    }[];
 };
 
 export default function PantallaVenta() {
@@ -36,11 +63,14 @@ export default function PantallaVenta() {
   const debouncedCliente = useDebounce(queryCliente, 300);
 
   const [procesando, setProcesando] = useState(false);
-  
-  // 🆕 NUEVO ESTADO PARA EL MENSAJE DE ÉXITO
   const [mostrarExito, setMostrarExito] = useState(false);
 
+  // Estados para Promociones
+  const [listaPromociones, setListaPromociones] = useState<PromocionBackend[]>([]);
+  const [showModalPromos, setShowModalPromos] = useState(false);
+
   // --- EFECTOS ---
+  
   useEffect(() => {
     if (debouncedProd) {
       buscarProductosVenta(debouncedProd).then(setListaProductos);
@@ -58,16 +88,93 @@ export default function PantallaVenta() {
     }
   }, [debouncedCliente]);
 
-  // --- LOGICA CARRITO ---
-  const agregarAlCarrito = (prod: Producto) => {
-    setCarrito((prev) => {
-      const existe = prev.find((item) => item.id === prod.id);
-      if (existe) {
-        if (existe.cantidad + 1 > prod.stock) return prev; 
-        return prev.map((item) => item.id === prod.id ? { ...item, cantidad: item.cantidad + 1 } : item);
-      }
-      return [...prev, { ...prod, cantidad: 1 }];
+  useEffect(() => {
+    obtenerPromociones("", false).then((data) => {
+        setListaPromociones(data as unknown as PromocionBackend[]);
     });
+  }, []);
+
+  // --- LÓGICA CARRITO (PRODUCTOS) ---
+
+  const agregarProductoAlCarrito = (prod: Producto) => {
+    setCarrito((prev) => {
+      const existe = prev.find((item) => item.id === prod.id && item.tipo === "PRODUCTO");
+      
+      if (existe) {
+        if (existe.cantidad + 1 > prod.stock) {
+             alert(`Stock insuficiente para ${prod.nombre}`);
+             return prev; 
+        }
+        return prev.map((item) => 
+            item.id === prod.id ? { ...item, cantidad: item.cantidad + 1 } : item
+        );
+      }
+      
+      if (1 > prod.stock) {
+          alert(`Sin stock de ${prod.nombre}`);
+          return prev;
+      }
+
+      // Agregamos como ItemCarrito normal
+      return [...prev, { 
+          id: prod.id,
+          nombre: prod.nombre,
+          precio: prod.precio,
+          cantidad: 1,
+          tipo: "PRODUCTO",
+          stockMaximo: prod.stock
+      }];
+    });
+  };
+
+  // 🆕 LÓGICA CARRITO (PROMOCIONES) ---
+  const aplicarPromocion = (promo: PromocionBackend) => {
+      // 1. Calcular Stock Máximo de la promo
+      // (El stock de la promo es igual al del ingrediente que menos tenga)
+      let stockPosible = 999999;
+      
+      promo.items.forEach(item => {
+          const cuantosPuedoHacer = Math.floor(item.producto.stock / item.cantidad);
+          if (cuantosPuedoHacer < stockPosible) {
+              stockPosible = cuantosPuedoHacer;
+          }
+      });
+
+      if (stockPosible < 1) {
+          alert("No hay stock suficiente de los productos para armar esta promoción.");
+          return;
+      }
+
+      // 2. Crear el objeto para el carrito
+      // Usamos ID negativo para diferenciarlo de productos
+      const promoId = -promo.id; 
+
+      setCarrito((prev) => {
+          const existe = prev.find(i => i.id === promoId && i.tipo === "PROMOCION");
+
+          if (existe) {
+              if (existe.cantidad + 1 > stockPosible) {
+                  alert("No alcanzan los productos para agregar más promociones de este tipo.");
+                  return prev;
+              }
+              return prev.map(i => i.id === promoId ? { ...i, cantidad: i.cantidad + 1 } : i);
+          }
+
+          return [...prev, {
+              id: promoId,
+              nombre: `PROMO: ${promo.nombre}`,
+              precio: promo.precio, // ✅ Usamos el PRECIO DE LA PROMO
+              cantidad: 1,
+              tipo: "PROMOCION",
+              stockMaximo: stockPosible,
+              contenido: promo.items.map(pi => ({
+                  productoId: pi.producto.id,
+                  cantidad: pi.cantidad
+              }))
+          }];
+      });
+
+      setShowModalPromos(false);
   };
 
   const modificarCantidad = (id: number, delta: number) => {
@@ -76,7 +183,13 @@ export default function PantallaVenta() {
         if (item.id === id) {
           const nuevaCant = item.cantidad + delta;
           if (nuevaCant < 1) return item; 
-          if (nuevaCant > item.stock) return item; 
+          
+          // Validación de Stock Genérica (sirve para Prod y Promo)
+          if (nuevaCant > item.stockMaximo) {
+              // Opcional: alert("Stock máximo alcanzado");
+              return item; 
+          }
+          
           return { ...item, cantidad: nuevaCant };
         }
         return item;
@@ -95,19 +208,42 @@ export default function PantallaVenta() {
   }
 
   const subtotal = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-  const descuento = 0; 
-  const total = subtotal - descuento;
+  const total = subtotal; // Sin descuentos extra por ahora
 
   const handleFinalizar = async () => {
     if (carrito.length === 0) return;
-    
     setProcesando(true);
     
-    const itemsParaDescontar = carrito.map(i => ({ 
-        id: i.id, 
-        cantidad: i.cantidad 
+    // ⚠️ PASO CRUCIAL: "DESEMPAQUETAR" EL CARRITO
+    // El servidor espera una lista de Productos para descontar stock.
+    // Debemos convertir las promos en sus componentes sumados.
+    
+    const mapaProductos = new Map<number, number>();
+
+    carrito.forEach(item => {
+        if (item.tipo === "PRODUCTO") {
+            const actual = mapaProductos.get(item.id) || 0;
+            mapaProductos.set(item.id, actual + item.cantidad);
+        } 
+        else if (item.tipo === "PROMOCION" && item.contenido) {
+            // Si es promo, multiplicamos sus ingredientes por la cantidad de promos
+            item.contenido.forEach(componente => {
+                const idProd = componente.productoId;
+                const cantTotal = componente.cantidad * item.cantidad;
+                const actual = mapaProductos.get(idProd) || 0;
+                mapaProductos.set(idProd, actual + cantTotal);
+            });
+        }
+    });
+
+    // Convertimos el mapa al formato que espera la acción
+    const itemsParaDescontar = Array.from(mapaProductos.entries()).map(([id, cantidad]) => ({
+        id,
+        cantidad
     }));
 
+    // Enviamos el TOTAL calculado en el frontend (que respeta el precio promo)
+    // y los ITEMS calculados (que respetan el stock real)
     const resultado = await procesarVenta(
         itemsParaDescontar, 
         total, 
@@ -118,13 +254,8 @@ export default function PantallaVenta() {
         setCarrito([]);
         setCliente(null);
         setQueryCliente("");
-        
-        // 🆕 LÓGICA DEL CARTELITO DE ÉXITO
         setMostrarExito(true);
-        setTimeout(() => {
-            setMostrarExito(false);
-        }, 3000); // Desaparece a los 3 segundos
-
+        setTimeout(() => setMostrarExito(false), 3000); 
     } else {
         alert("Error: " + resultado.message);
     }
@@ -136,8 +267,15 @@ export default function PantallaVenta() {
   return (
     <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 h-full bg-[#f6f6f8] dark:bg-[#101622] p-4 relative">
       
+      <ModalPromociones 
+        isOpen={showModalPromos}
+        onClose={() => setShowModalPromos(false)}
+        promociones={listaPromociones}
+        onSelect={aplicarPromocion}
+      />
+
       {/* --- COLUMNA IZQUIERDA: PRODUCTOS --- */}
-      <div className="lg:col-span-8 flex flex-col gap-4 h-full min-h-0">
+      <div className="lg:col-span-6 flex flex-col gap-4 h-full min-h-0">
         
         {/* BUSCADOR */}
         <div className="flex-none bg-white dark:bg-[#1e2736] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm">
@@ -153,9 +291,19 @@ export default function PantallaVenta() {
                 autoFocus
               />
             </div>
+            
             <div className="flex gap-2">
                 <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#151a25] border border-[#ededed] dark:border-[#333] rounded-lg text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-[#f9f9f9] dark:hover:bg-[#1f2937] transition-colors">
-                    <span className="material-symbols-outlined text-lg">filter_list</span> Filtrar
+                    <span className="material-symbols-outlined text-lg">filter_list</span> 
+                    <span className="hidden sm:inline">Filtrar</span>
+                </button>
+
+                <button 
+                    onClick={() => setShowModalPromos(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white border border-transparent rounded-lg text-sm font-bold transition-colors shadow-sm"
+                >
+                    <span className="material-symbols-outlined text-lg">local_offer</span> 
+                    <span className="hidden sm:inline">Promociones</span>
                 </button>
             </div>
           </div>
@@ -175,7 +323,7 @@ export default function PantallaVenta() {
               </thead>
               <tbody className="divide-y divide-[#ededed] dark:divide-[#333] text-sm">
                 {listaProductos.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-[#f9f9f9] dark:hover:bg-[#151a25]/50 transition-colors group cursor-pointer" onClick={() => agregarAlCarrito(prod)}>
+                    <tr key={prod.id} className="hover:bg-[#f9f9f9] dark:hover:bg-[#151a25]/50 transition-colors group cursor-pointer" onClick={() => agregarProductoAlCarrito(prod)}>
                         <td className="px-6 py-4">
                             <div className="flex flex-col">
                                 <span className="font-medium text-gray-900 dark:text-white text-base">{prod.nombre}</span>
@@ -191,11 +339,9 @@ export default function PantallaVenta() {
                         <td className="px-6 py-4 text-right">
                             <button 
                               className="group flex items-center gap-1.5 ml-auto px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
-                              onClick={(e) => { e.stopPropagation(); agregarAlCarrito(prod); }}
+                              onClick={(e) => { e.stopPropagation(); agregarProductoAlCarrito(prod); }}
                             >
-                              <span className="material-symbols-outlined text-sm transition-transform duration-500 ease-in-out group-hover:rotate-90">
-                                add
-                              </span>
+                              <span className="material-symbols-outlined text-sm transition-transform duration-500 ease-in-out group-hover:rotate-90">add</span>
                               <span>Agregar</span>
                             </button>
                         </td>
@@ -213,7 +359,7 @@ export default function PantallaVenta() {
       </div>
 
       {/* --- COLUMNA DERECHA: CARRITO --- */}
-      <div className="lg:col-span-4 flex flex-col gap-4 h-full min-h-0">
+      <div className="lg:col-span-6 flex flex-col gap-4 h-full min-h-0">
         
         {/* SELECCIONAR CLIENTE */}
         <div className="flex-none bg-white dark:bg-[#1e2736] p-5 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm z-20">
@@ -249,8 +395,7 @@ export default function PantallaVenta() {
             </div>
         </div>
 
-        {/* LISTA ITEMS CARRITO - MODIFICADO PARA ADAPTARSE A CONTENIDO */}
-        {/* Se cambió flex-1 por h-auto y se añadió max-h para scroll si hay muchos */}
+        {/* LISTA ITEMS CARRITO */}
         <div className="h-auto max-h-[55vh] shrink-0 bg-white dark:bg-[#1e2736] rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col overflow-hidden transition-all duration-300">
             <div className="flex-none p-4 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#151a25]">
                 <h3 className="font-bold text-sm text-gray-800 dark:text-neutral-200">Carrito de Compra</h3>
@@ -267,7 +412,9 @@ export default function PantallaVenta() {
                     </div>
                 ) : (
                     carrito.map((item) => (
-                        <div key={item.id} className="group relative bg-[#f9f9f9] dark:bg-[#151a25] p-3 rounded-xl border border-transparent hover:border-[#ededed] dark:hover:border-[#333] transition-all">
+                        <div key={item.id} className={`group relative p-3 rounded-xl border transition-all 
+                            ${item.tipo === 'PROMOCION' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/30' : 'bg-[#f9f9f9] dark:bg-[#151a25] border-transparent hover:border-[#ededed] dark:hover:border-[#333]'}`}>
+
                             <div className="flex justify-between items-start">
                                 <div className="grow pr-2 pl-5">
                                     <p className="text-base font-bold text-gray-900 dark:text-white line-clamp-1">{item.nombre}</p>
@@ -276,23 +423,12 @@ export default function PantallaVenta() {
                                 <div className="text-right flex flex-col items-end gap-2">
                                     <p className="text-base font-bold text-gray-900 dark:text-white">{formatMoney(item.precio * item.cantidad)}</p>
                                     
-                                    {/* Controles de cantidad */}
                                     <div className="flex items-center gap-1 bg-white dark:bg-[#1e2736] rounded-lg border border-[#ededed] dark:border-[#333] p-0.5 shadow-sm">
-                                        <button 
-                                            onClick={() => modificarCantidad(item.id, -1)} 
-                                            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#f9f9f9] dark:hover:bg-[#151a25] text-neutral-600 dark:text-neutral-300 transition-colors"
-                                        >
+                                        <button onClick={() => modificarCantidad(item.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#f9f9f9] dark:hover:bg-[#151a25] text-neutral-600 dark:text-neutral-300 transition-colors">
                                             <span className="material-symbols-outlined text-lg">remove</span>
                                         </button>
-                                        
-                                        <span className="text-lg font-bold w-8 text-center text-gray-900 dark:text-white leading-none">
-                                            {item.cantidad}
-                                        </span>
-                                        
-                                        <button 
-                                            onClick={() => modificarCantidad(item.id, 1)} 
-                                            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#f9f9f9] dark:hover:bg-[#151a25] text-neutral-600 dark:text-neutral-300 transition-colors"
-                                        >
+                                        <span className="text-lg font-bold w-8 text-center text-gray-900 dark:text-white leading-none">{item.cantidad}</span>
+                                        <button onClick={() => modificarCantidad(item.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#f9f9f9] dark:hover:bg-[#151a25] text-neutral-600 dark:text-neutral-300 transition-colors">
                                             <span className="material-symbols-outlined text-lg">add</span>
                                         </button>
                                     </div>
@@ -314,12 +450,6 @@ export default function PantallaVenta() {
                     <span>Subtotal</span>
                     <span>{formatMoney(subtotal)}</span>
                 </div>
-                {descuento > 0 && (
-                    <div className="flex justify-between text-sm text-green-600 font-medium">
-                        <span>Descuentos</span>
-                        <span>-{formatMoney(descuento)}</span>
-                    </div>
-                )}
             </div>
             <div className="border-t border-dashed border-[#ededed] dark:border-[#333] pt-4 mb-5">
                 <div className="flex justify-between items-end">
@@ -349,11 +479,7 @@ export default function PantallaVenta() {
 
       </div>
 
-      {/* 🆕 TOAST NOTIFICATION (CARTELITO FLOTANTE) */}
-      <div 
-        className={`fixed bottom-6 left-6 z-50 transform transition-all duration-500 ease-in-out
-        ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}
-      >
+      <div className={`fixed bottom-6 left-6 z-50 transform transition-all duration-500 ease-in-out ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
         <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
             <div className="bg-white/20 p-1 rounded-full">
                 <span className="material-symbols-outlined text-xl">check</span>
