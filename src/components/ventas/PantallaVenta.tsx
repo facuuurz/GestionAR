@@ -314,23 +314,23 @@ export default function PantallaVenta() {
             </div>
             
             <div className="flex gap-2">
-                <button 
-                    onClick={() => setShowFilters(true)}
-                    className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors
-                        ${activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min !== "" 
-                            ? "bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-300" // Estilo activo
-                            : "bg-white dark:bg-[#151a25] border-[#ededed] dark:border-[#333] text-neutral-700 dark:text-neutral-200 hover:bg-[#f9f9f9]" // Estilo normal
-                        }`}
-                >
-                    <span className="material-symbols-outlined text-lg">filter_list</span> 
-                    <span className="hidden sm:inline">Filtrar</span>
-                    
-                    {/* Indicador de filtros activos (puntito) */}
-                    {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min !== "") && (
-                        <span className="w-2 h-2 rounded-full bg-indigo-500 ml-1"></span>
-                    )}
-                </button>
-
+                {/* BOTÓN FILTRAR */}
+{/* BOTÓN FILTRAR */}
+<button 
+    onClick={() => setShowFilters(true)}
+    // Eliminamos la lógica de colores condicionales para mantener el estilo base siempre
+    className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-neutral-700 dark:text-neutral-200 text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white dark:hover:bg-white dark:hover:text-black"
+>
+    <span className="material-symbols-outlined text-[18px] transition-transform duration-500 ease-in-out group-hover:rotate-12">
+        filter_list
+    </span>
+    <span className="hidden sm:inline">Filtrar</span>
+    
+    {/* El único indicador visual de filtros activos: el punto azul */}
+    {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min !== "") && (
+        <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1 animate-in fade-in zoom-in duration-300"></span>
+    )}
+</button>
                 <button 
     onClick={() => setShowModalPromos(true)}
     className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-400 dark:hover:bg-emerald-500 whitespace-nowrap"

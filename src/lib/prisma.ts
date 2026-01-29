@@ -1,5 +1,5 @@
 // src/lib/prisma.ts
-import { PrismaClient } from "../app/generated/prisma/client" // ✅ Tu ruta personalizada
+import { PrismaClient } from "@prisma/client" // ✅ Tu ruta personalizada
 import { PrismaPg } from "@prisma/adapter-pg" // ✅ Tu adaptador
 
 const adapter = new PrismaPg({
