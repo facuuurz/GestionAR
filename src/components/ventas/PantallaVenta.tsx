@@ -5,6 +5,7 @@ import { buscarProductosVenta, buscarClienteVenta, procesarVenta } from "@/actio
 import { obtenerPromociones } from "@/actions/promociones";
 import ModalPromociones from "@/components/ventas/ModalPromociones";
 import { useDebounce } from "@/hooks/useDebounce";
+import FilterModal, { FilterState } from "@/components/ventas/FilterModal";
 
 // --- TIPOS ---
 type Producto = {
@@ -69,7 +70,19 @@ export default function PantallaVenta() {
   const [listaPromociones, setListaPromociones] = useState<PromocionBackend[]>([]);
   const [showModalPromos, setShowModalPromos] = useState(false);
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+      category: "Todas",
+      stockStatus: "all",
+      priceRange: { min: "", max: "" }
+  });
+
   // --- EFECTOS ---
+
+  useEffect(() => {
+    // Llamamos a la acción pasando el texto Y los filtros
+    buscarProductosVenta(debouncedProd, activeFilters).then(setListaProductos);
+  }, [debouncedProd, activeFilters]);
   
   useEffect(() => {
     if (debouncedProd) {
@@ -267,6 +280,14 @@ export default function PantallaVenta() {
   return (
     <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 h-full bg-[#f6f6f8] dark:bg-[#101622] p-4 relative">
       
+      <FilterModal 
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        currentFilters={activeFilters}
+        onApply={setActiveFilters}
+        categoriasDisponibles={["General", "Bebidas", "Limpieza", "Almacen"]} 
+      />
+
       <ModalPromociones 
         isOpen={showModalPromos}
         onClose={() => setShowModalPromos(false)}
@@ -293,9 +314,21 @@ export default function PantallaVenta() {
             </div>
             
             <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#151a25] border border-[#ededed] dark:border-[#333] rounded-lg text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-[#f9f9f9] dark:hover:bg-[#1f2937] transition-colors">
+                <button 
+                    onClick={() => setShowFilters(true)}
+                    className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors
+                        ${activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min !== "" 
+                            ? "bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-300" // Estilo activo
+                            : "bg-white dark:bg-[#151a25] border-[#ededed] dark:border-[#333] text-neutral-700 dark:text-neutral-200 hover:bg-[#f9f9f9]" // Estilo normal
+                        }`}
+                >
                     <span className="material-symbols-outlined text-lg">filter_list</span> 
                     <span className="hidden sm:inline">Filtrar</span>
+                    
+                    {/* Indicador de filtros activos (puntito) */}
+                    {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || activeFilters.priceRange.min !== "") && (
+                        <span className="w-2 h-2 rounded-full bg-indigo-500 ml-1"></span>
+                    )}
                 </button>
 
                 <button 
