@@ -5,31 +5,27 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-
+// --- SCHEMA DE VALIDACIÓN ---
 const proveedorSchema = z.object({
-  // AHORA EL CÓDIGO ES OBLIGATORIO Y MANUAL
   codigo: z.string()
     .min(1, "El código es obligatorio")
     .max(20, "El código no puede tener más de 20 caracteres")
     .trim(),
-
   razonSocial: z.string().min(1, "La Razón Social es obligatoria"),
-  
   contacto: z.string().optional(),
-   
   telefono: z.string()
     .trim()
     .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {
       message: "Solo números (ej: 112233) o + al inicio",
     })
     .optional(),
-  
   email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
+// --- TIPO DE ESTADO ---
 export type State = {
   errors?: {
-    codigo?: string[]; // Agregamos error de código
+    codigo?: string[];
     razonSocial?: string[];
     contacto?: string[];
     telefono?: string[];
@@ -39,9 +35,14 @@ export type State = {
   payload?: any;
 };
 
-export async function crearProveedor(prevState: State, formData: FormData) {
+// --- ACCIONES ---
+
+/**
+ * CREAR PROVEEDOR
+ */
+export async function crearProveedor(prevState: State, formData: FormData): Promise<State> {
   const rawData = {
-    codigo: formData.get("codigo") as string, // Leemos el código del form
+    codigo: formData.get("codigo") as string,
     razonSocial: formData.get("razonSocial") as string,
     contacto: formData.get("contacto") as string,
     telefono: formData.get("telefono") as string,
@@ -59,7 +60,6 @@ export async function crearProveedor(prevState: State, formData: FormData) {
   }
 
   try {
-    // Verificamos si el código ya existe para evitar error de Prisma
     const existeCodigo = await prisma.proveedor.findUnique({
         where: { codigo: validatedFields.data.codigo }
     });
@@ -74,7 +74,7 @@ export async function crearProveedor(prevState: State, formData: FormData) {
 
     await prisma.proveedor.create({
       data: {
-        codigo: validatedFields.data.codigo, // Usamos el manual
+        codigo: validatedFields.data.codigo,
         razonSocial: validatedFields.data.razonSocial,
         contacto: validatedFields.data.contacto || null,
         telefono: validatedFields.data.telefono || null,
@@ -93,9 +93,12 @@ export async function crearProveedor(prevState: State, formData: FormData) {
   redirect("/proveedores");
 }
 
+/**
+ * OBTENER PROVEEDORES (Server Function)
+ */
 export async function obtenerProveedores(query: string = "", sort: string = "") {
   try {
-    let orderBy: any = { id: 'desc' }; // Por defecto: Más recientes
+    let orderBy: any = { id: 'desc' };
 
     switch (sort) {
       case "Contacto-asc":
@@ -104,8 +107,6 @@ export async function obtenerProveedores(query: string = "", sort: string = "") 
       case "Contacto-desc":
         orderBy = { contacto: 'desc'};
         break;
-      
-      // Si el usuario elige "Razón Social" explícitamente
       case "razon-social-asc":
         orderBy = { razonSocial: 'asc' }; 
         break;
@@ -114,7 +115,6 @@ export async function obtenerProveedores(query: string = "", sort: string = "") 
     const proveedores = await prisma.proveedor.findMany({
       where: {
         OR: [
-          // Buscamos en Razón Social, Contacto y Email (ya no en nombre)
           { razonSocial: { contains: query, mode: 'insensitive' } },
           { contacto: { contains: query, mode: 'insensitive' } },
           { email: { contains: query, mode: 'insensitive' } },
@@ -130,38 +130,53 @@ export async function obtenerProveedores(query: string = "", sort: string = "") 
   }
 }
 
-export async function actualizarProveedor(formData: FormData) {
+/**
+ * ACTUALIZAR PROVEEDOR
+ */
+export async function actualizarProveedor(prevState: State, formData: FormData): Promise<State> {
   const id = parseInt(formData.get("id") as string);
-  const razonSocial = formData.get("razon_social") as string;
-  const contacto = formData.get("contacto") as string;
-  const telefono = formData.get("telefono") as string;
-  const email = formData.get("email") as string;
+  
+  const rawData = {
+    razonSocial: formData.get("razonSocial") as string,
+    contacto: formData.get("contacto") as string,
+    telefono: formData.get("telefono") as string,
+    email: formData.get("email") as string,
+  };
 
-  if (!id) throw new Error("ID de proveedor no válido");
+  if (!id) {
+    return { message: "ID de proveedor no válido", errors: {} };
+  }
 
   try {
     await prisma.proveedor.update({
       where: { id },
       data: {
-        razonSocial,
-        contacto,
-        telefono,
-        email,
+        razonSocial: rawData.razonSocial,
+        contacto: rawData.contacto,
+        telefono: rawData.telefono,
+        email: rawData.email,
       },
     });
   } catch (error) {
     console.error("Error al actualizar proveedor:", error);
-    throw new Error("No se pudo actualizar el proveedor");
+    return {
+      message: "No se pudo actualizar el proveedor en la base de datos.",
+      payload: rawData,
+    };
   }
 
   revalidatePath("/proveedores");
   redirect("/proveedores");
+  return { message: null };
 }
 
-export async function eliminarProveedor(formData: FormData) {
+/**
+ * ELIMINAR PROVEEDOR
+ */
+export async function eliminarProveedor(prevState: State, formData: FormData): Promise<State> {
   const id = parseInt(formData.get("id") as string);
 
-  if (!id) throw new Error("ID de proveedor no válido");
+  if (!id) return { message: "ID de proveedor no válido" };
 
   try {
     await prisma.proveedor.delete({
@@ -169,12 +184,12 @@ export async function eliminarProveedor(formData: FormData) {
     });
   } catch (error) {
     console.error("Error al eliminar proveedor:", error);
-    // Manejar error si tiene productos asociados
-    throw new Error("No se puede eliminar este proveedor");
+    return { 
+      message: "No se puede eliminar este proveedor. Asegúrese de que no tenga productos vinculados." 
+    };
   }
 
   revalidatePath("/proveedores");
   redirect("/proveedores");
+  return { message: null };
 }
-
-

@@ -25,12 +25,16 @@ function ErrorMessage({ errors }: { errors?: string[] }) {
   );
 }
 
-// 2. Usamos la interfaz local en las props
 export default function EditarProveedorForm({ proveedor }: { proveedor: ProveedorData }) {
   const initialState: State = { message: null, errors: {} };
   
   // Hook para actualizar
   const [state, formAction, isPending] = useActionState(actualizarProveedor, initialState);
+
+  // 🆕 Función para manejar la eliminación compatible con Server Actions y Typescript
+  const handleEliminar = async (formData: FormData) => {
+    await eliminarProveedor(initialState, formData);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
@@ -50,7 +54,6 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
             <span className="text-[#0d121b] dark:text-gray-100 text-sm font-medium">Editar Proveedor</span>
           </div>
 
-          {/* Título */}
           <div className="flex flex-col gap-2 mb-8">
             <h1 className="text-[#111318] dark:text-white text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">
               Editar Proveedor
@@ -60,12 +63,10 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
             </p>
           </div>
 
-          {/* FORMULARIO */}
           <form action={formAction} className="bg-white dark:bg-[#1A202C] rounded-xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm overflow-hidden relative">
             
             <input type="hidden" name="id" value={proveedor.id} />
 
-            {/* --- HEADER INFORMACIÓN --- */}
             <div className="border-b border-[#e5e7eb] dark:border-[#2d3748] px-6 py-4 bg-gray-50/50 dark:bg-[#1e2736]">
                 <h3 className="text-base font-bold text-[#0d121b] dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined">edit_square</span>
@@ -74,8 +75,6 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
             </div>
 
             <div className="p-6 md:p-8">
-              
-              {/* Mensaje Global de Error */}
               {state.message && !Object.keys(state.errors || {}).length && (
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900 text-sm font-medium flex items-center gap-2">
                     <span className="material-symbols-outlined text-[20px]">error</span>
@@ -83,10 +82,8 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                 </div>
               )}
 
-              {/* GRILLA PRINCIPAL */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 
-                {/* 1. Código del Proveedor */}
                 <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="codigo">
                     Código <span className="text-black dark:text-white">*</span>
@@ -109,7 +106,6 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   <ErrorMessage errors={state.errors?.codigo} />
                 </div>
 
-                {/* 2. Razón Social */}
                 <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="razonSocial">
                     Razón Social <span className="text-black dark:text-white">*</span>
@@ -132,7 +128,6 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   <ErrorMessage errors={state.errors?.razonSocial} />
                 </div>
 
-                {/* 3. Contacto */}
                 <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="contacto">
                     Contacto
@@ -142,9 +137,8 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                       <span className="material-symbols-outlined text-[18px]">person</span>
                     </div>
                     <input 
-                      // Nota: usamos || "" porque puede venir null de la BD
                       defaultValue={state.payload?.contacto || proveedor.contacto || ""}
-                      className="w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent focus:border-[#135bec] focus:bg-white dark:focus:bg-gray-900 pl-14 pr-4 py-3 text-[#111318] dark:text-white placeholder-[#616f89] transition-all outline-none ring-0 focus:ring-2 focus:ring-[#135bec]/20" 
+                      className="w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent focus:border-[#135bec] focus:bg-white dark:focus:bg-gray-900 pl-14 pr-4 py-3 text-[#111318] dark:text-white transition-all outline-none ring-0 focus:ring-2 focus:ring-[#135bec]/20" 
                       id="contacto" 
                       name="contacto" 
                       type="text"
@@ -153,7 +147,6 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   <ErrorMessage errors={state.errors?.contacto} />
                 </div>
 
-                {/* 4. Teléfono */}
                 <div className="col-span-1 md:col-span-6">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="telefono">
                     Teléfono <span className="text-black dark:text-white">*</span>
@@ -176,7 +169,6 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   <ErrorMessage errors={state.errors?.telefono} />
                 </div>
 
-                {/* 5. Email */}
                 <div className="col-span-1 md:col-span-12">
                   <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="email">
                     Correo Electrónico
@@ -198,16 +190,14 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   </div>
                   <ErrorMessage errors={state.errors?.email} />
                 </div>
-
               </div>
             </div>
 
-            {/* --- FOOTER BOTONES --- */}
             <div className="px-6 md:px-8 py-5 bg-[#f8f9fa] dark:bg-gray-800/50 border-t border-[#e5e7eb] dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
                
-               {/* Botón Eliminar con nuevo estilo */}
+               {/* 🆕 Botón Eliminar corregido para TypeScript */}
                <button 
-                  formAction={eliminarProveedor}
+                  formAction={handleEliminar}
                   className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer"
                >
                   <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -243,9 +233,7 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   </button>
                </div>
             </div>
-
           </form>
-
         </div>
       </main>
     </div>
