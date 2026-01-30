@@ -31,15 +31,15 @@ export default function ProductRow({ prod }: ProductRowProps) {
   const fechaObj = prod.fechaVencimiento ? new Date(prod.fechaVencimiento) : null;
   const hoy = new Date();
   
-  // Calculamos días restantes (si existe fecha)
   let diasRestantes = null;
   if (fechaObj) {
       const diffTime = fechaObj.getTime() - hoy.getTime();
       diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
   }
 
-  // Estilos según proximidad
-  let fechaClass = "text-neutral-500 dark:text-neutral-400"; // Normal
+  // Estilos actualizados: Ahora la fecha normal también tiene font-bold
+  let fechaClass = "text-neutral-500 dark:text-neutral-400 font-bold"; // <--- Cambio aquí
+
   if (diasRestantes !== null) {
       if (diasRestantes < 0) {
           // Vencido
@@ -49,7 +49,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
           fechaClass = "text-orange-600 font-bold bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300 px-2 py-0.5 rounded";
       }
   }
-
+  
   return (
     <tr className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
       
@@ -89,21 +89,29 @@ export default function ProductRow({ prod }: ProductRowProps) {
       </td>
 
       {/* 🆕 COLUMNA: VENCIMIENTO */}
-      <td className="px-4 py-3 text-sm whitespace-nowrap">
-        {fechaObj ? (
-            <div className="flex flex-col items-start">
-                <span className={fechaClass}>
-                    {fechaObj.toLocaleDateString()}
-                </span>
-                {/* Opcional: mostrar texto "Vencido" o "X días" */}
-                {diasRestantes !== null && diasRestantes < 0 && (
-                    <span className="text-[10px] text-red-500 font-bold mt-0.5">VENCIDO</span>
-                )}
-            </div>
-        ) : (
-            <span className="text-neutral-300 dark:text-neutral-600">-</span>
+      {/* 🆕 COLUMNA: VENCIMIENTO */}
+<td className="px-4 py-3 text-sm whitespace-nowrap">
+  <div className="flex flex-col items-center justify-center text-center"> 
+    {/* items-center centra horizontalmente, justify-center ayuda con el vertical si la celda es alta */}
+    
+    {fechaObj ? (
+      <>
+        <span className={`${fechaClass} block`}>
+          {fechaObj.toLocaleDateString()}
+        </span>
+        
+        {/* Etiqueta de Vencido */}
+        {diasRestantes !== null && diasRestantes < 0 && (
+          <span className="text-[10px] text-red-500 font-bold mt-0.5 leading-none">
+            VENCIDO
+          </span>
         )}
-      </td>
+      </>
+    ) : (
+      <span className="text-neutral-300 dark:text-neutral-600">-</span>
+    )}
+  </div>
+</td>
 
       {/* PRECIO */}
       <td className="px-4 py-3 text-sm font-medium text-primary dark:text-white">

@@ -33,8 +33,9 @@ export default function AgregarProductoPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");     
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);  
 
-  // NUEVO ESTADO: Contador de caracteres
+  // Contador de caracteres y Referencia para el auto-resize
   const [descLength, setDescLength] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [isPendingCat, startTransitionCat] = useTransition();
 
@@ -49,31 +50,36 @@ export default function AgregarProductoPage() {
     cargarCategorias();
   }, []);
 
-  // Lógica al cerrar el modal con un nuevo tipo
+  // Función para manejar el cambio en el textarea y su altura
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const target = e.target;
+    setDescLength(target.value.length);
+    
+    // Lógica de auto-crecimiento
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
   const handleCloseModal = (nuevoNombre?: string) => {
     setIsModalOpen(false);
-    
     if (nuevoNombre) {
       const nuevaCategoriaTemp = { id: Date.now(), nombre: nuevoNombre };
       setCategorias((prev) => [...prev, nuevaCategoriaTemp]);
-      
-      // Seleccionamos y mostramos el nuevo valor
       setSelectedTipo(nuevoNombre);
       setSearchTerm(nuevoNombre);
       setIsDropdownOpen(false);
-      
       cargarCategorias(); 
     }
   };
 
-  // Lógica de selección desde la lista
   const handleSelectOption = (valor: string) => {
     setSelectedTipo(valor);
     setSearchTerm(valor); 
     setIsDropdownOpen(false);
   };
 
-  // Filtrado de listas
   const basicasFiltradas = CATEGORIAS_BASICAS.filter(c => 
     c.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -87,7 +93,6 @@ export default function AgregarProductoPage() {
   return (
     <div className="bg-[#f6f6f8] dark:bg-[#101622] font-sans min-h-screen flex flex-col transition-colors duration-200">
       
-      {/* Cierre del dropdown al hacer clic fuera */}
       {isDropdownOpen && (
         <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)}></div>
       )}
@@ -99,11 +104,11 @@ export default function AgregarProductoPage() {
               
               {/* Breadcrumbs */}
               <div className="flex flex-wrap items-center gap-2 px-1">
-                <Link href="/" className="text-gray-500 dark:text-gray-400 text-sm font-medium  hover:text-blue-600  dark:hover:text-white transition-colors">
+                <Link href="/" className="text-gray-500 dark:text-gray-400 text-sm font-medium hover:text-blue-600 dark:hover:text-white transition-colors">
                   Panel
                 </Link>
                 <span className="material-symbols-outlined text-gray-400 text-sm">chevron_right</span>
-                <Link href="/inventario" className="text-gray-500 dark:text-gray-400 text-sm font-medium  dark:hover:text-white transition-colors  hover:text-blue-600 ">
+                <Link href="/inventario" className="text-gray-500 dark:text-gray-400 text-sm font-medium dark:hover:text-white transition-colors hover:text-blue-600">
                   Inventario
                 </Link>
                 <span className="material-symbols-outlined text-gray-400 text-sm">chevron_right</span>
@@ -115,11 +120,10 @@ export default function AgregarProductoPage() {
                   Agregar Nuevo Producto
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-base font-normal">
-                  Ingrese los detalles del nuevo artículo.
+                  Ingrese los detalles del nuevo artículo para su gestión.
                 </p>
               </div>
 
-              {/* FORMULARIO */}
               <form action={dispatch} className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-[#e5e7eb] dark:border-[#2d3748] overflow-hidden">
                 
                 <div className="border-b border-[#e5e7eb] dark:border-[#2d3748] px-6 py-4 bg-gray-50/50 dark:bg-[#1e2736]">
@@ -166,7 +170,7 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.codigoBarra} />
                     </label>
 
-                    {/* COMBOBOX TIPO DE PRODUCTO */}
+                    {/* COMBOBOX TIPO */}
                     <div className="flex flex-col gap-2 relative z-20">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Tipo de Producto *</span>
                       <div className="flex gap-2 relative">
@@ -174,9 +178,7 @@ export default function AgregarProductoPage() {
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/50 text-orange-700 pointer-events-none z-10">
                             <span className="material-symbols-outlined text-lg">category</span>
                           </div>
-                          
                           <input type="hidden" name="tipo" value={selectedTipo} />
-
                           <input
                             type="text"
                             placeholder="Buscar o seleccionar..."
@@ -190,69 +192,35 @@ export default function AgregarProductoPage() {
                             onFocus={() => setIsDropdownOpen(true)}
                             autoComplete="off"
                           />
-                          
                           <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-black dark:text-gray-400">
                             <span className="material-symbols-outlined text-xl">expand_more</span>
                           </div>
-
-                          {/* LISTA DESPLEGABLE */}
                           {isDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#2d3748] border border-[#e5e7eb] dark:border-[#4a5568] rounded-lg shadow-lg max-h-60 overflow-y-auto z-30 animate-in fade-in zoom-in-95 duration-100">
-                              
-                              {/* Básicos */}
+                            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#2d3748] border border-[#e5e7eb] dark:border-[#4a5568] rounded-lg shadow-lg max-h-60 overflow-y-auto z-30">
                               {basicasFiltradas.length > 0 && (
                                 <div>
-                                  <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-[#1a202c]">
-                                    Básicos
-                                  </div>
+                                  <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-[#1a202c]">Básicos</div>
                                   {basicasFiltradas.map((opcion) => (
-                                    <button
-                                      key={opcion}
-                                      type="button"
-                                      onClick={() => handleSelectOption(opcion)}
-                                      className="w-full text-left px-4 py-2 text-sm text-[#0d121b] dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#4a5568] capitalize transition-colors"
-                                    >
+                                    <button key={opcion} type="button" onClick={() => handleSelectOption(opcion)} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#4a5568] capitalize">
                                       {opcion}
                                     </button>
                                   ))}
                                 </div>
                               )}
-
-                              {/* Mis Categorías */}
                               {misCategoriasFiltradas.length > 0 && (
                                 <div>
-                                  <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-[#1a202c] border-t border-gray-100 dark:border-gray-700">
-                                    Mis Categorías
-                                  </div>
+                                  <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-[#1a202c] border-t">Mis Categorías</div>
                                   {misCategoriasFiltradas.map((cat) => (
-                                    <button
-                                      key={cat.id}
-                                      type="button"
-                                      onClick={() => handleSelectOption(cat.nombre)}
-                                      className="w-full text-left px-4 py-2 text-sm text-[#0d121b] dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#4a5568] capitalize transition-colors"
-                                    >
+                                    <button key={cat.id} type="button" onClick={() => handleSelectOption(cat.nombre)} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#4a5568] capitalize">
                                       {cat.nombre}
                                     </button>
                                   ))}
                                 </div>
                               )}
-
-                              {basicasFiltradas.length === 0 && misCategoriasFiltradas.length === 0 && (
-                                <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                                  No se encontraron resultados para "{searchTerm}"
-                                </div>
-                              )}
                             </div>
                           )}
-
                         </div>
-
-                        {/* Botón Agregar Modal (ANIMADO) */}
-                        <button 
-                          onClick={() => setIsModalOpen(true)} 
-                          className="hover:cursor-pointer flex items-center justify-center shrink-0 h-12 px-4 rounded-lg border border-[#cfd7e7] bg-[#f8f9fc] hover:bg-gray-100 font-bold text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md" 
-                          type="button"
-                        >
+                        <button onClick={() => setIsModalOpen(true)} className="flex items-center justify-center shrink-0 h-12 px-4 rounded-lg border border-[#cfd7e7] bg-[#f8f9fc] hover:bg-gray-100 font-bold text-sm transition-all shadow-sm" type="button">
                           <span className="material-symbols-outlined text-[20px] mr-2">add</span>
                           Agregar
                         </button>
@@ -260,7 +228,7 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.tipo} />
                     </div>
 
-                    {/* Código de Proveedor */}
+                    {/* Proveedor */}
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de Proveedor *</span>
                       <div className="relative w-full">
@@ -277,7 +245,7 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.proveedor} />
                     </label>
 
-                    {/* 🆕 NUEVO CAMPO: Fecha de Vencimiento */}
+                    {/* Fecha de Vencimiento */}
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Fecha de Vencimiento</span>
                       <div className="relative w-full">
@@ -292,22 +260,23 @@ export default function AgregarProductoPage() {
                       </div>
                     </label>
 
-                    {/* Descripción con Contador (Movido aquí para balancear la grilla) */}
+                    {/* Descripción con CRECIMIENTO AUTOMÁTICO */}
                     <label className="flex flex-col gap-2">
                       <div className="flex justify-between items-center">
                         <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
                         <span className={`text-xs ${descLength >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                          (Opcional {descLength} de 200)
+                          ({descLength}/200)
                         </span>
                       </div>
                       <div className="relative w-full">
                         <textarea 
+                          ref={textareaRef}
                           name="descripcion"
                           maxLength={200}
                           rows={1} 
-                          onChange={(e) => setDescLength(e.target.value.length)}
-                          className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 min-h-[48px]`}
-                          placeholder="Ingrese detalles..." 
+                          onChange={handleDescriptionChange}
+                          className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 overflow-hidden min-h-12`}
+                          placeholder="Ingrese detalles adicionales..." 
                         />
                         <div className="pointer-events-none absolute left-3 top-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
                           <span className="material-symbols-outlined text-lg">description</span>
@@ -325,15 +294,8 @@ export default function AgregarProductoPage() {
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Stock inicial *</span>
                       <div className="relative w-full">
-                        <input 
-                          name="stock"
-                          className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="0" 
-                          type="number"
-                        />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
-                          <span className="material-symbols-outlined text-lg">inventory</span>
-                        </div>
+                        <input name="stock" className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="0" type="number" />
+                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700"><span className="material-symbols-outlined text-lg">inventory</span></div>
                       </div>
                       <ErrorMessage errors={state.errors?.stock} />
                     </label>
@@ -342,58 +304,25 @@ export default function AgregarProductoPage() {
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Precio Unitario *</span>
                       <div className="relative w-full">
-                        <input 
-                          name="precio"
-                          className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="0.00" 
-                          step="0.01" 
-                          type="number"
-                        />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700">
-                          <span className="material-symbols-outlined text-lg">attach_money</span>
-                        </div>
+                        <input name="precio" className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="0.00" step="0.01" type="number" />
+                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700"><span className="material-symbols-outlined text-lg">attach_money</span></div>
                       </div>
                       <ErrorMessage errors={state.errors?.precio} />
                     </label>
                   </div>
                 </div>
 
-                {/* Footer */}
+                {/* Footer con Botones */}
                 <div className="bg-gray-50 dark:bg-[#1a202c] border-t border-[#e5e7eb] px-6 py-4 flex flex-col items-end gap-2">
                    {state.message && (
-                      <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">
-                         {state.message}
-                      </div>
+                      <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>
                    )}
                    <div className="flex flex-col-reverse md:flex-row justify-end items-center gap-4 w-full">
-                    
-                    {/* Botón Cancelar (ANIMADO) */}
-                    <Link 
-                      href="/inventario" 
-                      className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                    >
+                    <Link href="/inventario" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all shadow-sm">
                       Cancelar
                     </Link>
-                    
-                    {/* Botón Guardar (ANIMADO) */}
-                    <button 
-                      type="submit" 
-                      disabled={isPending}
-                      className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
-                        ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black'}
-                      `}
-                    >
-                      {isPending ? (
-                        <>
-                          <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-[18px]">save</span>
-                          Guardar Producto
-                        </>
-                      )}
+                    <button type="submit" disabled={isPending} className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-sm ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black'}`}>
+                      {isPending ? (<><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</>) : (<><span className="material-symbols-outlined text-[18px]">save</span>Guardar Producto</>)}
                     </button>
                    </div>
                 </div>
@@ -401,7 +330,6 @@ export default function AgregarProductoPage() {
               </form>
             </div>
           </div>
-          <div className="h-10"></div>
         </div>
       </div>
       
