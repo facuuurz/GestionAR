@@ -166,32 +166,6 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.codigoBarra} />
                     </label>
 
-                    {/* Descripción con Contador */}
-                    <label className="flex flex-col gap-2 md:col-span-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
-                        {/* AQUÍ ESTÁ EL CONTADOR */}
-                        <span className={`text-xs ${descLength >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                          (Opcional {descLength} de 200)
-                        </span>
-                      </div>
-                      <div className="relative w-full">
-                        <textarea 
-                          name="descripcion"
-                          maxLength={200}
-                          rows={3}
-                          // AQUÍ ACTUALIZAMOS EL ESTADO
-                          onChange={(e) => setDescLength(e.target.value.length)}
-                          className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20`}
-                          placeholder="Ingrese detalles..." 
-                        />
-                        <div className="pointer-events-none absolute left-3 top-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                          <span className="material-symbols-outlined text-lg">description</span>
-                        </div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.descripcion} />
-                    </label>
-
                     {/* COMBOBOX TIPO DE PRODUCTO */}
                     <div className="flex flex-col gap-2 relative z-20">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Tipo de Producto *</span>
@@ -263,7 +237,6 @@ export default function AgregarProductoPage() {
                                 </div>
                               )}
 
-                              {/* Vacío */}
                               {basicasFiltradas.length === 0 && misCategoriasFiltradas.length === 0 && (
                                 <div className="px-4 py-3 text-sm text-gray-500 text-center">
                                   No se encontraron resultados para "{searchTerm}"
@@ -303,6 +276,46 @@ export default function AgregarProductoPage() {
                       </div>
                       <ErrorMessage errors={state.errors?.proveedor} />
                     </label>
+
+                    {/* 🆕 NUEVO CAMPO: Fecha de Vencimiento */}
+                    <label className="flex flex-col gap-2">
+                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Fecha de Vencimiento</span>
+                      <div className="relative w-full">
+                        <input 
+                          name="fechaVencimiento"
+                          type="date"
+                          className="flex w-full rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20"
+                        />
+                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300">
+                          <span className="material-symbols-outlined text-lg">event</span>
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* Descripción con Contador (Movido aquí para balancear la grilla) */}
+                    <label className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
+                        <span className={`text-xs ${descLength >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                          (Opcional {descLength} de 200)
+                        </span>
+                      </div>
+                      <div className="relative w-full">
+                        <textarea 
+                          name="descripcion"
+                          maxLength={200}
+                          rows={1} 
+                          onChange={(e) => setDescLength(e.target.value.length)}
+                          className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 min-h-[48px]`}
+                          placeholder="Ingrese detalles..." 
+                        />
+                        <div className="pointer-events-none absolute left-3 top-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
+                          <span className="material-symbols-outlined text-lg">description</span>
+                        </div>
+                      </div>
+                      <ErrorMessage errors={state.errors?.descripcion} />
+                    </label>
+
                   </div>
 
                   <hr className="border-[#e5e7eb] dark:border-[#2d3748]"/>

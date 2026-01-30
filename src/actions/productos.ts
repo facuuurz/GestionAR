@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 // ----------------------------------------------------------------------
 // 1. ESQUEMA DE VALIDACIÓN Y TIPOS
@@ -27,6 +28,7 @@ const productoSchema = z.object({
     .min(0.01, "El precio debe ser mayor a 0"),
   
   descripcion: z.string().max(200, "Máximo 200 caracteres").optional(),
+  fechaVencimiento: z.string().optional().nullable(),
 });
 
 // Definición del Estado para useActionState
@@ -39,6 +41,7 @@ export type State = {
     stock?: string[];
     precio?: string[];
     descripcion?: string[];
+    fechaVencimiento?: string[];
   };
   message?: string | null;
   // 'payload' almacena lo que el usuario escribió para devolverlo si hay error
@@ -58,6 +61,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
     stock: formData.get("stock"), 
     precio: formData.get("precio"),
     descripcion: formData.get("descripcion"),
+    fechaVencimiento: formData.get("fechaVencimiento"),
   });
 
   if (!validatedFields.success) {
@@ -68,9 +72,11 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
     };
   }
 
-  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion } = validatedFields.data;
+  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento } = validatedFields.data;
 
   try {
+    const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
+
     await prisma.producto.create({
       data: {
         nombre,
@@ -80,6 +86,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
         stock,
         precio,
         descripcion: descripcion || "",
+        fechaVencimiento: fechaFinal,
       },
     });
   } catch (error) {
@@ -110,6 +117,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
     stock: formData.get("stock"),
     precio: formData.get("precio"),
     descripcion: formData.get("descripcion"),
+    fechaVencimiento: formData.get("fechaVencimiento"),
   });
 
   // 2. Si falla, retornamos errores Y los datos que escribió el usuario (payload)
@@ -121,10 +129,12 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
     };
   }
 
-  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion } = validatedFields.data;
+  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento } = validatedFields.data;
 
   // 3. Actualizar DB
   try {
+    const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
+    
     await prisma.producto.update({
       where: { id },
       data: {
@@ -135,6 +145,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
         tipo,
         proveedor,
         descripcion: descripcion || null,
+        fechaVencimiento: fechaFinal,
       },
     });
   } catch (error) {
@@ -162,21 +173,112 @@ export async function eliminarProducto(formData: FormData) {
   redirect("/inventario");
 }
 
-export async function obtenerProductosDB() {
+// DEFINICIÓN DE LOS FILTROS
+interface ProductFilters {
+  query?: string;
+  category?: string;
+  stockStatus?: string;
+  priceMin?: string;
+  priceMax?: string;
+  sort?: string;
+}
+
+// ⚠️ FUNCIÓN MODIFICADA PARA FILTRAR Y ORDENAR EN LA BD
+export async function obtenerProductosDB(filters?: ProductFilters) {
   try {
+    // 1. Construir cláusula WHERE (Filtros)
+    const where: Prisma.ProductoWhereInput = {};
+
+    // A. Búsqueda General (Nombre, Código, Tipo, Proveedor)
+    if (filters?.query) {
+      const search = filters.query.trim();
+      where.OR = [
+        { nombre: { contains: search, mode: "insensitive" } },
+        { codigoBarra: { contains: search, mode: "insensitive" } },
+        { tipo: { contains: search, mode: "insensitive" } },
+        { proveedor: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // B. Categoría
+    if (filters?.category && filters.category !== "Todas") {
+      where.tipo = { equals: filters.category, mode: "insensitive" };
+    }
+
+    // C. Estado del Stock
+    if (filters?.stockStatus) {
+      if (filters.stockStatus === "low") {
+        // Stock Bajo: entre 1 y 20
+        where.stock = { gt: 0, lte: 20 };
+      } else if (filters.stockStatus === "none") {
+        // Sin Stock: 0
+        where.stock = { equals: 0 };
+      } else if (filters.stockStatus === "expiring") {
+        // Por Vencer: Fecha entre HOY y 30 días en el futuro
+        const hoy = new Date();
+        const futuro = new Date();
+        futuro.setDate(hoy.getDate() + 30);
+        
+        where.fechaVencimiento = {
+          gte: hoy,
+          lte: futuro
+        };
+      }
+    }
+
+    // D. Rango de Precio
+    if (filters?.priceMin || filters?.priceMax) {
+      where.precio = {};
+      if (filters.priceMin) where.precio.gte = parseFloat(filters.priceMin);
+      if (filters.priceMax) where.precio.lte = parseFloat(filters.priceMax);
+    }
+
+    // 2. Construir cláusula ORDER BY (Ordenamiento)
+    let orderBy: Prisma.ProductoOrderByWithRelationInput[] = [];
+
+    switch (filters?.sort) {
+      case "nombre-asc":
+        orderBy = [{ nombre: "asc" }];
+        break;
+      case "stock-desc":
+        orderBy = [{ stock: "desc" }];
+        break;
+      case "stock-asc":
+        orderBy = [{ stock: "asc" }];
+        break;
+      case "precio-desc":
+        orderBy = [{ precio: "desc" }];
+        break;
+      case "precio-asc":
+        orderBy = [{ precio: "asc" }];
+        break;
+      case "vencimiento-asc":
+        // Primero los que vencen pronto, los nulos al final
+        orderBy = [{ fechaVencimiento: "asc" }]; 
+        break;
+      default:
+        // Por defecto: Creados recientemente
+        orderBy = [{ createdAt: "desc" }];
+    }
+
+    // 3. Ejecutar consulta
     const productos = await prisma.producto.findMany({
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy,
     });
+
     return productos.map((p) => ({
       ...p,
-      precio: Number(p.precio),
+      precio: Number(p.precio), // Convertir Decimal a Number para el frontend
     }));
+
   } catch (error) {
     console.error("Error al obtener productos:", error);
     return [];
   }
 }
 
+// ... (MANTENER cargarDatosDePrueba y obtenerProductoPorId IGUAL QUE ANTES) ...
 export async function cargarDatosDePrueba() {
   try {
     await prisma.producto.createMany({
@@ -195,7 +297,12 @@ export async function cargarDatosDePrueba() {
 export async function obtenerProductoPorId(id: number) {
   if (!id || typeof id !== 'number' || isNaN(id)) return null;
   try {
-    return await prisma.producto.findUnique({ where: { id } });
+    const prod = await prisma.producto.findUnique({ where: { id } });
+    if (!prod) return null;
+    return {
+        ...prod,
+        precio: Number(prod.precio)
+    }
   } catch (error) {
     return null;
   }

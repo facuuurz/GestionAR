@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { buscarProductosVenta, buscarClienteVenta, procesarVenta } from "@/actions/ventas";
+import { buscarProductosVenta, buscarClienteVenta, procesarVenta, obtenerCategorias } from "@/actions/ventas";
 import { obtenerPromociones } from "@/actions/promociones";
 import ModalPromociones from "@/components/ventas/ModalPromociones";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -15,6 +15,7 @@ type Producto = {
   stock: number;
   precio: number;
   categoria?: string; 
+  fechaVencimiento?: Date | string | null;
 };
 
 // ⚠️ MODIFICADO: ItemCarrito ahora soporta Productos y Promos
@@ -77,7 +78,14 @@ export default function PantallaVenta() {
       priceRange: { min: "", max: "" }
   });
 
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState<string[]>([]);
+
   // --- EFECTOS ---
+  useEffect(() => {
+    obtenerCategorias().then((cats) => {
+        setCategoriasDisponibles(cats);
+    });
+  }, []);
 
   useEffect(() => {
     // Llamamos a la acción pasando el texto Y los filtros
@@ -285,7 +293,7 @@ export default function PantallaVenta() {
         onClose={() => setShowFilters(false)}
         currentFilters={activeFilters}
         onApply={setActiveFilters}
-        categoriasDisponibles={["General", "Bebidas", "Limpieza", "Almacen"]} 
+        categoriasDisponibles={categoriasDisponibles} 
       />
 
       <ModalPromociones 
@@ -363,6 +371,11 @@ export default function PantallaVenta() {
                             <div className="flex flex-col">
                                 <span className="font-medium text-gray-900 dark:text-white text-base">{prod.nombre}</span>
                                 <span className="text-xs text-neutral-500">{prod.codigoBarra || "S/C"}</span>
+                                {(prod as any).fechaVencimiento && (
+                                    <span className="text-[10px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 px-1.5 py-0.5 rounded w-fit mt-1">
+                                         Vence: {new Date((prod as any).fechaVencimiento).toLocaleDateString()}
+                                    </span>
+                                )}
                             </div>
                         </td>
                         <td className="px-6 py-4 text-center">

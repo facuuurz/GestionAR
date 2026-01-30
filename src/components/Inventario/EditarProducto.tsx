@@ -16,6 +16,8 @@ interface ProductFormProps {
     tipo: string;
     proveedor: string;
     descripcion: string;
+    // 🆕 Agregamos el campo opcional de fecha
+    fechaVencimiento?: Date | string | null; 
   };
   categorias: {
     id: number;
@@ -37,6 +39,14 @@ function ErrorMessage({ errors }: { errors?: string[] }) {
   );
 }
 
+// 🆕 Función para formatear la fecha a YYYY-MM-DD (requerido por input type="date")
+const formatDateForInput = (date?: Date | string | null) => {
+  if (!date) return "";
+  const d = new Date(date);
+  // Asegura formato ISO (YYYY-MM-DD) manejando la zona horaria correctamente si es necesario
+  return d.toISOString().split('T')[0];
+};
+
 // --- COMPONENTE PRINCIPAL ---
 export default function EditProductForm({ producto, categorias: categoriasIniciales }: ProductFormProps) {
   // 1. Estados iniciales del formulario
@@ -56,11 +66,10 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 4. Estados de Stock y Descripción
-  // SOLUCIÓN: Tipamos el estado como <number | string> para permitir el vacío ""
   const [stockActual, setStockActual] = useState<number | string>(state.payload?.stock ?? producto.stock);
   const [descLength, setDescLength] = useState(producto.descripcion?.length || 0);
   
-  // Helpers de Stock (Actualizados para manejar string vacío)
+  // Helpers de Stock
   const handleSumarStock = () => {
     setStockActual((prev) => (prev === "" ? 1 : Number(prev) + 1));
   };
@@ -271,9 +280,32 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
              </div>
              <ErrorMessage errors={state.errors?.proveedor} />
           </label>
+
+          {/* 🆕 NUEVO CAMPO: Fecha de Vencimiento */}
+          <label className="flex flex-col gap-2">
+             <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Fecha de Vencimiento</span>
+             <div className="relative w-full">
+               <input 
+                 name="fechaVencimiento"
+                 // Usamos la función auxiliar para convertir la fecha
+                 defaultValue={formatDateForInput(state.payload?.fechaVencimiento ?? producto.fechaVencimiento)}
+                 type="date"
+                 className="flex w-full rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20"
+               />
+               <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300">
+                 <span className="material-symbols-outlined text-lg">event</span>
+               </div>
+             </div>
+             {/* Si agregas validación para fecha en el server, agrega ErrorMessage aquí */}
+          </label>
           
-          {/* DESCRIPCION */}
-          <div className="md:col-span-2">
+          {/* DESCRIPCION (Ocupa 2 columnas o se adapta) */}
+          <div className="md:col-span-1"> 
+          {/* Nota: Antes era col-span-2, lo cambié a col-span-1 o puedes dejarlo dinámico 
+             para que llene el espacio restante. Como agregamos un campo impar, 
+             la grilla podría quedar con huecos si no ajustamos. 
+             Si quieres que descripcion ocupe todo el ancho abajo, sácalo del grid o ponle md:col-span-2 
+             y asegúrate que los items anteriores sean pares, o acepta el hueco.*/}
             <label className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
@@ -285,7 +317,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                 <textarea 
                   name="descripcion"
                   maxLength={200}
-                  rows={3}
+                  rows={3} // Reduje rows para que se alinee mejor con la altura de inputs si queda al lado
                   defaultValue={state.payload?.descripcion ?? producto.descripcion ?? ""}
                   onChange={(e) => setDescLength(e.target.value.length)}
                   className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20`}
@@ -302,8 +334,9 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
 
         {/* --- GRUPO INFERIOR: STOCK Y PRECIO --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+            {/* ... Contenido de Stock y Precio sin cambios ... */}
             
-          {/* Stock (CORREGIDO) */}
+          {/* Stock */}
           <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                   <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Stock Total *</span>
@@ -324,7 +357,6 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                    <input 
                      name="stock"
                      value={stockActual}
-                     // SOLUCIÓN: Si el valor está vacío, lo dejamos vacío. Si no, lo convertimos a número (eliminando ceros a la izquierda)
                      onChange={(e) => {
                         const val = e.target.value;
                         if (val === "") setStockActual("");

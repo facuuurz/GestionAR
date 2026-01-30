@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 
 // Componentes
@@ -24,10 +24,25 @@ export default function InventarioPage() {
   });
   const [currentSort, setCurrentSort] = useState(""); 
 
-  // --- 3. DATA DESDE EL HOOK ---
-  const { productos, setCriterioOrden, loading } = useProductos();
+  // --- 3. DATA DESDE EL HOOK (MODIFICADO) ---
+  // Obtenemos 'recargar' y usamos 'productos' directos (ya vienen filtrados)
+  const { productos, loading, recargar } = useProductos();
 
-  // --- 4. EXTRACCIÓN DE CATEGORÍAS ---
+  // --- 4. EFECTO: PEDIR DATOS AL SERVIDOR CUANDO CAMBIAN FILTROS ---
+  useEffect(() => {
+    recargar({
+      query: busqueda,
+      category: activeFilters.category,
+      stockStatus: activeFilters.stockStatus,
+      priceMin: activeFilters.priceRange.min,
+      priceMax: activeFilters.priceRange.max,
+      sort: currentSort
+    });
+  }, [busqueda, activeFilters, currentSort, recargar]);
+
+  // --- 5. EXTRACCIÓN DE CATEGORÍAS ---
+  // Nota: Esto mostrará solo categorías de los productos visibles. 
+  // Idealmente deberías cargar todas las categorías en un hook aparte si quieres verlas siempre.
   const categoriasUnicas = useMemo(() => {
     const tipos = productos
         .map(p => p.tipo)
@@ -35,53 +50,22 @@ export default function InventarioPage() {
     return Array.from(new Set(tipos));
   }, [productos]);
 
-  // --- 5. LÓGICA DE FILTRADO ---
-  const productosFiltrados = useMemo(() => {
-    return productos.filter((prod) => {
-      // Lógica de búsqueda
-      let matchesSearch = true;
-      if (busqueda) {
-        const termino = busqueda.toLowerCase();
-        const matches = [
-            prod.nombre, 
-            prod.tipo, 
-            prod.proveedor, 
-            prod.codigoBarra, 
-            prod.id.toString()
-        ];
-        matchesSearch = matches.some(field => field?.toLowerCase().includes(termino));
-      }
-
-      // Filtro Categoría
-      let matchesCategory = true;
-      if (activeFilters.category !== "Todas") {
-          matchesCategory = prod.tipo?.toLowerCase() === activeFilters.category.toLowerCase();
-      }
-
-      // Filtro Stock
-      let matchesStock = true;
-      if (activeFilters.stockStatus === "low") matchesStock = prod.stock > 0 && prod.stock < 20; 
-      else if (activeFilters.stockStatus === "none") matchesStock = prod.stock <= 0; 
-
-      // Filtro Precio
-      let matchesPrice = true;
-      const precio = Number(prod.precio);
-      const min = activeFilters.priceRange.min ? Number(activeFilters.priceRange.min) : 0;
-      const max = activeFilters.priceRange.max ? Number(activeFilters.priceRange.max) : Infinity;
-      if (precio < min || precio > max) matchesPrice = false;
-
-      return matchesSearch && matchesCategory && matchesStock && matchesPrice;
-    });
-  }, [productos, busqueda, activeFilters]);
-
   // Manejadores
   const handleApplyFilters = (filtros: any) => setActiveFilters(filtros);
 
   const handleApplySort = (criterio: string, cerrarModal: boolean = true) => {
-    setCriterioOrden(criterio);
     setCurrentSort(criterio);
     if (cerrarModal) setMostrarOrdenar(false);
   };
+
+  // Verificamos si hay filtros activos para mostrar el botón de limpiar
+  const hasActiveFilters = 
+    activeFilters.category !== "Todas" || 
+    activeFilters.stockStatus !== "all" || 
+    activeFilters.priceRange.min !== "" || 
+    activeFilters.priceRange.max !== "" ||
+    busqueda !== "" ||
+    currentSort !== "";
 
   return (
     <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
@@ -129,7 +113,7 @@ export default function InventarioPage() {
           </Link>
         </div>
 
-        {/* --- USANDO EL NUEVO COMPONENTE --- */}
+        {/* Barra de Navegación */}
         <BarraNavegacionInventario 
             busqueda={busqueda}
             onSearchChange={setBusqueda}
@@ -153,6 +137,7 @@ export default function InventarioPage() {
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Código</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider min-w-50">Producto</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Vencimiento</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Precio Unit.</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Tipo</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">Cod. Prov.</th>
@@ -163,20 +148,21 @@ export default function InventarioPage() {
               <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
                 {loading ? (
                    <tr>
-                     <td colSpan={7} className="text-center py-20">
+                     <td colSpan={8} className="text-center py-20">
                        <div className="flex flex-col items-center justify-center gap-2">
                           <span className="material-symbols-outlined animate-spin text-3xl text-primary dark:text-white">progress_activity</span>
                           <span className="text-neutral-400 text-sm">Cargando inventario...</span>
                        </div>
                      </td>
                    </tr>
-                ) : productosFiltrados.length > 0 ? (
-                   productosFiltrados.map((prod) => (
+                ) : productos.length > 0 ? (
+                   // Usamos 'productos' directamente en lugar de 'productosFiltrados'
+                   productos.map((prod) => (
                      <ProductRow key={prod.id} prod={prod} />
                    ))
                 ) : (
                    <tr>
-                       <td colSpan={7} className="text-center py-12 text-neutral-500 text-sm">
+                       <td colSpan={8} className="text-center py-12 text-neutral-500 text-sm">
                            <div className="flex flex-col items-center gap-2">
                                <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
                                <p>
@@ -184,13 +170,13 @@ export default function InventarioPage() {
                                    ? `No se encontraron productos que coincidan con "${busqueda}"` 
                                    : "No se encontraron productos con los filtros aplicados."}
                                </p>
-                               {(activeFilters.category !== "Todas" || activeFilters.stockStatus !== "all" || busqueda || currentSort) && (
+                               {hasActiveFilters && (
                                    <button 
                                      onClick={() => {
                                          setBusqueda("");
                                          setActiveFilters({ category: "Todas", stockStatus: "all", priceRange: { min: "", max: "" } });
-                                         setCriterioOrden("");
                                          setCurrentSort("");
+                                         // recargar se llamará automáticamente por el useEffect
                                      }}
                                      className="text-blue-600 hover:underline text-xs font-bold mt-1"
                                    >
@@ -207,8 +193,9 @@ export default function InventarioPage() {
           
           {!loading && (
             <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
-                <span>Mostrando {productosFiltrados.length} productos</span>
-                <span>Total Productos: {productos.length}</span>
+                <span>Mostrando {productos.length} productos</span>
+                {/* Nota: Para mostrar el total real de la BD necesitarías que el server devuelva 'count' también */}
+                <span>Resultados: {productos.length}</span>
             </div>
           )}
         </div>

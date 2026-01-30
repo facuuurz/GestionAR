@@ -64,7 +64,10 @@ export async function buscarProductosVenta(query: string, filters?: Filters) {
     const productos = await prisma.producto.findMany({
       where: whereClause,
       take: 20, // Limitamos para rendimiento
-      orderBy: { nombre: 'asc' }
+      orderBy: [
+        { fechaVencimiento: 'asc' },
+        { nombre: 'asc' }
+      ]
     });
 
     return productos.map((producto) => ({
@@ -149,5 +152,19 @@ export async function procesarVenta(
   } catch (error: any) {
     console.error("Error al procesar venta:", error);
     return { success: false, message: error.message || "Error al procesar la venta" };
+  }
+}
+
+export async function obtenerCategorias() {
+  try {
+    const categorias = await prisma.categoria.findMany({
+      orderBy: { nombre: 'asc' }, // Ordenadas alfabéticamente
+    });
+
+    // Devolvemos solo un array de strings: ["Bebidas", "Limpieza", etc.]
+    return categorias.map((c) => c.nombre);
+  } catch (error) {
+    console.error("Error al obtener categorías:", error);
+    return [];
   }
 }

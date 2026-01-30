@@ -19,18 +19,20 @@ model User {
 model Producto {
   id            Int      @id @default(autoincrement()) @map("id_producto")
   nombre        String   @map("nombre_producto")
-  codigoBarra   String?  @unique @map("codigo_barra")
+  codigoBarra   String?  @map("codigo_barra")
   descripcion   String?  @map("descripcion")
   tipo          String?  @map("tipo_producto")
   proveedor     String?  @map("codigo_proveedor")
   stock         Int      @default(0) @map("stock_inicial")
   precio        Decimal  @default(0.00) @db.Decimal(10, 2) @map("precio_unitario")
+  fechaVencimiento DateTime? @db.Date @map("fecha_vencimiento")
   
   promociones   PromocionProducto[]
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@index([codigoBarra, fechaVencimiento])
   @@map("productos")
 }
 

@@ -53,7 +53,7 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
         </div>
 
         {/* Cuerpo */}
-        <div className="p-6 flex flex-col gap-6">
+        <div className="p-6 flex flex-col gap-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
           
           {/* Filtro: Tipo de producto */}
           <div className="flex flex-col gap-2">
@@ -76,24 +76,32 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
             </div>
           </div>
 
-          {/* Filtro: Estado del Stock */}
+          {/* Filtro: Estado del Stock (y Vencimiento) */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
               <span className="material-symbols-outlined text-[20px] text-neutral-400">inventory_2</span>
               Estado del Stock
             </label>
-            <div className="flex flex-wrap gap-2">
-              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors flex-1 justify-center ${stockStatus === 'all' ? 'bg-neutral-100 dark:bg-neutral-700 border-neutral-400' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50'}`}>
+            <div className="grid grid-cols-2 gap-2">
+              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors justify-center ${stockStatus === 'all' ? 'bg-neutral-100 dark:bg-neutral-700 border-neutral-400' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-[#2a2a2a]'}`}>
                 <input type="radio" name="stock" className="hidden" checked={stockStatus === 'all'} onChange={() => setStockStatus('all')} />
                 <span className="text-sm font-medium">Todos</span>
               </label>
-              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors flex-1 justify-center ${stockStatus === 'low' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50'}`}>
+              
+              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors justify-center ${stockStatus === 'low' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-[#2a2a2a]'}`}>
                 <input type="radio" name="stock" className="hidden" checked={stockStatus === 'low'} onChange={() => setStockStatus('low')} />
                 <span className="text-sm font-medium">Bajo</span>
               </label>
-              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors flex-1 justify-center ${stockStatus === 'none' ? 'bg-red-50 border-red-400 text-red-700' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50'}`}>
+              
+              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors justify-center ${stockStatus === 'none' ? 'bg-red-50 border-red-400 text-red-700' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-[#2a2a2a]'}`}>
                 <input type="radio" name="stock" className="hidden" checked={stockStatus === 'none'} onChange={() => setStockStatus('none')} />
                 <span className="text-sm font-medium">Sin Stock</span>
+              </label>
+
+              {/* OPCIÓN NUEVA: Vencimiento Cercano */}
+              <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors justify-center ${stockStatus === 'expiring' ? 'bg-orange-50 border-orange-400 text-orange-700' : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-[#2a2a2a]'}`}>
+                <input type="radio" name="stock" className="hidden" checked={stockStatus === 'expiring'} onChange={() => setStockStatus('expiring')} />
+                <span className="text-sm font-medium">Por Vencer</span>
               </label>
             </div>
           </div>
@@ -144,8 +152,6 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters, 
            </button>
 
            <div className="flex gap-3 w-full sm:w-auto">
-            {/* Se ha eliminado el botón cancelar */}
-            
             {/* Botón Aplicar */}
             <button 
                 onClick={handleApply} 
