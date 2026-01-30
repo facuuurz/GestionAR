@@ -5,13 +5,12 @@ interface ProductRowProps {
 }
 
 export default function ProductRow({ prod }: ProductRowProps) {
-  // --- 1. LÓGICA DE STOCK (COLORES Y ESTADOS) ---
+  // --- 1. LÓGICA DE STOCK ---
   const isZero = prod.stock === 0;
   const isLow = prod.stock > 0 && prod.stock < 20; 
   const isGood = prod.stock >= 20; 
   
   let stockColorClass = '';
-  
   if (isZero) {
     stockColorClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
   } else if (isLow) {
@@ -20,14 +19,14 @@ export default function ProductRow({ prod }: ProductRowProps) {
     stockColorClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
   }
 
-  // --- 2. LÓGICA DE TEXTO (DESCRIPCIÓN Y UNIDADES) ---
+  // --- 2. LÓGICA DE TEXTO ---
   const descripcionCorta = prod.descripcion && prod.descripcion.length > 50 
     ? prod.descripcion.substring(0, 50) + "..." 
     : prod.descripcion;
 
   const labelUnidad = prod.stock === 1 ? "ud." : "uds.";
 
-  // --- 3. 🆕 LÓGICA DE VENCIMIENTO ---
+  // --- 3. LÓGICA DE VENCIMIENTO ---
   const fechaObj = prod.fechaVencimiento ? new Date(prod.fechaVencimiento) : null;
   const hoy = new Date();
   
@@ -37,16 +36,18 @@ export default function ProductRow({ prod }: ProductRowProps) {
       diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
   }
 
-  // Estilos actualizados: Ahora la fecha normal también tiene font-bold
-  let fechaClass = "text-neutral-500 dark:text-neutral-400 font-bold"; // <--- Cambio aquí
+  // 🆕 ESTILOS ACTUALIZADOS CON BG POR DEFECTO
+  // Definimos las clases base para todos los estados de fecha
+  const baseFechaClass = "font-bold px-2 py-0.5 rounded text-xs inline-block";
+  let fechaClass = `${baseFechaClass} text-neutral-600 bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-300`; 
 
   if (diasRestantes !== null) {
       if (diasRestantes < 0) {
           // Vencido
-          fechaClass = "text-red-600 font-bold bg-red-50 dark:bg-red-900/20 dark:text-red-300 px-2 py-0.5 rounded";
+          fechaClass = `${baseFechaClass} text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300`;
       } else if (diasRestantes <= 30) {
-          // Por vencer (menos de 30 días)
-          fechaClass = "text-orange-600 font-bold bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300 px-2 py-0.5 rounded";
+          // Por vencer
+          fechaClass = `${baseFechaClass} text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300`;
       }
   }
   
@@ -60,7 +61,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
         </Link>
       </td>
 
-      {/* PRODUCTO (Nombre + Descripción Corta) */}
+      {/* PRODUCTO */}
       <td className="px-4 py-3">
         <div className="flex flex-col">
           <Link 
@@ -78,7 +79,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
         </div>
       </td>
 
-      {/* STOCK CON ICONOS Y UNIDADES */}
+      {/* STOCK */}
       <td className="px-4 py-3">
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${stockColorClass}`}>
           {isLow && <span className="material-symbols-outlined text-[16px] mr-1.5">warning</span>}
@@ -88,30 +89,26 @@ export default function ProductRow({ prod }: ProductRowProps) {
         </span>
       </td>
 
-      {/* 🆕 COLUMNA: VENCIMIENTO */}
-      {/* 🆕 COLUMNA: VENCIMIENTO */}
-<td className="px-4 py-3 text-sm whitespace-nowrap">
-  <div className="flex flex-col items-center justify-center text-center"> 
-    {/* items-center centra horizontalmente, justify-center ayuda con el vertical si la celda es alta */}
-    
-    {fechaObj ? (
-      <>
-        <span className={`${fechaClass} block`}>
-          {fechaObj.toLocaleDateString()}
-        </span>
-        
-        {/* Etiqueta de Vencido */}
-        {diasRestantes !== null && diasRestantes < 0 && (
-          <span className="text-[10px] text-red-500 font-bold mt-0.5 leading-none">
-            VENCIDO
-          </span>
-        )}
-      </>
-    ) : (
-      <span className="text-neutral-300 dark:text-neutral-600">-</span>
-    )}
-  </div>
-</td>
+      {/* VENCIMIENTO ACTUALIZADO */}
+      <td className="px-4 py-3 text-sm whitespace-nowrap text-center">
+        <div className="flex flex-col items-center"> 
+          {fechaObj ? (
+            <>
+              <span className={fechaClass}>
+                {fechaObj.toLocaleDateString()}
+              </span>
+              
+              {diasRestantes !== null && diasRestantes < 0 && (
+                <span className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-wider">
+                  Vencido
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-neutral-300 dark:text-neutral-600">-</span>
+          )}
+        </div>
+      </td>
 
       {/* PRECIO */}
       <td className="px-4 py-3 text-sm font-medium text-primary dark:text-white">
@@ -136,7 +133,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
           href={`/inventario/editar/${prod.id}`}
           className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
         >
-          <span className="material-symbols-outlined text-[16px] transition-transform duration-500 ease-in-out">
+          <span className="material-symbols-outlined text-[16px]">
             edit 
           </span>
           <span>Actualizar</span>

@@ -12,6 +12,9 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "GestionAR - Inicio",
   description: "Sistema de gestión administrativa",
+  icons: {
+    icon: "/icon.png", // <--- Next.js ya sabe que debe buscar en 'public'
+  },
 };
 
 export default function RootLayout({
