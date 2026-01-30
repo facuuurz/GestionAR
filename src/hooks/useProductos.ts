@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
-// NOTA: Asegúrate de que estas rutas sean correctas según tu proyecto
+import { useState, useEffect, useCallback } from "react";
+// Asegúrate de que la ruta sea correcta
 import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos"; 
 
-type Producto = {
+// 1. Actualizamos el tipo para incluir la fecha
+export type Producto = {
   id: number;
   nombre: string;
   codigoBarra: string | null;
@@ -10,26 +11,46 @@ type Producto = {
   proveedor: string | null;
   stock: number;
   precio: number;
+  descripcion: string | null;
+  fechaVencimiento: Date | string | null; // 🆕 Nuevo campo
   createdAt: Date;
   updatedAt: Date;
 };
 
-// Aceptamos "datosIniciales" para evitar errores si se pasan props
-export function useProductos(datosIniciales: any[] = []) {
-  const [productosBase, setProductosBase] = useState<Producto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [criterioOrden, setCriterioOrden] = useState("");
+// Definimos la forma de los filtros que acepta el hook
+type FiltrosHook = {
+  query?: string;
+  category?: string;
+  stockStatus?: string;
+  priceMin?: string;
+  priceMax?: string;
+  sort?: string;
+};
 
-  useEffect(() => {
-    recargar();
+export function useProductos() {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 2. Función para cargar datos (ahora acepta filtros)
+  // Usamos useCallback para que no se re-cree en cada render
+  const recargar = useCallback(async (filtros?: FiltrosHook) => {
+    setLoading(true);
+    try {
+      // Llamamos al Server Action pasando los filtros
+      const datos = await obtenerProductosDB(filtros);
+      setProductos(datos as any); // 'as any' por si hay conflicto de tipos con Decimal/Number
+    } catch (error) {
+      console.error("Error cargando productos:", error);
+      setProductos([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  async function recargar() {
-    setLoading(true);
-    const datos = await obtenerProductosDB();
-    setProductosBase(datos);
-    setLoading(false);
-  }
+  // Carga inicial (sin filtros)
+  useEffect(() => {
+    recargar();
+  }, [recargar]);
 
   async function generarDatosPrueba() {
     setLoading(true);
@@ -37,30 +58,13 @@ export function useProductos(datosIniciales: any[] = []) {
     await recargar();
   }
 
-  // Lógica de ordenamiento
-  const productosOrdenados = useMemo(() => {
-    let ordenados = [...productosBase];
-    if (!criterioOrden) return ordenados;
-
-    ordenados.sort((a, b) => {
-      switch (criterioOrden) {
-        case "nombre-asc": return a.nombre.localeCompare(b.nombre);
-        case "nombre-desc": return b.nombre.localeCompare(a.nombre);
-        case "stock-desc": return b.stock - a.stock;
-        case "stock-asc": return a.stock - b.stock;
-        case "precio-desc": return b.precio - a.precio;
-        case "precio-asc": return a.precio - b.precio;
-        default: return 0;
-      }
-    });
-    return ordenados;
-  }, [productosBase, criterioOrden]);
+  // 3. Ya no necesitamos 'useMemo' para ordenar ni 'criterioOrden' como estado local,
+  // porque el servidor nos devuelve la lista ya ordenada y filtrada.
 
   return {
-    productos: productosOrdenados,
+    productos, // Devolvemos directo el estado
     loading,
-    recargar,
+    recargar, // Esta función ahora es la clave para filtrar/ordenar
     generarDatosPrueba,
-    setCriterioOrden, 
   };
 }

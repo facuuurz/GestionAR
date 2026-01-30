@@ -5,10 +5,10 @@ interface ProductRowProps {
 }
 
 export default function ProductRow({ prod }: ProductRowProps) {
-  // --- 1. LÓGICA DE COLORES Y ESTADOS ---
+  // --- 1. LÓGICA DE STOCK (COLORES Y ESTADOS) ---
   const isZero = prod.stock === 0;
-  const isLow = prod.stock > 0 && prod.stock < 20; // Menor a 20 (Amarillo)
-  const isGood = prod.stock >= 20; // Mayor o igual a 20 (Verde)
+  const isLow = prod.stock > 0 && prod.stock < 20; 
+  const isGood = prod.stock >= 20; 
   
   let stockColorClass = '';
   
@@ -17,7 +17,6 @@ export default function ProductRow({ prod }: ProductRowProps) {
   } else if (isLow) {
     stockColorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
   } else {
-    // Caso isGood
     stockColorClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
   }
 
@@ -26,15 +25,36 @@ export default function ProductRow({ prod }: ProductRowProps) {
     ? prod.descripcion.substring(0, 50) + "..." 
     : prod.descripcion;
 
-  // Determinar si es "ud." o "uds."
   const labelUnidad = prod.stock === 1 ? "ud." : "uds.";
+
+  // --- 3. 🆕 LÓGICA DE VENCIMIENTO ---
+  const fechaObj = prod.fechaVencimiento ? new Date(prod.fechaVencimiento) : null;
+  const hoy = new Date();
+  
+  // Calculamos días restantes (si existe fecha)
+  let diasRestantes = null;
+  if (fechaObj) {
+      const diffTime = fechaObj.getTime() - hoy.getTime();
+      diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  }
+
+  // Estilos según proximidad
+  let fechaClass = "text-neutral-500 dark:text-neutral-400"; // Normal
+  if (diasRestantes !== null) {
+      if (diasRestantes < 0) {
+          // Vencido
+          fechaClass = "text-red-600 font-bold bg-red-50 dark:bg-red-900/20 dark:text-red-300 px-2 py-0.5 rounded";
+      } else if (diasRestantes <= 30) {
+          // Por vencer (menos de 30 días)
+          fechaClass = "text-orange-600 font-bold bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300 px-2 py-0.5 rounded";
+      }
+  }
 
   return (
     <tr className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
       
-      {/* CÓDIGO   font-bold text-[#135bec] dark:text-blue-400 hover:underline hover:text-blue-600 cursor-pointer*/}
-      <td className="px-4 py-3 text-sm font-bold dark:text-neutral-400 font-mono
-      hover:underline hover:text-blue-600 cursor-pointer text-[#135bec]">
+      {/* CÓDIGO */}
+      <td className="px-4 py-3 text-sm font-bold dark:text-neutral-400 font-mono hover:underline hover:text-blue-600 cursor-pointer text-[#135bec]">
         <Link href={`/inventario/detalles-producto/${prod.id}`}>
           {prod.codigoBarra || prod.id}
         </Link>
@@ -51,10 +71,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
           </Link>
           
           {prod.descripcion && (
-            <span 
-                className="text-xs text-neutral-500 mt-0.5" 
-                title={prod.descripcion} 
-            >
+            <span className="text-xs text-neutral-500 mt-0.5" title={prod.descripcion}>
                 {descripcionCorta}
             </span>
           )}
@@ -64,19 +81,28 @@ export default function ProductRow({ prod }: ProductRowProps) {
       {/* STOCK CON ICONOS Y UNIDADES */}
       <td className="px-4 py-3">
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${stockColorClass}`}>
-          
-          {/* Icono para Stock Bajo (< 20 y > 0) */}
           {isLow && <span className="material-symbols-outlined text-[16px] mr-1.5">warning</span>}
-          
-          {/* Icono para Sin Stock (0) */}
           {isZero && <span className="material-symbols-outlined text-[16px] mr-1.5">error</span>}
-          
-          {/* Icono para Stock OK (>= 20) */}
           {isGood && <span className="material-symbols-outlined text-[16px] mr-1.5">check_circle</span>}
-          
-          {/* Número + ud./uds. */}
           {prod.stock} {labelUnidad}
         </span>
+      </td>
+
+      {/* 🆕 COLUMNA: VENCIMIENTO */}
+      <td className="px-4 py-3 text-sm whitespace-nowrap">
+        {fechaObj ? (
+            <div className="flex flex-col items-start">
+                <span className={fechaClass}>
+                    {fechaObj.toLocaleDateString()}
+                </span>
+                {/* Opcional: mostrar texto "Vencido" o "X días" */}
+                {diasRestantes !== null && diasRestantes < 0 && (
+                    <span className="text-[10px] text-red-500 font-bold mt-0.5">VENCIDO</span>
+                )}
+            </div>
+        ) : (
+            <span className="text-neutral-300 dark:text-neutral-600">-</span>
+        )}
       </td>
 
       {/* PRECIO */}

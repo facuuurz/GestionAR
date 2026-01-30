@@ -58,7 +58,7 @@ export default function Ordenar({ isOpen, onClose, onAplicar, currentSort = "nom
         </div>
 
         {/* Opciones */}
-        <div className="p-2 flex flex-col gap-1">
+        <div className="p-2 flex flex-col gap-1 max-h-[60vh] overflow-y-auto custom-scrollbar">
           
           {/* Opción: Nombre A-Z */}
           <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all group ${(criterio === "nombre-asc" || criterio === "") ? "bg-neutral-100 dark:bg-[#2a2a2a]" : "hover:bg-neutral-50 dark:hover:bg-[#252525]"}`}>
@@ -71,6 +71,22 @@ export default function Ordenar({ isOpen, onClose, onAplicar, currentSort = "nom
               name="ordenar" 
               value="nombre-asc"
               checked={criterio === "nombre-asc" || criterio === ""}
+              onChange={(e) => setCriterio(e.target.value)}
+              className="accent-black dark:accent-white w-4 h-4 cursor-pointer" 
+            />
+          </label>
+
+          {/* Opción: Vencimiento (Más próxima) - NUEVO */}
+          <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all group ${criterio === "vencimiento-asc" ? "bg-neutral-100 dark:bg-[#2a2a2a]" : "hover:bg-neutral-50 dark:hover:bg-[#252525]"}`}>
+            <div className="flex items-center gap-3">
+              <span className={`material-symbols-outlined transition-colors ${criterio === "vencimiento-asc" ? "text-neutral-900 dark:text-white" : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"}`}>event_upcoming</span>
+              <span className={`text-sm font-medium transition-colors ${criterio === "vencimiento-asc" ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-200"}`}>Vencimiento (Más próxima)</span>
+            </div>
+            <input 
+              type="radio" 
+              name="ordenar" 
+              value="vencimiento-asc"
+              checked={criterio === "vencimiento-asc"}
               onChange={(e) => setCriterio(e.target.value)}
               className="accent-black dark:accent-white w-4 h-4 cursor-pointer" 
             />
