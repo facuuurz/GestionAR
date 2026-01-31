@@ -16,6 +16,7 @@ type Producto = {
   precio: number;
   categoria?: string; 
   fechaVencimiento?: Date | string | null;
+  esPorPeso: boolean;
 };
 
 // ⚠️ MODIFICADO: ItemCarrito ahora soporta Productos y Promos
@@ -27,7 +28,8 @@ type ItemCarrito = {
   tipo: "PRODUCTO" | "PROMOCION"; 
   
   // Para validar stock
-  stockMaximo: number; 
+  stockMaximo: number;
+  esPorPeso?: boolean; 
 
   // Solo si es promo, guardamos qué tiene adentro para descontar luego
   contenido?: { productoId: number; cantidad: number }[];
@@ -71,6 +73,10 @@ export default function PantallaVenta() {
   const [listaPromociones, setListaPromociones] = useState<PromocionBackend[]>([]);
   const [showModalPromos, setShowModalPromos] = useState(false);
 
+  const [productoAPesar, setProductoAPesar] = useState<Producto | null>(null);
+  const [pesoInput, setPesoInput] = useState<string>("");
+  const [pesoInputRef, setPesoInputRef] = useState<HTMLInputElement | null>(null);
+
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
       category: "Todas",
@@ -81,6 +87,12 @@ export default function PantallaVenta() {
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<string[]>([]);
 
   // --- EFECTOS ---
+  useEffect(() => {
+    if (productoAPesar && pesoInputRef) {
+        pesoInputRef.focus();
+    }
+  }, [productoAPesar, pesoInputRef]);
+  
   useEffect(() => {
     obtenerCategorias().then((cats) => {
         setCategoriasDisponibles(cats);
@@ -143,9 +155,66 @@ export default function PantallaVenta() {
           precio: prod.precio,
           cantidad: 1,
           tipo: "PRODUCTO",
-          stockMaximo: prod.stock
+          stockMaximo: prod.stock,
+          esPorPeso: prod.esPorPeso
       }];
     });
+  };
+
+  const iniciarAgregadoProducto = (prod: Producto) => {
+    if (prod.esPorPeso) {
+        setPesoInput(""); // Limpiar input anterior
+        setProductoAPesar(prod); // Esto abre el modal (cuando lo agreguemos al JSX)
+    } else {
+        agregarProductoAlCarrito(prod); // Flujo normal para unidades
+    }
+  };
+
+  // B. Confirmar el peso ingresado en el modal
+  const confirmarPeso = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!productoAPesar) return;
+
+    const gramos = parseInt(pesoInput);
+    
+    if (isNaN(gramos) || gramos <= 0) {
+        alert("Ingrese un peso válido");
+        return;
+    }
+
+    // Agregamos al carrito manual (modificando el estado directamente para poner los gramos)
+    setCarrito((prev) => {
+        const existe = prev.find((item) => item.id === productoAPesar.id && item.tipo === "PRODUCTO");
+        
+        // Si ya existe, sumamos los gramos
+        if (existe) {
+            if (existe.cantidad + gramos > productoAPesar.stock) {
+                 alert(`Stock insuficiente. Máximo disponible: ${productoAPesar.stock} gr`);
+                 return prev; 
+            }
+            return prev.map((item) => 
+                item.id === productoAPesar.id ? { ...item, cantidad: item.cantidad + gramos } : item
+            );
+        }
+        
+        // Si no existe, lo creamos
+        if (gramos > productoAPesar.stock) {
+            alert(`Stock insuficiente. Disponible: ${productoAPesar.stock} gr`);
+            return prev;
+        }
+
+        return [...prev, { 
+            id: productoAPesar.id,
+            nombre: productoAPesar.nombre,
+            precio: productoAPesar.precio,
+            cantidad: gramos, // Guardamos GRAMOS aquí
+            tipo: "PRODUCTO",
+            stockMaximo: productoAPesar.stock,
+            esPorPeso: true // Importante para renderizar correctamente
+        }];
+    });
+
+    setProductoAPesar(null); // Cerrar modal
   };
 
   // 🆕 LÓGICA CARRITO (PROMOCIONES) ---
@@ -202,12 +271,12 @@ export default function PantallaVenta() {
     setCarrito((prev) => 
       prev.map((item) => {
         if (item.id === id) {
-          const nuevaCant = item.cantidad + delta;
-          if (nuevaCant < 1) return item; 
+          const paso = item.esPorPeso ? 50 : 1; 
+          const nuevaCant = item.cantidad + (delta * paso);
           
-          // Validación de Stock Genérica (sirve para Prod y Promo)
+          if (nuevaCant < (item.esPorPeso ? 5 : 1)) return item; 
+          
           if (nuevaCant > item.stockMaximo) {
-              // Opcional: alert("Stock máximo alcanzado");
               return item; 
           }
           
@@ -218,6 +287,17 @@ export default function PantallaVenta() {
     );
   };
 
+  const subtotal = carrito.reduce((acc, item) => {
+      if (item.esPorPeso) {
+          // Regla de tres simple: (PrecioPorKilo * Gramos) / 1000
+          return acc + ((item.precio * item.cantidad) / 1000);
+      } else {
+          return acc + (item.precio * item.cantidad);
+      }
+  }, 0);
+  
+  const total = subtotal;
+
   const eliminarDelCarrito = (id: number) => {
       setCarrito(prev => prev.filter(item => item.id !== id));
   }
@@ -227,9 +307,6 @@ export default function PantallaVenta() {
       setQueryCliente(c.nombre);
       setShowClienteResults(false);
   }
-
-  const subtotal = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-  const total = subtotal; // Sin descuentos extra por ahora
 
   const handleFinalizar = async () => {
     if (carrito.length === 0) return;
@@ -366,7 +443,8 @@ export default function PantallaVenta() {
               </thead>
               <tbody className="divide-y divide-[#ededed] dark:divide-[#333] text-sm">
                 {listaProductos.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-[#f9f9f9] dark:hover:bg-[#151a25]/50 transition-colors group cursor-pointer" onClick={() => agregarProductoAlCarrito(prod)}>
+                    <tr key={prod.id} className="hover:bg-[#f9f9f9] dark:hover:bg-[#151a25]/50 transition-colors group cursor-pointer" 
+                        onClick={() => iniciarAgregadoProducto(prod)}>
                         <td className="px-6 py-4">
                             <div className="flex flex-col">
                                 <span className="font-medium text-gray-900 dark:text-white text-base">{prod.nombre}</span>
@@ -387,7 +465,7 @@ export default function PantallaVenta() {
                         <td className="px-6 py-4 text-right">
                             <button 
                               className="group flex items-center gap-1.5 ml-auto px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
-                              onClick={(e) => { e.stopPropagation(); agregarProductoAlCarrito(prod); }}
+                              onClick={(e) => { e.stopPropagation(); iniciarAgregadoProducto(prod); }}
                             >
                               <span className="material-symbols-outlined text-sm transition-transform duration-500 ease-in-out group-hover:rotate-90">add</span>
                               <span>Agregar</span>
@@ -466,10 +544,16 @@ export default function PantallaVenta() {
                             <div className="flex justify-between items-start">
                                 <div className="grow pr-2 pl-5">
                                     <p className="text-base font-bold text-gray-900 dark:text-white line-clamp-1">{item.nombre}</p>
-                                    <p className="text-xs text-neutral-500 mt-1">{formatMoney(item.precio)} unidad</p>
+                                    <p className="text-xs text-neutral-500 mt-1">{formatMoney(item.precio)} {item.esPorPeso ? '/kg' : 'unidad'}</p>
                                 </div>
                                 <div className="text-right flex flex-col items-end gap-2">
-                                    <p className="text-base font-bold text-gray-900 dark:text-white">{formatMoney(item.precio * item.cantidad)}</p>
+                                    <p className="text-base font-bold text-gray-900 dark:text-white">
+                                        {formatMoney(
+                                            item.esPorPeso 
+                                            ? (item.precio * item.cantidad) / 1000 
+                                            : item.precio * item.cantidad
+                                        )}
+                                    </p>
                                     
                                     <div className="flex items-center gap-1 bg-white dark:bg-[#1e2736] rounded-lg border border-[#ededed] dark:border-[#333] p-0.5 shadow-sm">
                                         <button onClick={() => modificarCantidad(item.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[#f9f9f9] dark:hover:bg-[#151a25] text-neutral-600 dark:text-neutral-300 transition-colors">
@@ -536,8 +620,65 @@ export default function PantallaVenta() {
                 <p className="font-bold text-sm">¡Venta exitosa!</p>
                 <p className="text-xs text-green-100">La operación se registró correctamente.</p>
             </div>
+            
         </div>
       </div>
+
+      {productoAPesar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-[#1e2736] w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-neutral-200 dark:border-[#333]">
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Ingresar Peso</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{productoAPesar.nombre}</p>
+                    </div>
+                    <button onClick={() => setProductoAPesar(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <form onSubmit={confirmarPeso} className="flex flex-col gap-4">
+                    <div className="relative">
+                        <input 
+                            ref={setPesoInputRef}
+                            type="number" 
+                            value={pesoInput}
+                            onChange={(e) => setPesoInput(e.target.value)}
+                            className="w-full text-center text-4xl font-bold py-4 rounded-xl bg-gray-50 dark:bg-[#151a25] border-2 border-indigo-100 dark:border-[#333] focus:border-indigo-500 outline-none text-gray-900 dark:text-white"
+                            placeholder="0"
+                            min="1"
+                            autoFocus
+                        />
+                        <span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">gr</span>
+                    </div>
+                    
+                    <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                        Precio: {formatMoney(productoAPesar.precio)} / kg
+                        <br/>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold text-lg mt-1 block">
+                            = {formatMoney((productoAPesar.precio * (parseInt(pesoInput) || 0)) / 1000)}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                        <button 
+                            type="button" 
+                            onClick={() => setProductoAPesar(null)}
+                            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-[#444] text-gray-700 dark:text-white font-bold hover:bg-gray-50 dark:hover:bg-[#252a35]"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit"
+                            className="px-4 py-3 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/30"
+                        >
+                            Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+      )}
 
     </div>
   );
