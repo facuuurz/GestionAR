@@ -9,14 +9,15 @@ import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTi
 interface ProductFormProps {
   producto: {
     id: number;
-    codigoBarra: string;
+    codigoBarra: string | null; // Puede ser null en prisma
     nombre: string;
     stock: number;
     precio: number;
     tipo: string;
-    proveedor: string;
-    descripcion: string;
+    proveedor: string | null;
+    descripcion: string | null;
     fechaVencimiento?: Date | string | null; 
+    esPorPeso: boolean; // 🆕 AGREGADO
   };
   categorias: {
     id: number;
@@ -49,20 +50,20 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoriasList, setCategoriasList] = useState(categoriasIniciales);
   
+  // 🆕 ESTADO PARA PESO (Inicializado con el valor del producto)
+  const [esPorPeso, setEsPorPeso] = useState(producto.esPorPeso);
+
   const initialTipo = state.payload?.tipo || producto.tipo || "";
   const [selectedTipo, setSelectedTipo] = useState<string>(initialTipo); 
   const [searchTerm, setSearchTerm] = useState<string>(initialTipo);     
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // 🆕 REFERENCIA PARA EL AUTO-RESIZE DE LA DESCRIPCIÓN
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [stockActual, setStockActual] = useState<number | string>(state.payload?.stock ?? producto.stock);
   const [descLength, setDescLength] = useState(producto.descripcion?.length || 0);
 
-  // 🆕 FUNCIÓN PARA AJUSTAR ALTURA
   const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -70,7 +71,6 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
     }
   };
 
-  // Ajustar altura al cargar el componente
   useEffect(() => {
     adjustHeight();
   }, []);
@@ -126,6 +126,9 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
 
       <form action={dispatch} className="flex flex-col gap-8">
         <input type="hidden" name="id" value={producto.id} />
+        
+        {/* 🆕 INPUT OCULTO PARA ENVIAR EL VALOR DE PESO */}
+        <input type="hidden" name="esPorPeso" value={esPorPeso ? "true" : "false"} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
           
@@ -134,7 +137,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
              <div className="relative w-full">
                <input 
                  name="codigoBarra"
-                 defaultValue={state.payload?.codigoBarra ?? producto.codigoBarra}
+                 defaultValue={state.payload?.codigoBarra ?? producto.codigoBarra ?? ""}
                  className={`flex w-full rounded-lg border ${state.errors?.codigoBarra ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-4 pr-14 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
                  placeholder="Escanee o ingrese código" 
                  type="text"
@@ -234,7 +237,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
              <div className="relative w-full">
                <input 
                  name="proveedor"
-                 defaultValue={state.payload?.proveedor ?? producto.proveedor}
+                 defaultValue={state.payload?.proveedor ?? producto.proveedor ?? ""}
                  className={`flex w-full rounded-lg border ${state.errors?.proveedor ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
                  placeholder="REF-000" 
                  type="text"
@@ -271,12 +274,12 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
               </div>
               <div className="relative w-full">
                 <textarea 
-                  ref={textareaRef} // 🆕 REFERENCIA ASIGNADA
+                  ref={textareaRef}
                   name="descripcion"
                   maxLength={200}
                   rows={1} 
                   defaultValue={state.payload?.descripcion ?? producto.descripcion ?? ""}
-                  onChange={handleDescriptionChange} // 🆕 FUNCIÓN CON AUTO-RESIZE
+                  onChange={handleDescriptionChange}
                   className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 overflow-hidden min-h-12`}
                   placeholder="Ingrese detalles..." 
                 />
@@ -291,10 +294,35 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
 
         <div className="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
 
+        {/* 🆕 SECCIÓN TOGGLE, STOCK Y PRECIO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+          
+          {/* TOGGLE */}
+          <div className="md:col-span-2 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-blue-900 dark:text-blue-200">
+                ¿Producto por Peso?
+              </span>
+              <span className="text-xs text-blue-600 dark:text-blue-300">
+                {esPorPeso 
+                  ? "El stock se guardará en Gramos y el precio será por Kilo." 
+                  : "El stock se guardará por Unidades y el precio será Unitario."}
+              </span>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setEsPorPeso(!esPorPeso)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${esPorPeso ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${esPorPeso ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
           <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                  <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Stock Total *</span>
+                  <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
+                    {esPorPeso ? "Stock Total (Gramos) *" : "Stock Total (Unidades) *"}
+                  </span>
                   <span className="text-xs font-medium text-slate-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                       Original: <b>{producto.stock}</b>
                   </span>
@@ -311,12 +339,20 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                         const val = e.target.value;
                         setStockActual(val === "" ? "" : Number(val));
                      }}
-                     className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                     placeholder="0" type="number"
+                     className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
+                     placeholder={esPorPeso ? "Ej. 1500" : "0"} type="number"
                    />
                    <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
-                     <span className="material-symbols-outlined text-lg">inventory</span>
+                     <span className="material-symbols-outlined text-lg">
+                        {esPorPeso ? "scale" : "inventory"}
+                     </span>
                    </div>
+                   {/* SUFIJO DE UNIDAD */}
+                   {esPorPeso && (
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                      gr
+                    </span>
+                   )}
                  </div>
                  <button type="button" onClick={handleSumarStock} className="h-12 w-12 flex items-center justify-center rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 transition-colors">
                     <span className="material-symbols-outlined">add</span>
@@ -326,17 +362,25 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
           </div>
 
           <label className="flex flex-col gap-2">
-             <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Precio Unitario *</span>
+             <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
+                {esPorPeso ? "Precio por Kilo *" : "Precio Unitario *"}
+             </span>
              <div className="relative w-full">
                <input 
                  name="precio"
                  defaultValue={state.payload?.precio ?? producto.precio}
-                 className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
+                 className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
                  placeholder="0.00" step="0.01" type="number"
                />
                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700">
                  <span className="material-symbols-outlined text-lg">attach_money</span>
                </div>
+               {/* SUFIJO DE UNIDAD PRECIO */}
+               {esPorPeso && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                  /kg
+                </span>
+               )}
              </div>
              <ErrorMessage errors={state.errors?.precio} />
           </label>
@@ -347,6 +391,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>
             )}
             <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-4 w-full">
+              {/* Nota: Usamos formAction para eliminar, que podría necesitar también el input hidden de peso, pero no es crítico para borrar */}
               <button formAction={eliminarProducto} className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer">
                 <span className="material-symbols-outlined text-[18px]">delete</span>Eliminar Producto
               </button>

@@ -19,6 +19,24 @@ export default function ProductRow({ prod }: ProductRowProps) {
     stockColorClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
   }
 
+  let displayStock = "";
+  let displayPrecio = `$${Number(prod.precio).toFixed(2)}`;
+
+  if (prod.esPorPeso) {
+      // Si es por peso: mostramos Kg si supera los 1000gr, si no gramos
+      if (prod.stock >= 1000) {
+          displayStock = `${(prod.stock / 1000).toFixed(2)} kg`;
+      } else {
+          displayStock = `${prod.stock} gr`;
+      }
+      // Agregamos "/kg" al precio
+      displayPrecio += " /kg";
+  } else {
+      // Si es unitario: mostramos ud. o uds.
+      const labelUnidad = prod.stock === 1 ? "ud." : "uds.";
+      displayStock = `${prod.stock} ${labelUnidad}`;
+  }
+
   // --- 2. LÓGICA DE TEXTO ---
   const descripcionCorta = prod.descripcion && prod.descripcion.length > 50 
     ? prod.descripcion.substring(0, 50) + "..." 
@@ -85,7 +103,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
           {isLow && <span className="material-symbols-outlined text-[16px] mr-1.5">warning</span>}
           {isZero && <span className="material-symbols-outlined text-[16px] mr-1.5">error</span>}
           {isGood && <span className="material-symbols-outlined text-[16px] mr-1.5">check_circle</span>}
-          {prod.stock} {labelUnidad}
+          {displayStock}
         </span>
       </td>
 
@@ -112,7 +130,7 @@ export default function ProductRow({ prod }: ProductRowProps) {
 
       {/* PRECIO */}
       <td className="px-4 py-3 text-sm font-medium text-primary dark:text-white">
-        ${Number(prod.precio).toFixed(2)}
+        {displayPrecio}
       </td>
 
       {/* TIPO */}

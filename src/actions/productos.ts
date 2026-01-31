@@ -29,6 +29,7 @@ const productoSchema = z.object({
   
   descripcion: z.string().max(200, "Máximo 200 caracteres").optional(),
   fechaVencimiento: z.string().optional().nullable(),
+  esPorPeso: z.coerce.boolean().optional(),
 });
 
 // Definición del Estado para useActionState
@@ -53,6 +54,10 @@ export type State = {
 // ----------------------------------------------------------------------
 
 export async function crearProducto(prevState: State, formData: FormData): Promise<State> {
+
+  const rawEsPorPeso = formData.get("esPorPeso");
+  const esPorPesoBoolean = rawEsPorPeso === "on" || rawEsPorPeso === "true";
+
   const validatedFields = productoSchema.safeParse({
     nombre: formData.get("nombre"),
     codigoBarra: formData.get("codigoBarra"),
@@ -62,6 +67,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
     precio: formData.get("precio"),
     descripcion: formData.get("descripcion"),
     fechaVencimiento: formData.get("fechaVencimiento"),
+    esPorPeso: esPorPesoBoolean,
   });
 
   if (!validatedFields.success) {
@@ -72,7 +78,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
     };
   }
 
-  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento } = validatedFields.data;
+  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento, esPorPeso } = validatedFields.data;
 
   try {
     const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
@@ -87,6 +93,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
         precio,
         descripcion: descripcion || "",
         fechaVencimiento: fechaFinal,
+        esPorPeso: esPorPeso || false,
       },
     });
   } catch (error) {
@@ -108,6 +115,9 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
 export async function actualizarProducto(prevState: State, formData: FormData): Promise<State> {
   const id = parseInt(formData.get("id") as string);
 
+  const rawEsPorPeso = formData.get("esPorPeso");
+  const esPorPesoBoolean = rawEsPorPeso === "on" || rawEsPorPeso === "true";
+
   // 1. Validar datos
   const validatedFields = productoSchema.safeParse({
     nombre: formData.get("nombre"),
@@ -118,6 +128,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
     precio: formData.get("precio"),
     descripcion: formData.get("descripcion"),
     fechaVencimiento: formData.get("fechaVencimiento"),
+    esPorPeso: esPorPesoBoolean,
   });
 
   // 2. Si falla, retornamos errores Y los datos que escribió el usuario (payload)
@@ -129,7 +140,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
     };
   }
 
-  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento } = validatedFields.data;
+  const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento, esPorPeso } = validatedFields.data;
 
   // 3. Actualizar DB
   try {
@@ -146,6 +157,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
         proveedor,
         descripcion: descripcion || null,
         fechaVencimiento: fechaFinal,
+        esPorPeso: esPorPeso || false,
       },
     });
   } catch (error) {

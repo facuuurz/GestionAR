@@ -23,13 +23,60 @@ export default async function ProductDetailsPage({ params }: PageProps) {
   }
 
   // --- LÓGICA VISUAL ---
-  const precioFormateado = new Intl.NumberFormat("es-AR", {
+  
+  // 1. Formato de Precio
+  let precioFormateado = new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency: "ARS",
   }).format(Number(producto.precio));
 
-  // Calculamos porcentaje para la barra (máximo 100%)
-  const porcentajeStock = Math.min((producto.stock / 200) * 100, 100); 
+  if (producto.esPorPeso) {
+    precioFormateado += " / kg";
+  }
+
+  // 2. Formato de Stock (Visualización)
+  let stockNumero = "";
+  let stockUnidad = "";
+
+  if (producto.esPorPeso) {
+      if (producto.stock >= 1000) {
+          stockNumero = (producto.stock / 1000).toFixed(2);
+          stockUnidad = "kg";
+      } else {
+          stockNumero = producto.stock.toString();
+          stockUnidad = "gr";
+      }
+  } else {
+      stockNumero = producto.stock.toString();
+      stockUnidad = producto.stock === 1 ? "unidad" : "unidades";
+  }
+
+  // 3. Lógica de Semáforo Stock (Ajustada para peso)
+  // Definimos qué es "Stock Bajo": 20 unidades o 1000 gramos (1kg)
+  const umbralBajo = producto.esPorPeso ? 1000 : 20; 
+  // Definimos referencia para la barra del 100%: 200 unidades o 10000 gramos (10kg)
+  const maxBarra = producto.esPorPeso ? 10000 : 200; 
+
+  // Calculamos porcentaje
+  const porcentajeStock = Math.min((producto.stock / maxBarra) * 100, 100); 
+
+  let stockColorClass = "";
+  let barColorClass = "";
+  let textoEstado = "";
+
+  if (producto.stock === 0) {
+    stockColorClass = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+    barColorClass = "bg-red-500 dark:bg-red-600";
+    textoEstado = "Sin Stock";
+  } else if (producto.stock <= umbralBajo) {
+    stockColorClass = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+    barColorClass = "bg-yellow-500 dark:bg-yellow-600";
+    textoEstado = "Stock Bajo";
+  } else {
+    stockColorClass = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+    barColorClass = "bg-green-500 dark:bg-green-600";
+    textoEstado = "En Stock";
+  }
 
   // --- HELPER FECHAS UTC ---
   const formatDateUTC = (dateString: Date | string | null | undefined) => {
@@ -41,51 +88,27 @@ export default async function ProductDetailsPage({ params }: PageProps) {
     return `${day}/${month}/${year}`;
   };
 
-  // --- LÓGICA DE SEMÁFORO STOCK ---
-  let stockColorClass = "";
-  let barColorClass = "";
-  let textoEstado = "";
-
-  if (producto.stock === 0) {
-    stockColorClass = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-    barColorClass = "bg-red-500 dark:bg-red-600";
-    textoEstado = "Sin Stock";
-  } else if (producto.stock <= 20) {
-    stockColorClass = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-    barColorClass = "bg-yellow-500 dark:bg-yellow-600";
-    textoEstado = "Stock Bajo";
-  } else {
-    stockColorClass = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-    barColorClass = "bg-green-500 dark:bg-green-600";
-    textoEstado = "En Stock";
-  }
-
-  // --- 🆕 LÓGICA DE SEMÁFORO VENCIMIENTO ---
+  // --- LÓGICA DE SEMÁFORO VENCIMIENTO ---
   const fechaObj = producto.fechaVencimiento ? new Date(producto.fechaVencimiento) : null;
   const hoy = new Date();
   
-  // Estilos por defecto (Normal / No Vencido)
   let vencimientoContainerClass = "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50";
   let vencimientoIconBg = "bg-pink-100 dark:bg-pink-900/30";
   let vencimientoIconText = "text-pink-600 dark:text-pink-400";
   let textoVencimiento = "Fecha de Vencimiento";
   
-  // 🟢 CORRECCIÓN: Declaramos la variable AQUÍ, fuera del if
   let diasRestantes: number | null = null; 
 
   if (fechaObj) {
       const diffTime = fechaObj.getTime() - hoy.getTime();
-      // 🟢 Asignamos valor a la variable externa
       diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (diasRestantes < 0) {
-          // VENCIDO
           vencimientoContainerClass = "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30";
           vencimientoIconBg = "bg-red-100 dark:bg-red-900/40";
           vencimientoIconText = "text-red-600 dark:text-red-400";
           textoVencimiento = "¡PRODUCTO VENCIDO!";
       } else if (diasRestantes <= 30) {
-          // POR VENCER
           vencimientoContainerClass = "bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-900/30";
           vencimientoIconBg = "bg-orange-100 dark:bg-orange-900/40";
           vencimientoIconText = "text-orange-600 dark:text-orange-400";
@@ -117,11 +140,13 @@ export default async function ProductDetailsPage({ params }: PageProps) {
             </span>
           </div>
           <p className="text-slate-500 dark:text-gray-400 text-base max-w-2xl">
-            Detalle completo del producto y gestión de stock actual.
+            {producto.esPorPeso 
+                ? "Producto vendido a granel (por peso)." 
+                : "Producto vendido por unidad."}
           </p>
         </div>
         
-        {/* --- BOTÓN ACTUALIZAR --- */}
+        {/* BOTÓN ACTUALIZAR */}
         <Link 
             href={`/inventario/editar/${producto.id}`} 
             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
@@ -187,7 +212,7 @@ export default async function ProductDetailsPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* 🆕 FECHA DE VENCIMIENTO (Con lógica visual) */}
+            {/* Fecha de Vencimiento */}
             <div className={`flex gap-4 p-4 rounded-lg border ${vencimientoContainerClass}`}>
               <div className={`shrink-0 size-10 rounded-lg flex items-center justify-center shadow-sm ${vencimientoIconBg} ${vencimientoIconText}`}>
                 <span className="material-symbols-outlined">event</span>
@@ -227,10 +252,12 @@ export default async function ProductDetailsPage({ params }: PageProps) {
               <span className="material-symbols-outlined text-[120px] leading-none text-slate-900 dark:text-white">attach_money</span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-500 dark:text-gray-400 mb-2 uppercase tracking-wide font-display">Precio Unitario</p>
+              <p className="text-sm font-semibold text-slate-500 dark:text-gray-400 mb-2 uppercase tracking-wide font-display">
+                 {producto.esPorPeso ? "Precio por Kilo" : "Precio Unitario"}
+              </p>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">{precioFormateado}</span>
-                <span className="text-sm text-slate-500 font-bold">ARS</span>
+                {!producto.esPorPeso && <span className="text-sm text-slate-500 font-bold">ARS</span>}
               </div>
             </div>
             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-[#333]">
@@ -244,20 +271,31 @@ export default async function ProductDetailsPage({ params }: PageProps) {
           {/* TARJETA STOCK */}
           <div className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-slate-200 dark:border-[#333] p-6 flex flex-col justify-between relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-              <span className="material-symbols-outlined text-[120px] leading-none text-slate-900 dark:text-white">inventory</span>
+              <span className="material-symbols-outlined text-[120px] leading-none text-slate-900 dark:text-white">
+                {producto.esPorPeso ? "scale" : "inventory"}
+              </span>
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-500 dark:text-gray-400 mb-2 uppercase tracking-wide font-display">Stock Actual</p>
   
-              <div className="flex items-center gap-2">
-                <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">{producto.stock}</span>
-    
-                {/* Badge con Color dinámico */}
-                <span className={`text-sm font-bold px-2 py-1 rounded-md font-display ${stockColorClass}`}>
-                    {textoEstado}
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">
+                    {stockNumero}
+                </span>
+                <span className="text-xl font-bold text-slate-500 mb-1">
+                    {stockUnidad}
                 </span>
               </div>
-              </div>
+
+               {/* Badge de estado (Stock bajo, etc) */}
+               <div className="mt-2">
+                    <span className={`text-sm font-bold px-2 py-1 rounded-md font-display ${stockColorClass}`}>
+                        {textoEstado}
+                    </span>
+               </div>
+
+            </div>
+            
             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-[#333]">
               <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mb-2">
                 <div 
@@ -266,7 +304,9 @@ export default async function ProductDetailsPage({ params }: PageProps) {
                     style={{ width: `${porcentajeStock}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-slate-400 font-display">Nivel de reorden: 20 Unidades</p>
+              <p className="text-xs text-slate-400 font-display">
+                Nivel de reorden: {producto.esPorPeso ? "1 kg" : "20 Unidades"}
+              </p>
             </div>
           </div>
         </div>

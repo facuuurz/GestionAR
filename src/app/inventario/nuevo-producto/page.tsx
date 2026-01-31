@@ -32,6 +32,7 @@ export default function AgregarProductoPage() {
   const [selectedTipo, setSelectedTipo] = useState<string>(""); 
   const [searchTerm, setSearchTerm] = useState<string>("");     
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);  
+  const [esPorPeso, setEsPorPeso] = useState(false);
 
   // Contador de caracteres y Referencia para el auto-resize
   const [descLength, setDescLength] = useState(0);
@@ -125,6 +126,7 @@ export default function AgregarProductoPage() {
               </div>
 
               <form action={dispatch} className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-[#e5e7eb] dark:border-[#2d3748] overflow-hidden">
+                <input type="hidden" name="esPorPeso" value={esPorPeso ? "true" : "false"} />
                 
                 <div className="border-b border-[#e5e7eb] dark:border-[#2d3748] px-6 py-4 bg-gray-50/50 dark:bg-[#1e2736]">
                   <h3 className="text-base font-bold text-[#0d121b] dark:text-white flex items-center gap-2">
@@ -291,43 +293,101 @@ export default function AgregarProductoPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Stock */}
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Stock inicial *</span>
-                      <div className="relative w-full">
-                        <input name="stock" className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="0" type="number" />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700"><span className="material-symbols-outlined text-lg">inventory</span></div>
+                    <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-blue-900 dark:text-blue-200">
+                          ¿Producto por Peso?
+                        </span>
+                        <span className="text-xs text-blue-600 dark:text-blue-300">
+                          {esPorPeso 
+                            ? "El stock se guardará en Gramos y el precio será por Kilo." 
+                            : "El stock se guardará por Unidades y el precio será Unitario."}
+                        </span>
                       </div>
-                      <ErrorMessage errors={state.errors?.stock} />
-                    </label>
+                      <button 
+                        type="button"
+                        onClick={() => setEsPorPeso(!esPorPeso)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${esPorPeso ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${esPorPeso ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
 
-                    {/* Precio */}
-                    <label className="flex flex-col gap-2">
-                      <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Precio Unitario *</span>
-                      <div className="relative w-full">
-                        <input name="precio" className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="0.00" step="0.01" type="number" />
-                        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700"><span className="material-symbols-outlined text-lg">attach_money</span></div>
-                      </div>
-                      <ErrorMessage errors={state.errors?.precio} />
-                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      {/* Stock (Adaptable a Gramos/Unidades) */}
+                      <label className="flex flex-col gap-2">
+                        <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
+                          {esPorPeso ? "Stock inicial (en Gramos) *" : "Stock inicial (Unidades) *"}
+                        </span>
+                        <div className="relative w-full">
+                          <input 
+                            name="stock" 
+                            className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder={esPorPeso ? "Ej. 1500 (para 1.5kg)" : "0"} 
+                            type="number" 
+                          />
+                          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
+                            <span className="material-symbols-outlined text-lg">
+                              {esPorPeso ? "scale" : "inventory"}
+                            </span>
+                          </div>
+                          {/* Indicador visual de unidad */}
+                          {esPorPeso && (
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                              gr
+                            </span>
+                          )}
+                        </div>
+                        <ErrorMessage errors={state.errors?.stock} />
+                      </label>
+  
+                      {/* Precio (Adaptable a Kilo/Unidad) */}
+                      <label className="flex flex-col gap-2">
+                        <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
+                          {esPorPeso ? "Precio por Kilo *" : "Precio Unitario *"}
+                        </span>
+                        <div className="relative w-full">
+                          <input 
+                            name="precio" 
+                            className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder="0.00" 
+                            step="0.01" 
+                            type="number" 
+                          />
+                          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700">
+                            <span className="material-symbols-outlined text-lg">attach_money</span>
+                          </div>
+                          {/* Indicador visual de unidad */}
+                          {esPorPeso && (
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                              /kg
+                            </span>
+                          )}
+                        </div>
+                        <ErrorMessage errors={state.errors?.precio} />
+                      </label>
+                    </div>
                   </div>
                 </div>
 
                 {/* Footer con Botones */}
                 <div className="bg-gray-50 dark:bg-[#1a202c] border-t border-[#e5e7eb] px-6 py-4 flex flex-col items-end gap-2">
-                   {state.message && (
-                      <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>
-                   )}
-                   <div className="flex flex-col-reverse md:flex-row justify-end items-center gap-4 w-full">
-                    <Link href="/inventario" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all shadow-sm">
-                      Cancelar
-                    </Link>
-                    <button type="submit" disabled={isPending} className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-sm ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black'}`}>
-                      {isPending ? (<><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</>) : (<><span className="material-symbols-outlined text-[18px]">save</span>Guardar Producto</>)}
-                    </button>
-                   </div>
-                </div>
-
-              </form>
+                     {/* ... (El footer queda igual que antes) ... */}
+                     {state.message && (
+                        <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>
+                      )}
+                      <div className="flex flex-col-reverse md:flex-row justify-end items-center gap-4 w-full">
+                        <Link href="/inventario" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all shadow-sm">
+                          Cancelar
+                        </Link>
+                        <button type="submit" disabled={isPending} className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-sm ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black'}`}>
+                          {isPending ? (<><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</>) : (<><span className="material-symbols-outlined text-[18px]">save</span>Guardar Producto</>)}
+                        </button>
+                      </div>
+                  </div>
+  
+                </form>
             </div>
           </div>
         </div>
