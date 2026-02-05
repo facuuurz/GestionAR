@@ -301,10 +301,33 @@ export default function AgregarProductoPage() {
                 <div className="bg-gray-50 dark:bg-[#1a202c] border-t border-[#e5e7eb] px-6 py-4 flex flex-col items-end gap-2">
                   {state.message && <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>}
                   <div className="flex flex-col-reverse md:flex-row justify-end items-center gap-4 w-full">
-                    <Link href="/inventario" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all shadow-sm">Cancelar</Link>
-                    <button type="submit" disabled={isPending} className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-sm ${isPending ? 'bg-neutral-800 hover:bg-black' : 'bg-neutral-800 hover:bg-black'}`}>
-                      {isPending ? (<><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</>) : (<><span className="material-symbols-outlined text-[18px]">save</span>Guardar Producto</>)}
-                    </button>
+                    <Link 
+  href="/inventario" 
+  className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-600 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:cursor-pointer"
+>
+  Cancelar
+</Link>
+                    <button 
+  type="submit" 
+  disabled={isPending} 
+  className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 shadow-sm ${
+    isPending 
+      ? 'bg-neutral-500 cursor-not-allowed' 
+      : 'bg-neutral-800 hover:bg-black hover:scale-105 active:scale-95 hover:shadow-md hover:cursor-pointer dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'
+  }`}
+>
+  {isPending ? (
+    <>
+      <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+      Guardando...
+    </>
+  ) : (
+    <>
+      <span className="material-symbols-outlined text-[18px]">save</span>
+      Guardar Producto
+    </>
+  )}
+</button>
                   </div>
                 </div>
               </form>
