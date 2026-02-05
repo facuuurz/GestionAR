@@ -5,19 +5,23 @@ export default function OrdenarCuentas({ isOpen, onClose, onAplicar, currentSort
   const [criterio, setCriterio] = useState(currentSort);
 
   useEffect(() => {
-    if (isOpen) setCriterio(currentSort);
+    // Si currentSort viene vacío, lo forzamos a "nombre-asc" visualmente
+    if (isOpen) setCriterio(currentSort || "nombre-asc");
   }, [isOpen, currentSort]);
 
   if (!isOpen) return null;
 
   const handleApply = () => {
-    onAplicar((criterio === "nombre-asc" || criterio === "") ? "" : criterio, true);
+    // CORRECCIÓN: Enviamos 'criterio' directamente. 
+    // Si es "nombre-asc", enviamos "nombre-asc", no "".
+    onAplicar(criterio, true);
     onClose();
   };
 
   const handleReset = () => {
+    // Al resetear, volvemos al default explícito
     setCriterio("nombre-asc");
-    onAplicar("", false);
+    onAplicar("nombre-asc", false); // Ojo: enviar el valor explícito aquí también
   }
 
   return (
@@ -36,13 +40,9 @@ export default function OrdenarCuentas({ isOpen, onClose, onAplicar, currentSort
         </div>
 
         <div className="p-2 flex flex-col gap-1">
-          {/* Opción: Nombre A-Z */}
           <SortOption label="Nombre (A - Z)" value="nombre-asc" icon="sort_by_alpha" current={criterio} set={setCriterio} />
-          {/* Opción: Nombre Z-A */}
           <SortOption label="Nombre (Z - A)" value="nombre-desc" icon="sort_by_alpha" current={criterio} set={setCriterio} />
-          {/* Opción: Mayor Saldo */}
           <SortOption label="Mayor Saldo" value="saldo-desc" icon="trending_up" current={criterio} set={setCriterio} />
-          {/* Opción: Menor Saldo */}
           <SortOption label="Menor Saldo" value="saldo-asc" icon="trending_down" current={criterio} set={setCriterio} />
         </div>
 
@@ -60,7 +60,9 @@ export default function OrdenarCuentas({ isOpen, onClose, onAplicar, currentSort
 }
 
 function SortOption({ label, value, icon, current, set }: any) {
-    const isSelected = (current === value) || (value === "nombre-asc" && current === "");
+    // CORRECCIÓN: Simplificamos la lógica de selección
+    const isSelected = current === value;
+    
     return (
         <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all group ${isSelected ? "bg-neutral-100 dark:bg-[#2a2a2a]" : "hover:bg-neutral-50 dark:hover:bg-[#252525]"}`}>
             <div className="flex items-center gap-3">

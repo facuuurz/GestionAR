@@ -11,11 +11,14 @@ const Header = () => {
   ];
 
   return (
-    // CAMBIOS AQUI: 'fixed', 'top-0', 'left-0', 'w-full', 'bg-opacity' y 'backdrop-blur'
     <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-[#ededed] dark:border-[#333] bg-[#f6f6f8] dark:bg-[#191919] px-10 py-3 shadow-sm transition-colors duration-200">
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-4 text-primary dark:text-white">
-          <Link className="size-8 flex items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-primary transition-colors" href="/">
+          {/* CAMBIO AQUÍ: 
+             - Light: bg-black text-white (Fondo negro, ícono blanco)
+             - Dark:  dark:bg-white dark:text-black (Fondo blanco, ícono negro)
+          */}
+          <Link className="size-8 flex items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-black transition-colors" href="/">
             <span className="material-symbols-outlined text-[20px]">sunny</span>
           </Link>
           <Link className="text-primary dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]" href="/">GestionAR</Link>
