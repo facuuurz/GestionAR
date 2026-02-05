@@ -591,22 +591,22 @@ export default function PantallaVenta() {
             </div>
             
             <button 
-                onClick={handleFinalizar}
-                disabled={procesando || carrito.length === 0}
-                className={`w-full text-white py-4 rounded-xl text-lg font-bold shadow-lg flex justify-center items-center gap-2 transition-all transform active:scale-[0.99]
-                    ${procesando || carrito.length === 0 
-                        ? 'bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed text-neutral-500 dark:text-neutral-500' 
-                        : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30'}`} 
-            >
-                {procesando ? (
-                    <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
-                ) : (
-                    <>
-                        <span className="material-symbols-outlined text-2xl">check</span>
-                        CONFIRMAR VENTA
-                    </>
-                )}
-            </button>
+    onClick={handleFinalizar}
+    disabled={procesando || carrito.length === 0}
+    className={`w-full text-white py-4 rounded-xl text-lg font-bold shadow-lg flex justify-center items-center gap-2 transition-all transform active:scale-[0.99]
+        ${procesando || carrito.length === 0 
+            ? 'bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed text-neutral-500 dark:text-neutral-500' 
+            : 'bg-blue-600 hover:bg-blue-500 hover:cursor-pointer shadow-blue-500/30'}`} 
+>
+    {procesando ? (
+        <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+    ) : (
+        <>
+            <span className="material-symbols-outlined text-2xl">check</span>
+            CONFIRMAR VENTA
+        </>
+    )}
+</button>
         </div>
 
       </div>
