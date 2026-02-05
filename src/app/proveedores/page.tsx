@@ -102,10 +102,20 @@ export default async function ProveedoresPage(props: {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
+                          {/* Avatar (Opcional: también podrías envolver esto en el Link si quieres) */}
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${getAvatarColor(prov.id)}`}>
                             {prov.razonSocial.substring(0, 2).toUpperCase()}
                           </div>
-                          <span className="font-medium text-neutral-800 dark:text-white">{prov.razonSocial}</span>
+                          
+                          {/* 🔴 AQUÍ ESTÁ EL CAMBIO PRINCIPAL */}
+                          <Link 
+                            href={`/proveedores/${prov.id}`}
+                            className="font-medium text-neutral-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors"
+                          >
+                            {prov.razonSocial}
+                          </Link>
+                          {/* ---------------------------------- */}
+
                         </div>
                       </td>
                       <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">{prov.contacto || "-"}</td>

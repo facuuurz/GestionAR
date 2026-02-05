@@ -184,7 +184,7 @@ export default function NuevoClientePage() {
                       id="direccion"
                       type="text" 
                       defaultValue={state.payload?.direccion}
-                      placeholder="Calle Falsa 123" 
+                      placeholder="Calle 123" 
                       className={`w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-700 border rounded-lg text-sm text-slate-700 dark:text-slate-200 focus:outline-none transition-all placeholder:text-slate-400
                         ${state.errors?.direccion 
                             ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
