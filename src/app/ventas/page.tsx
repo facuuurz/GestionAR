@@ -612,17 +612,20 @@ export default function PantallaVenta() {
       </div>
 
       <div className={`fixed bottom-6 left-6 z-50 transform transition-all duration-500 ease-in-out ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
-        <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
-            <div className="bg-white/20 p-1 rounded-full">
-                <span className="material-symbols-outlined text-xl">check</span>
-            </div>
-            <div>
-                <p className="font-bold text-sm">¡Venta exitosa!</p>
-                <p className="text-xs text-green-100">La operación se registró correctamente.</p>
-            </div>
+  <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
+    
+    {/* Contenedor del icono ajustado */}
+    <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+      <span className="material-symbols-outlined text-xl">check</span>
+    </div>
+
+    <div>
+      <p className="font-bold text-sm">¡Venta exitosa!</p>
+      <p className="text-xs text-green-100">La operación se registró correctamente.</p>
+    </div>
             
-        </div>
-      </div>
+  </div>
+</div>
 
       {productoAPesar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
