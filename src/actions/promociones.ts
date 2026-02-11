@@ -8,14 +8,9 @@ import { z } from "zod";
 // 1. Esquema de Validación
 const promocionSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  descripcion: z.string().optional(), // Puede ser opcional según tu DB
-  
-  // Convertimos el texto a número automáticamente
+  descripcion: z.string().optional(),
   precio: z.coerce.number().min(0, "El precio no puede ser negativo"),
-  
-  // El checkbox no envía "false", envía null si no está marcado. Lo manejamos manual fuera del schema o así:
   activo: z.boolean().optional().default(true),
-
   fechaInicio: z.coerce.date(),
   fechaFin: z.coerce.date(),
 }).refine((data) => data.fechaFin >= data.fechaInicio, {
@@ -35,9 +30,8 @@ export type State = {
   payload?: any;
 };
 
-// --- BUSCAR PRODUCTOS (Para el buscador del formulario) ---
+// --- BUSCAR PRODUCTOS PARA EL FORMULARIO ---
 export async function buscarProductosParaPromocion(query: string) {
-  // Si no hay query, devolvemos los últimos 20
   if (!query || query.trim() === "") {
      try {
        const productos = await prisma.producto.findMany({
@@ -59,7 +53,6 @@ export async function buscarProductosParaPromocion(query: string) {
      }
   }
   
-  // Búsqueda con filtro
   try {
     const productos = await prisma.producto.findMany({
       where: {
@@ -88,14 +81,17 @@ export async function buscarProductosParaPromocion(query: string) {
   }
 }
 
-// --- OBTENER PROMOCIONES (Para el Modal y la Lista) ---
+// --- OBTENER PROMOCIONES (CON FILTRO DE INTEGRIDAD) ---
 export async function obtenerPromociones(query: string = "", soloActivas: boolean = false) {
   try {
     const promociones = await prisma.promocion.findMany({
       where: {
-        // Solo traemos las ACTIVAS por defecto para el modal de ventas
+        // ✅ FILTRO CLAVE: Solo trae promociones que tengan al menos 1 producto
+        // Esto oculta las promociones cuyos productos fueron eliminados
+        items: {
+          some: {} 
+        },
         ...(soloActivas ? { activo: true } : {}),
-
         ...(query ? {
             OR: [
                 { nombre: { contains: query, mode: "insensitive" } },
@@ -103,7 +99,6 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
             ],
         } : {})
       },
-      // 👇 INCLUDE PROFUNDO: Traemos la tabla intermedia Y el producto real
       include: {
         items: {
           include: {
@@ -140,7 +135,6 @@ export async function crearPromocion(prevState: State, formData: FormData) {
     precio: formData.get("precio"),
     fechaInicio: formData.get("fechaInicio"),
     fechaFin: formData.get("fechaFin"),
-    // En HTML, si el checkbox está on envía "on", si no, envía null
     activo: formData.get("activo") === "on", 
   };
 
@@ -155,7 +149,6 @@ export async function crearPromocion(prevState: State, formData: FormData) {
     console.error("Error parseando JSON de productos", e);
   }
 
-  // Validamos con Zod (pasando activo manualmente)
   const validatedFields = promocionSchema.safeParse({
       ...rawData,
       activo: rawData.activo
@@ -184,12 +177,10 @@ export async function crearPromocion(prevState: State, formData: FormData) {
         precio: validatedFields.data.precio,
         fechaInicio: validatedFields.data.fechaInicio,
         fechaFin: validatedFields.data.fechaFin,
-        activo: validatedFields.data.activo, // ✅ Guardamos el estado
-        
-        // Relación Many-to-Many
+        activo: validatedFields.data.activo,
         items: {
             create: productosParaInsertar.map((item) => ({
-                productoId: item.id, // Usamos el ID directo que es más eficiente
+                productoId: item.id,
                 cantidad: item.cantidad
             }))
         }
@@ -215,7 +206,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     precio: formData.get("precio"),
     fechaInicio: formData.get("fechaInicio"),
     fechaFin: formData.get("fechaFin"),
-    activo: formData.get("activo") === "on", // ✅ Lógica checkbox
+    activo: formData.get("activo") === "on",
   };
 
   const productosDataRaw = formData.get("productosData") as string;
@@ -246,7 +237,6 @@ export async function actualizarPromocion(id: number, prevState: State, formData
 
   try {
     await prisma.$transaction(async (tx) => {
-      // 1. Actualizar datos básicos
       await tx.promocion.update({
         where: { id },
         data: {
@@ -259,13 +249,10 @@ export async function actualizarPromocion(id: number, prevState: State, formData
         },
       });
 
-      // 2. Borrar items viejos (Estrategia simple: borrar todo y crear de nuevo)
-      // Nota: Usamos 'promocionProducto' (camelCase) que es como Prisma nombra la tabla intermedia por defecto
       await tx.promocionProducto.deleteMany({
         where: { promocionId: id },
       });
 
-      // 3. Insertar items nuevos
       await tx.promocionProducto.createMany({
         data: productosParaInsertar.map((item) => ({
           promocionId: id,
@@ -287,7 +274,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
   redirect("/promociones");
 }
 
-// --- ELIMINAR ---
+// --- ELIMINAR PROMOCIÓN ---
 export async function eliminarPromocion(id: number) {
   try {
     await prisma.promocion.delete({ where: { id } });
@@ -298,7 +285,7 @@ export async function eliminarPromocion(id: number) {
   redirect("/promociones");
 }
 
-// --- OBTENER POR ID (Para editar) ---
+// --- OBTENER POR ID ---
 export async function obtenerPromocionPorId(id: number) {
   try {
     const promocion = await prisma.promocion.findUnique({
@@ -317,15 +304,13 @@ export async function obtenerPromocionPorId(id: number) {
     return {
       ...promocion,
       precio: Number(promocion.precio),
-
       items: promocion.items.map((item) => ({
         ...item,
         producto: {
             ...item.producto,
-            precio: Number(item.producto.precio) // Convertimos precio del producto
+            precio: Number(item.producto.precio)
         }
       })),
-      // Mapeamos para que el frontend lo lea fácil
       productos: promocion.items.map((p) => ({
         producto: {
             ...p.producto,

@@ -62,29 +62,43 @@ export default async function Panel() {
           </Link>
 
           {/* Tarjeta: Stock */}
-          <Link className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="/inventario">
-            <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXdzopWsFirwytLlZdQ2T-VwLsDDHyQrPIXFjPNZnOmM84yF8_-rztmm7J9WHEJZkRgfPAPwNOmtbYjBQwjgd-iskl6vwfx-LNc0b4z2lwUfaRCoZlLoSGH1EbAwphJI4_kSTJSPV0bbVRYgrYXN_1Loi9tr-B3cmLbp65nVO7EjQxXaLrMDDVwaK18G02jeFv4JW2ChVfp2YinqBHcWwu5W5t0JjtIE14DN6ilDaDKp-bpIMNdO3-uPc5K_aW7JPMNeNVC33jiygJ')`}}>
-              <div className="absolute inset-0  from-black/60 to-transparent"></div>
-              <div className="absolute bottom-4 left-4">
-                <span className="inline-flex items-center rounded-full bg-orange-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
-                  <span className="material-symbols-outlined text-[14px] mr-1">warning</span> Alerta de Stock Bajo
-                </span>
-              </div>
-            </div>
-            <div className="p-5 flex-1 flex flex-col">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600">Inventario</p>
-                <span className="material-symbols-outlined text-neutral-400">inventory_2</span>
-              </div>
-              <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Gestiona inventario, almacenes y seguimiento en tiempo real.</p>
-              <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
-                <p className="text-primary dark:text-white text-sm font-bold">
-                    {metricas.totalProductos} Ítems Totales
-                </p>
-                <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-              </div>
-            </div>
-          </Link>
+<Link className="xl:col-span-2 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" href="/inventario">
+  <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXdzopWsFirwytLlZdQ2T-VwLsDDHyQrPIXFjPNZnOmM84yF8_-rztmm7J9WHEJZkRgfPAPwNOmtbYjBQwjgd-iskl6vwfx-LNc0b4z2lwUfaRCoZlLoSGH1EbAwphJI4_kSTJSPV0bbVRYgrYXN_1Loi9tr-B3cmLbp65nVO7EjQxXaLrMDDVwaK18G02jeFv4JW2ChVfp2YinqBHcWwu5W5t0JjtIE14DN6ilDaDKp-bpIMNdO3-uPc5K_aW7JPMNeNVC33jiygJ')`}}>
+    <div className="absolute inset-0  from-black/60 to-transparent"></div>
+    <div className="absolute bottom-4 left-4">
+      {metricas.totalProductos === 0 ? (
+        <span className="inline-flex items-center rounded-full bg-neutral-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="material-symbols-outlined text-[14px] mr-1">inventory</span> Sin productos
+        </span>
+      ) : metricas.stockTotal === 0 ? (
+        <span className="inline-flex items-center rounded-full bg-red-600/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="material-symbols-outlined text-[14px] mr-1">block</span> Sin Stock Disponible
+        </span>
+      ) : metricas.productosStockBajo > 0 ? (
+        <span className="inline-flex items-center rounded-full bg-orange-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="material-symbols-outlined text-[14px] mr-1">warning</span> Alerta de Stock Bajo
+        </span>
+      ) : (
+        <span className="inline-flex items-center rounded-full bg-green-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="material-symbols-outlined text-[14px] mr-1">check_circle</span> Stock Estable
+        </span>
+      )}
+    </div>
+  </div>
+  <div className="p-5 flex-1 flex flex-col">
+    <div className="flex justify-between items-start mb-2">
+      <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600 transition-colors">Inventario</p>
+      <span className="material-symbols-outlined text-neutral-400">inventory_2</span>
+    </div>
+    <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Gestiona inventario, almacenes y seguimiento en tiempo real.</p>
+    <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
+      <p className="text-primary dark:text-white text-sm font-bold">
+          {metricas.totalProductos} Ítems Totales
+      </p>
+      <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+    </div>
+  </div>
+</Link>
 
           {/* Tarjeta: Cuentas Corrientes */}
           <Link 
@@ -101,7 +115,7 @@ export default async function Panel() {
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600">Cuentas Corrientes</p>
+                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600 transition-colors">Cuentas Corrientes</p>
                 <span className="material-symbols-outlined text-neutral-400">account_balance_wallet</span>
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Monitorea saldos de clientes, facturación e historial de pagos.</p>
@@ -115,32 +129,38 @@ export default async function Panel() {
           </Link>
 
           {/* Tarjeta: Promociones (Ancha) */}
-          <Link 
-            className="xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" 
-            href="/promociones"
-          >
-            <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD-TKVWStBi45-oCdf2wdITmTtwKVeBerJWoOI41z6QIJkA17qYci2r9-0z1-_Jc3IuGMtC6ZHqi0L3uFXBfTzTaLX4Bp6z1gFVupxJfyUl1lZAzciEmrqyp0wXunQUFE7orn-iOxhnqqsR-k5IRXCUqvQgt-4gBhW3MwmZp4mu_KF-PtUvMmYpEGm2BLM7XZsYAbBskXvT7BXaPUQaEqS8cBlwzOk_u0uKdWpSce8YoDEniIdpRJ8M0VPWmnuUrNapLdUry1FI4Hgc')`}}>
-              <div className="absolute inset-0 from-black/60 to-transparent"></div>
-              <div className="absolute bottom-4 left-4">
-                <span className="inline-flex items-center rounded-full bg-green-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
-                  <span className="material-symbols-outlined text-[14px] mr-1">bolt</span> Activo Ahora
-                </span>
-              </div>
-            </div>
-            <div className="p-5 flex-1 flex flex-col">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600">Promociones</p>
-                <span className="material-symbols-outlined text-neutral-400">campaign</span>
-              </div>
-              <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Crea descuentos, gestiona campañas y ofertas especiales.</p>
-              <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
-                <p className="text-primary dark:text-white text-sm font-bold">
-                    {metricas.promocionesActivas} Promociones Activas
-                </p>
-                <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-              </div>
-            </div>
-          </Link>
+<Link 
+  className="xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" 
+  href="/promociones"
+>
+  <div className="relative w-full h-48 bg-cover bg-center" style={{backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD-TKVWStBi45-oCdf2wdITmTtwKVeBerJWoOI41z6QIJkA17qYci2r9-0z1-_Jc3IuGMtC6ZHqi0L3uFXBfTzTaLX4Bp6z1gFVupxJfyUl1lZAzciEmrqyp0wXunQUFE7orn-iOxhnqqsR-k5IRXCUqvQgt-4gBhW3MwmZp4mu_KF-PtUvMmYpEGm2BLM7XZsYAbBskXvT7BXaPUQaEqS8cBlwzOk_u0uKdWpSce8YoDEniIdpRJ8M0VPWmnuUrNapLdUry1FI4Hgc')`}}>
+    <div className="absolute inset-0 from-black/60 to-transparent"></div>
+    <div className="absolute bottom-4 left-4">
+      {metricas.promocionesActivas > 0 ? (
+        <span className="inline-flex items-center rounded-full bg-green-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="material-symbols-outlined text-[14px] mr-1">bolt</span> Activo Ahora
+        </span>
+      ) : (
+        <span className="inline-flex items-center rounded-full bg-neutral-500/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="material-symbols-outlined text-[14px] mr-1">campaign</span> Sin campañas activas
+        </span>
+      )}
+    </div>
+  </div>
+  <div className="p-5 flex-1 flex flex-col">
+    <div className="flex justify-between items-start mb-2">
+      <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600 transition-colors">Promociones</p>
+      <span className="material-symbols-outlined text-neutral-400">campaign</span>
+    </div>
+    <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Crea descuentos, gestiona campañas y ofertas especiales.</p>
+    <div className="mt-auto pt-4 border-t border-[#ededed] dark:border-[#333] flex items-center justify-between">
+      <p className="text-primary dark:text-white text-sm font-bold">
+          {metricas.promocionesActivas} Promociones Activas
+      </p>
+      <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+    </div>
+  </div>
+</Link>
 
           {/* Tarjeta: Proveedores (Ancha) */}
           <Link className="md:col-span-2 xl:col-span-3 group flex flex-col rounded-xl bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" 
@@ -156,7 +176,7 @@ export default async function Panel() {
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600">Proveedores</p>
+                <p className="text-primary dark:text-white text-xl font-bold group-hover:text-blue-600 transition-colors">Proveedores</p>
                 <span className="material-symbols-outlined text-neutral-400">local_shipping</span>
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-4">Gestiona proveedores, pedidos y logística de entrega.</p>

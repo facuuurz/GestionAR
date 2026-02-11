@@ -9,24 +9,16 @@ import PromocionRow from "@/components/promociones/PromocionRow";
 import { usePromociones } from "@/hooks/usePromociones";
 
 export default function PromocionesPage() {
-  // --- 1. ESTADOS DE DATOS ---
   const [busqueda, setBusqueda] = useState(""); 
-  
-  // --- 2. DATA DESDE EL HOOK ---
   const { promociones, loading } = usePromociones();
 
-  // --- 3. LÓGICA DE FILTRADO EN TIEMPO REAL ---
+  // Filtrado en el cliente para mayor velocidad
   const promocionesFiltradas = useMemo(() => {
     if (!busqueda) return promociones;
-
     const termino = busqueda.toLowerCase();
     
     return promociones.filter((promo) => {
-      const matches = [
-        promo.nombre, 
-        promo.descripcion
-      ];
-      // Si alguno de los campos incluye el término de búsqueda, retorna true
+      const matches = [promo.nombre, promo.descripcion];
       return matches.some(field => field?.toLowerCase().includes(termino));
     });
   }, [promociones, busqueda]);
@@ -38,7 +30,7 @@ export default function PromocionesPage() {
         
         {/* Breadcrumbs */}
         <div className="flex flex-wrap gap-2 items-center text-sm shrink-0">
-          <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600">
+          <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors">
             Panel
           </Link>
           <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
@@ -57,9 +49,9 @@ export default function PromocionesPage() {
           </div>
           <Link 
              href="/promociones/nuevo"
-             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
           >
-            <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
+            <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:rotate-90">add</span>
             <span className="text-sm font-bold truncate">Nueva Promoción</span>
           </Link>
         </div>
@@ -70,7 +62,7 @@ export default function PromocionesPage() {
             onSearchChange={setBusqueda}
         />
 
-        {/* Tabla */}
+        {/* Tabla de Resultados */}
         <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
           <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-200">
@@ -106,8 +98,8 @@ export default function PromocionesPage() {
                                <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
                                <p>
                                  {busqueda 
-                                   ? `No se encontraron promociones que coincidan con "${busqueda}"` 
-                                   : "No hay promociones registradas."}
+                                    ? `No se encontraron promociones que coincidan con "${busqueda}"` 
+                                    : "No hay promociones registradas con productos."}
                                </p>
                                {busqueda && (
                                    <button 
@@ -125,6 +117,7 @@ export default function PromocionesPage() {
             </table>
           </div>
           
+          {/* Footer de la Tabla */}
           {!loading && (
             <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
                 <span>Mostrando {promocionesFiltradas.length} promociones</span>
