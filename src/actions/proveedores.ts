@@ -176,20 +176,40 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
 export async function eliminarProveedor(prevState: State, formData: FormData): Promise<State> {
   const id = parseInt(formData.get("id") as string);
 
-  if (!id) return { message: "ID de proveedor no válido" };
+  if (!id || isNaN(id)) return { message: "ID de proveedor no válido" };
 
   try {
-    await prisma.proveedor.delete({
+    // 1. Primero buscamos el proveedor para obtener su CÓDIGO
+    const proveedor = await prisma.proveedor.findUnique({
       where: { id },
+      select: { codigo: true } // Solo necesitamos el código
     });
+
+    if (!proveedor) {
+      return { message: "El proveedor no existe." };
+    }
+
+    // 2. Usamos una transacción para asegurar integridad
+    // Primero borramos los productos asociados a ese código, luego el proveedor.
+    await prisma.$transaction([
+      // Paso A: Borrar productos donde el campo 'proveedor' coincida con el código
+      prisma.producto.deleteMany({
+        where: { proveedor: proveedor.codigo },
+      }),
+      // Paso B: Borrar el proveedor por su ID
+      prisma.proveedor.delete({
+        where: { id },
+      }),
+    ]);
+
   } catch (error) {
-    console.error("Error al eliminar proveedor:", error);
+    console.error("Error al eliminar proveedor y productos:", error);
     return { 
-      message: "No se puede eliminar este proveedor. Asegúrese de que no tenga productos vinculados." 
+      message: "Ocurrió un error al intentar eliminar el proveedor y sus productos." 
     };
   }
 
   revalidatePath("/proveedores");
+  revalidatePath("/inventario"); // También revalidamos inventario porque borramos productos
   redirect("/proveedores");
-  return { message: null };
 }

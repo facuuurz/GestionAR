@@ -38,6 +38,11 @@ export default function NuevaPromocionPage() {
     const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
     const [mostrarResultados, setMostrarResultados] = useState(false);
 
+    const [nombre, setNombre] = useState("");
+    const [descripcion, setDescripcion] = useState("");
+    const [fechaInicio, setFechaInicio] = useState("");
+    const [fechaFin, setFechaFin] = useState("");
+
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     // --- VALIDACIÓN CLIENTE ---
@@ -62,6 +67,18 @@ export default function NuevaPromocionPage() {
         }
     }, [busquedaDebounced, mostrarResultados]);
 
+    useEffect(() => {
+        // Si hay payload (datos devueltos por el server) y existe el campo de restauración
+        if (state.payload && state.payload.productosDataUI) {
+            try {
+                const productosRestaurados = JSON.parse(state.payload.productosDataUI);
+                setProductosSeleccionados(productosRestaurados);
+            } catch (error) {
+                console.error("Error al restaurar productos:", error);
+            }
+        }
+    }, [state]);
+
     // Cerrar buscador al hacer click fuera
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -72,6 +89,15 @@ export default function NuevaPromocionPage() {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (state.payload) {
+            setNombre(state.payload.nombre || "");
+            setDescripcion(state.payload.descripcion || "");
+            setFechaInicio(state.payload.fechaInicio || "");
+            setFechaFin(state.payload.fechaFin || "");
+        }
+    }, [state]);
 
     // --- FORMATEADORES ---
     const formatCurrency = (amount: number) => {
@@ -265,6 +291,13 @@ export default function NuevaPromocionPage() {
                                 }))
                             )} 
                         />
+
+                        <input 
+                            type="hidden" 
+                            name="productosDataUI" 
+                            value={JSON.stringify(productosSeleccionados)} 
+                        />
+
                         <input type="hidden" name="precio" value={totalGeneral} />
 
                         {state.message && (
@@ -288,7 +321,8 @@ export default function NuevaPromocionPage() {
                                     <input 
                                         className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
                                         id="nombre" name="nombre" placeholder="Ej. Descuento de Verano 2024" type="text"
-                                        defaultValue={state.payload?.nombre || ""}
+                                        value={nombre}
+                                        onChange={(e) => setNombre(e.target.value)}
                                     />
                                 </div>
                                 
@@ -318,7 +352,8 @@ export default function NuevaPromocionPage() {
                                     <input 
                                         className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
                                         id="descripcion" name="descripcion" placeholder="Breve descripción..." type="text"
-                                        defaultValue={state.payload?.descripcion || ""}
+                                        value={descripcion}
+                                        onChange={(e) => setDescripcion(e.target.value)}
                                     />
                                 </div>
                                 
@@ -539,7 +574,8 @@ export default function NuevaPromocionPage() {
                                         <input 
                                             className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
                                             id="fechaInicio" name="fechaInicio" type="date"
-                                            defaultValue={state.payload?.fechaInicio || ""}
+                                            value={fechaInicio}
+                                            onChange={(e) => setFechaInicio(e.target.value)}
                                         />
                                     </div>
                                     
@@ -569,7 +605,8 @@ export default function NuevaPromocionPage() {
                                         <input 
                                             className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
                                             id="fechaFin" name="fechaFin" type="date"
-                                            defaultValue={state.payload?.fechaFin || ""}
+                                            value={fechaFin}
+                                            onChange={(e) => setFechaFin(e.target.value)}
                                         />
                                     </div>
                                     {state.errors?.fechaFin && (

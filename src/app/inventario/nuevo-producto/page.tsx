@@ -27,6 +27,15 @@ export default function AgregarProductoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   
+  // --- 1. ESTADOS PARA LOS INPUTS (Para que persistan) ---
+  const [nombre, setNombre] = useState("");
+  const [codigoBarra, setCodigoBarra] = useState("");
+  const [proveedor, setProveedor] = useState("");
+  const [stock, setStock] = useState("");
+  const [precio, setPrecio] = useState("");
+  const [fechaVencimiento, setFechaVencimiento] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+
   const [selectedTipo, setSelectedTipo] = useState<string>(""); 
   const [searchTerm, setSearchTerm] = useState<string>("");     
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);  
@@ -37,6 +46,11 @@ export default function AgregarProductoPage() {
 
   const [isPendingCat, startTransitionCat] = useTransition();
 
+  // Server Action
+  const initialState = { message: null, errors: {} };
+  const [state, dispatch, isPending] = useActionState(crearProducto, initialState);
+
+  // Cargar categorías
   const cargarCategorias = () => {
     startTransitionCat(async () => {
       const datos = await obtenerCategorias();
@@ -48,8 +62,39 @@ export default function AgregarProductoPage() {
     cargarCategorias();
   }, []);
 
+  // --- 2. EFECTO PARA RECUPERAR DATOS SI HAY ERROR ---
+  useEffect(() => {
+    if (state.payload) {
+        setNombre(state.payload.nombre || "");
+        setCodigoBarra(state.payload.codigoBarra || "");
+        setProveedor(state.payload.proveedor || "");
+        setStock(state.payload.stock?.toString() || "");
+        setPrecio(state.payload.precio?.toString() || "");
+        setFechaVencimiento(state.payload.fechaVencimiento || "");
+        setDescripcion(state.payload.descripcion || "");
+        
+        // Recuperar Tipo
+        if (state.payload.tipo) {
+            setSelectedTipo(state.payload.tipo);
+            setSearchTerm(state.payload.tipo);
+        }
+
+        // Recuperar Checkbox peso
+        if (state.payload.esPorPeso !== undefined) {
+            // El servidor devuelve string "true" o boolean, nos aseguramos
+            setEsPorPeso(String(state.payload.esPorPeso) === "true");
+        }
+        
+        // Ajustar contador de descripción
+        if (state.payload.descripcion) {
+            setDescLength(state.payload.descripcion.length);
+        }
+    }
+  }, [state]);
+
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
+    setDescripcion(target.value); // Actualizamos estado
     setDescLength(target.value.length);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -81,9 +126,6 @@ export default function AgregarProductoPage() {
   const misCategoriasFiltradas = categorias.filter(c => 
     c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const initialState = { message: null, errors: {} };
-  const [state, dispatch, isPending] = useActionState(crearProducto, initialState);
 
   return (
     <div className="bg-[#f6f6f8] dark:bg-[#101622] font-sans min-h-screen flex flex-col transition-colors duration-200">
@@ -130,12 +172,21 @@ export default function AgregarProductoPage() {
                 </div>
 
                 <div className="p-6 md:p-8 flex flex-col gap-8">
-                  {/* ... campos anteriores: Nombre, Código, Tipo, Proveedor, Fecha, Descripción ... */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* INPUT NOMBRE */}
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Nombre del producto *</span>
                       <div className="relative w-full">
-                        <input name="nombre" className={`flex w-full rounded-lg border ${state.errors?.nombre ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="Ej. Coca Cola 2L" type="text" />
+                        <input 
+                            name="nombre" 
+                            className={`flex w-full rounded-lg border ${state.errors?.nombre ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder="Ej. Coca Cola 2L" 
+                            type="text" 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                        />
                         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
                           <span className="material-symbols-outlined text-lg">shopping_bag</span>
                         </div>
@@ -143,10 +194,19 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.nombre} />
                     </label>
 
+                    {/* INPUT CÓDIGO BARRA */}
                     <label className="flex flex-col gap-2 relative">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de barra *</span>
                       <div className="relative w-full">
-                        <input name="codigoBarra" className={`flex w-full rounded-lg border ${state.errors?.codigoBarra ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-4 pr-14 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="Escanee o ingrese código" type="text" />
+                        <input 
+                            name="codigoBarra" 
+                            className={`flex w-full rounded-lg border ${state.errors?.codigoBarra ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-4 pr-14 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder="Escanee o ingrese código" 
+                            type="text" 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={codigoBarra}
+                            onChange={(e) => setCodigoBarra(e.target.value)}
+                        />
                         <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors cursor-pointer">
                           <span className="material-symbols-outlined text-lg">barcode_scanner</span>
                         </button>
@@ -162,7 +222,15 @@ export default function AgregarProductoPage() {
                             <span className="material-symbols-outlined text-lg">category</span>
                           </div>
                           <input type="hidden" name="tipo" value={selectedTipo} />
-                          <input type="text" placeholder="Buscar o seleccionar..." className={`flex w-full rounded-lg border ${state.errors?.tipo ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); if (e.target.value === "") setSelectedTipo(""); }} onFocus={() => setIsDropdownOpen(true)} autoComplete="off" />
+                          <input 
+                            type="text" 
+                            placeholder="Buscar o seleccionar..." 
+                            className={`flex w-full rounded-lg border ${state.errors?.tipo ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            value={searchTerm} 
+                            onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); if (e.target.value === "") setSelectedTipo(""); }} 
+                            onFocus={() => setIsDropdownOpen(true)} 
+                            autoComplete="off" 
+                          />
                           <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-black dark:text-gray-400">
                             <span className="material-symbols-outlined text-xl">expand_more</span>
                           </div>
@@ -194,10 +262,19 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.tipo} />
                     </div>
 
+                    {/* INPUT PROVEEDOR */}
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de Proveedor *</span>
                       <div className="relative w-full">
-                        <input name="proveedor" className={`flex w-full rounded-lg border ${state.errors?.proveedor ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="REF-000" type="text" />
+                        <input 
+                            name="proveedor" 
+                            className={`flex w-full rounded-lg border ${state.errors?.proveedor ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder="REF-000" 
+                            type="text" 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={proveedor}
+                            onChange={(e) => setProveedor(e.target.value)}
+                        />
                         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700">
                           <span className="material-symbols-outlined text-lg">local_shipping</span>
                         </div>
@@ -205,23 +282,42 @@ export default function AgregarProductoPage() {
                       <ErrorMessage errors={state.errors?.proveedor} />
                     </label>
 
+                    {/* INPUT FECHA */}
                     <label className="flex flex-col gap-2">
                       <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Fecha de Vencimiento</span>
                       <div className="relative w-full">
-                        <input name="fechaVencimiento" type="date" className="flex w-full rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20" />
+                        <input 
+                            name="fechaVencimiento" 
+                            type="date" 
+                            className="flex w-full rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20" 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={fechaVencimiento}
+                            onChange={(e) => setFechaVencimiento(e.target.value)}
+                        />
                         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300">
                           <span className="material-symbols-outlined text-lg">event</span>
                         </div>
                       </div>
                     </label>
 
+                    {/* INPUT DESCRIPCIÓN */}
                     <label className="flex flex-col gap-2">
                       <div className="flex justify-between items-center">
                         <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
                         <span className={`text-xs ${descLength >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>({descLength}/200)</span>
                       </div>
                       <div className="relative w-full">
-                        <textarea ref={textareaRef} name="descripcion" maxLength={200} rows={1} onChange={handleDescriptionChange} className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 overflow-hidden min-h-12`} placeholder="Ingrese detalles adicionales..." />
+                        <textarea 
+                            ref={textareaRef} 
+                            name="descripcion" 
+                            maxLength={200} 
+                            rows={1} 
+                            onChange={handleDescriptionChange} 
+                            className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 overflow-hidden min-h-12`} 
+                            placeholder="Ingrese detalles adicionales..." 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={descripcion}
+                        />
                         <div className="pointer-events-none absolute left-3 top-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
                           <span className="material-symbols-outlined text-lg">description</span>
                         </div>
@@ -233,7 +329,7 @@ export default function AgregarProductoPage() {
                   <hr className="border-[#e5e7eb] dark:border-[#2d3748]"/>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Contenedor ¿Producto por Peso? - MEJORADO */}
+                    {/* Contenedor ¿Producto por Peso? */}
                     <div className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-300 ${
                       esPorPeso 
                         ? 'bg-blue-600 border-blue-700 shadow-lg' 
@@ -250,7 +346,7 @@ export default function AgregarProductoPage() {
                         </span>
                       </div>
                       
-                      {/* Switch con contraste mejorado */}
+                      {/* Switch */}
                       <button 
                         type="button"
                         onClick={() => setEsPorPeso(!esPorPeso)}
@@ -267,12 +363,22 @@ export default function AgregarProductoPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      {/* INPUT STOCK */}
                       <label className="flex flex-col gap-2">
                         <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
                           {esPorPeso ? "Stock inicial (en Gramos) *" : "Stock inicial (Unidades) *"}
                         </span>
                         <div className="relative w-full">
-                          <input name="stock" className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder={esPorPeso ? "Ej. 1500 (para 1.5kg)" : "0"} type="number" />
+                          <input 
+                            name="stock" 
+                            className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder={esPorPeso ? "Ej. 1500 (para 1.5kg)" : "0"} 
+                            type="number" 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={stock}
+                            onChange={(e) => setStock(e.target.value)}
+                          />
                           <div className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full ${esPorPeso ? 'bg-blue-100 text-blue-700' : 'bg-sky-100 text-sky-700'}`}>
                             <span className="material-symbols-outlined text-lg">{esPorPeso ? "scale" : "inventory"}</span>
                           </div>
@@ -281,12 +387,22 @@ export default function AgregarProductoPage() {
                         <ErrorMessage errors={state.errors?.stock} />
                       </label>
   
+                      {/* INPUT PRECIO */}
                       <label className="flex flex-col gap-2">
                         <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
                           {esPorPeso ? "Precio por Kilo *" : "Precio Unitario *"}
                         </span>
                         <div className="relative w-full">
-                          <input name="precio" className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} placeholder="0.00" step="0.01" type="number" />
+                          <input 
+                            name="precio" 
+                            className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`} 
+                            placeholder="0.00" 
+                            step="0.01" 
+                            type="number" 
+                            // 3. APLICAMOS CONTROL DE ESTADO
+                            value={precio}
+                            onChange={(e) => setPrecio(e.target.value)}
+                          />
                           <div className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full ${esPorPeso ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                             <span className="material-symbols-outlined text-lg">attach_money</span>
                           </div>
@@ -302,32 +418,32 @@ export default function AgregarProductoPage() {
                   {state.message && <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>}
                   <div className="flex flex-col-reverse md:flex-row justify-end items-center gap-4 w-full">
                     <Link 
-  href="/inventario" 
-  className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-600 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:cursor-pointer"
->
-  Cancelar
-</Link>
+                      href="/inventario" 
+                      className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-600 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:cursor-pointer"
+                    >
+                      Cancelar
+                    </Link>
                     <button 
-  type="submit" 
-  disabled={isPending} 
-  className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 shadow-sm ${
-    isPending 
-      ? 'bg-neutral-500 cursor-not-allowed' 
-      : 'bg-neutral-800 hover:bg-black hover:scale-105 active:scale-95 hover:shadow-md hover:cursor-pointer dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'
-  }`}
->
-  {isPending ? (
-    <>
-      <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-      Guardando...
-    </>
-  ) : (
-    <>
-      <span className="material-symbols-outlined text-[18px]">save</span>
-      Guardar Producto
-    </>
-  )}
-</button>
+                      type="submit" 
+                      disabled={isPending} 
+                      className={`w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 shadow-sm ${
+                        isPending 
+                          ? 'bg-neutral-500 cursor-not-allowed' 
+                          : 'bg-neutral-800 hover:bg-black hover:scale-105 active:scale-95 hover:shadow-md hover:cursor-pointer dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'
+                      }`}
+                    >
+                      {isPending ? (
+                        <>
+                          <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[18px]">save</span>
+                          Guardar Producto
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </form>
