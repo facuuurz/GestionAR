@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { State } from "@/actions/cuentas-corrientes";
+// 1. Importar el Modal
+import EliminarClienteModal from "@/components/Cuentas-corrientes/Modal/EliminarClienteModal";
 
 interface EditarClienteFormProps {
   cliente: any; 
@@ -14,9 +16,31 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
   const initialState: State = { message: null, errors: {} };
   const [state, formAction, isPending] = useActionState(actualizarAction, initialState);
 
-  const handleDelete = async () => {
-    if (confirm("¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.")) {
+  // 2. Estados para el Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // 3. Función: Abre el modal (antes era el confirm)
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  // 4. Función: Confirma y llama al Server Action (CORREGIDA)
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
         await eliminarAction();
+        // Si tiene éxito y redirige, el componente se desmonta, así que no hace falta hacer nada más.
+    } catch (error: any) {
+        if (error.message === "NEXT_REDIRECT") {
+            throw error; // Dejamos que Next.js maneje la redirección
+        }
+        
+        // Si es otro error real, lo mostramos
+        console.error("Error al eliminar:", error);
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        alert("Ocurrió un error al intentar eliminar el cliente.");
     }
   };
 
@@ -62,8 +86,6 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
                 type="text"
               />
             </div>
-            
-            {/* Mensaje de error estilizado */}
             {state.errors?.cuit && (
               <div className="flex items-center gap-1.5 mt-1 text-red-500">
                 <span className="material-symbols-outlined text-[18px]">error</span>
@@ -138,17 +160,17 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
             </div>
              {state.errors?.email && <p className="text-red-500 text-xs">{state.errors.email[0]}</p>}
           </div>
-          
-
         </div>
 
         {/* FOOTER BAR */}
         <div className="bg-[#f9fafb] dark:bg-gray-800/50 px-6 py-4 md:px-8 border-t border-[#f0f2f4] dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
           
+          {/* Botón Eliminar: Ahora abre el modal */}
           <button
             type="button" 
-            onClick={handleDelete}
-            className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer"
+            onClick={handleDeleteClick}
+            disabled={isPending || isDeleting}
+            className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[18px]">delete</span>
             Eliminar Cliente
@@ -164,9 +186,9 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isDeleting}
               className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
-              ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'}`}
+              ${(isPending || isDeleting) ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'}`}
             >
               {isPending ? (
                   <>
@@ -184,6 +206,16 @@ export default function EditarClienteForm({ cliente, actualizarAction, eliminarA
           
         </div>
       </form>
+
+      {/* 5. Renderizamos el Modal al final */}
+      <EliminarClienteModal 
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        nombreCliente={cliente.nombre}
+      />
+
     </div>
   );
 }

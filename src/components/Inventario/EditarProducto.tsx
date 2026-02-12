@@ -4,6 +4,7 @@ import { useState, useActionState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { actualizarProducto, eliminarProducto, State } from "@/actions/productos";
 import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTipoModal"; 
+import EliminarProductoModal from "@/components/Inventario/Modal/EliminarProductoModal";
 
 // --- TIPOS ---
 interface ProductFormProps {
@@ -63,6 +64,10 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
   const [stockActual, setStockActual] = useState<number | string>(state.payload?.stock ?? producto.stock);
   const [descLength, setDescLength] = useState(producto.descripcion?.length || 0);
 
+  // 2. ESTADOS PARA EL MODAL DE ELIMINAR
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -116,6 +121,28 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
       setIsDropdownOpen(false);
     }
   };
+
+  // 3. FUNCIÓN PARA CONFIRMAR ELIMINACIÓN
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    // Creamos el FormData manualmente porque no es un submit nativo
+    const formData = new FormData();
+    formData.append("id", producto.id.toString());
+
+    try {
+        await eliminarProducto(formData);
+        // Si hay redirect, el componente se desmonta aquí.
+    } catch (error: any) {
+        // Ignoramos el error de redirección de Next.js
+        if (error.message === "NEXT_REDIRECT") {
+            throw error;
+        }
+        console.error(error);
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        alert("Error al eliminar el producto");
+    }
+  };
   
   return (
     <>
@@ -163,6 +190,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
               <ErrorMessage errors={state.errors?.nombre} />
           </label>
 
+          {/* ... (SECCIÓN TIPO DE PRODUCTO - IGUAL QUE ANTES) ... */}
           <div className="flex flex-col gap-2 relative z-20">
               <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Tipo de Producto *</span>
               <div className="flex gap-2 relative">
@@ -185,11 +213,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                     onFocus={() => setIsDropdownOpen(true)}
                     autoComplete="off"
                   />
-                  <button 
-                     type="button"
-                     onClick={toggleDropdown}
-                     className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-black dark:text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
-                  >
+                  <button type="button" onClick={toggleDropdown} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-black dark:text-gray-400 hover:text-blue-600 transition-colors cursor-pointer">
                     <span className={`material-symbols-outlined text-xl transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
                   </button>
 
@@ -218,11 +242,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                     </div>
                   )}
                 </div>
-                <button 
-                  onClick={() => setIsModalOpen(true)} 
-                  className="hover:cursor-pointer flex items-center justify-center shrink-0 h-12 px-4 rounded-lg border border-[#cfd7e7] bg-[#f8f9fc] hover:bg-gray-100 font-bold text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md dark:border-[#4a5568] dark:bg-[#2d3748] dark:hover:bg-[#4a5568] dark:text-white" 
-                  type="button"
-                >
+                <button onClick={() => setIsModalOpen(true)} className="hover:cursor-pointer flex items-center justify-center shrink-0 h-12 px-4 rounded-lg border border-[#cfd7e7] bg-[#f8f9fc] hover:bg-gray-100 font-bold text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md dark:border-[#4a5568] dark:bg-[#2d3748] dark:hover:bg-[#4a5568] dark:text-white" type="button">
                   <span className="material-symbols-outlined text-[20px] mr-2">add</span>Agregar
                 </button>
               </div>
@@ -291,7 +311,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
 
         <div className="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
 
-        {/* SECCIÓN TOGGLE, STOCK Y PRECIO - Layout corregido a ancho completo */}
+        {/* SECCIÓN TOGGLE, STOCK Y PRECIO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           <div className={`md:col-span-2 flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-300 ${
@@ -324,7 +344,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
             </button>
           </div>
 
-          {/* Stock con botones de suma/resta - Ancho completo en grid col 1 */}
+          {/* Stock */}
           <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                   <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
@@ -367,7 +387,7 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
               <ErrorMessage errors={state.errors?.stock} />
           </div>
 
-          {/* Precio - Ancho completo en grid col 2 */}
+          {/* Precio */}
           <label className="flex flex-col gap-2">
              <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
                 {esPorPeso ? "Precio por Kilo *" : "Precio Unitario *"}
@@ -397,12 +417,22 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>
             )}
             <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-4 w-full">
-              <button formAction={eliminarProducto} className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer">
-                <span className="material-symbols-outlined text-[18px]">delete</span>Eliminar Producto
+              
+              {/* 4. BOTÓN ELIMINAR MODIFICADO */}
+              <button 
+                type="button" // Cambiado a type="button"
+                onClick={() => setShowDeleteModal(true)} // Abre el modal
+                disabled={isPending || isDeleting}
+                className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[18px]">delete</span>
+                Eliminar Producto
               </button>
+
               <div className="flex flex-col-reverse md:flex-row gap-4 w-full md:w-auto">
                 <Link href="/inventario" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md dark:text-neutral-300 dark:border-neutral-700 dark:hover:bg-neutral-800">Cancelar</Link>
-                <button type="submit" disabled={isPending} className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'}`}>
+                
+                <button type="submit" disabled={isPending || isDeleting} className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${isPending || isDeleting ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'}`}>
                   {isPending ? (<><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</>) : (<><span className="material-symbols-outlined text-[18px]">save</span>Guardar Cambios</>)}
                 </button>
               </div>
@@ -411,6 +441,15 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
       </form>
       
       <AgregarTipoModal isOpen={isModalOpen} onClose={handleCloseModal} />
+      
+      {/* 5. RENDERIZAR EL MODAL */}
+      <EliminarProductoModal 
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        nombreProducto={producto.nombre}
+      />
     </>
   );
 }
