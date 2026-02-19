@@ -6,7 +6,8 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-// Modelo de Usuario
+
+// --- SEGURIDAD Y USUARIOS ---
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -15,36 +16,33 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-// Modelo Producto
+// --- PRODUCTOS Y STOCK ---
 model Producto {
-  id            Int      @id @default(autoincrement()) @map("id_producto")
-  nombre        String   @map("nombre_producto")
-  codigoBarra   String?  @map("codigo_barra")
-  descripcion   String?  @map("descripcion")
-  tipo          String?  @map("tipo_producto")
-  proveedor     String?  @map("codigo_proveedor")
-  stock         Int      @default(0) @map("stock_inicial")
-  precio        Decimal  @default(0.00) @db.Decimal(10, 2) @map("precio_unitario")
+  id               Int       @id @default(autoincrement()) @map("id_producto")
+  nombre           String    @map("nombre_producto")
+  codigoBarra      String?   @map("codigo_barra")
+  descripcion      String?   @map("descripcion")
+  tipo             String?   @map("tipo_producto")
+  proveedor        String?   @map("codigo_proveedor")
+  stock            Int       @default(0) @map("stock_inicial")
+  precio           Decimal   @default(0.00) @db.Decimal(10, 2) @map("precio_unitario")
   fechaVencimiento DateTime? @db.Date @map("fecha_vencimiento")
-
   esPorPeso        Boolean   @default(false)
   
-  promociones   PromocionProducto[]
+  promociones      PromocionProducto[]
   
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([codigoBarra, fechaVencimiento])
   @@map("productos")
 }
 
-// Modelo Categoria
 model Categoria {
   id     Int    @id @default(autoincrement())
   nombre String @unique
 }
 
-// Modelo Proveedor
 model Proveedor {
   id          Int      @id @default(autoincrement())
   codigo      String   @unique
@@ -58,44 +56,43 @@ model Proveedor {
   @@map("proveedores")
 }
 
-// --- MODIFICADO: CUENTA CORRIENTE ---
+// --- CUENTAS CORRIENTES Y MOVIMIENTOS ---
 model Cuenta_corriente {
-  id        Int      @id @default(autoincrement())
-  nombre    String   @map("razon_social")
-  cuit      String?  @unique
-  telefono  String?
-  email     String?
-  direccion String?
-  ciudad    String?
+  id          Int      @id @default(autoincrement())
+  nombre      String   @map("razon_social")
+  cuit        String?  @unique
+  telefono    String?
+  email       String?
+  direccion   String?
+  ciudad      String?
   
-  saldo     Decimal  @default(0.00) @db.Decimal(10, 2)
-  estado    String   @default("Al Día")
+  saldo       Decimal  @default(0.00) @db.Decimal(10, 2)
+  estado      String   @default("Al Día")
 
-  // ✅ NUEVO: Relación con los movimientos
+  // Relaciones
   movimientos Movimiento[]
+  ventas      Venta[] // ✅ Relación inversa: Permite ver qué ventas se cargaron a esta cuenta
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("Cuentas_corrientes")
 }
 
-// --- ✅ NUEVO MODELO: MOVIMIENTO ---
 model Movimiento {
-  id                Int      @id @default(autoincrement())
-  fecha             DateTime @default(now())
+  id                Int              @id @default(autoincrement())
+  fecha             DateTime         @default(now())
   descripcion       String
-  monto             Decimal  @db.Decimal(10, 2) // Guardamos con precisión
-  tipo              String   // "CREDITO" o "DEBITO"
+  monto             Decimal          @db.Decimal(10, 2)
+  tipo              String           // "CREDITO" o "DEBITO"
   
-  // Relación con la cuenta corriente
   cuentaCorrienteId Int
   cuenta            Cuenta_corriente @relation(fields: [cuentaCorrienteId], references: [id], onDelete: Cascade)
 
   @@map("movimientos")
 }
 
-// Modelo Promocion
+// --- PROMOCIONES ---
 model Promocion {
   id          Int      @id @default(autoincrement())
   nombre      String
@@ -113,16 +110,47 @@ model Promocion {
   @@map("promociones")
 }
 
-// Modelo Tabla Intermedia Promocion-Producto
 model PromocionProducto {
   promocionId Int
   productoId  Int
-  cantidad    Int       @default(1)
+  cantidad    Int      @default(1)
 
   promocion   Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)
-  // CAMBIA ESTA LÍNEA:
   producto    Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
   @@id([promocionId, productoId])
   @@map("promocion_productos")
+}
+
+// --- VENTAS ---
+model Venta {
+  id                Int               @id @default(autoincrement())
+  codigoVenta       String            @unique @map("codigo_venta")
+  fecha             DateTime          @default(now())
+  cliente           String            @default("Consumidor Final") // Nombre descriptivo
+  metodoPago        String            @map("metodo_pago")
+  montoTotal        Decimal           @db.Decimal(10, 2) @map("monto_total")
+  
+  // ✅ VÍNCULO CON CUENTA CORRIENTE
+  // Opcional: solo se llena si metodoPago es "Cuenta Corriente"
+  cuentaCorrienteId Int?              @map("cuenta_corriente_id")
+  cuentaCorriente   Cuenta_corriente? @relation(fields: [cuentaCorrienteId], references: [id])
+
+  items             DetalleVenta[]
+
+  @@map("ventas")
+}
+
+model DetalleVenta {
+  id             Int      @id @default(autoincrement())
+  ventaId        Int      @map("venta_id")
+  productoId     Int?     @map("producto_id")
+  nombre         String   // Se guarda el nombre para histórico (por si el producto cambia después)
+  cantidad       Float    // Usamos Float para soportar decimales en productos por peso
+  precioUnitario Decimal  @db.Decimal(10, 2) @map("precio_unitario")
+  esPromo        Boolean  @default(false) @map("es_promo")
+
+  venta          Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  
+  @@map("detalle_ventas")
 }
