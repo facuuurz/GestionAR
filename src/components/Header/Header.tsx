@@ -7,7 +7,8 @@ const Header = () => {
   const pathname = usePathname();
 
   const navLinks = [
-    { name: "Panel", href: "/" }
+    { name: "Panel", href: "/" },
+    { name: "Historial Ventas", href: "/historial-ventas" }
   ];
 
   return (
