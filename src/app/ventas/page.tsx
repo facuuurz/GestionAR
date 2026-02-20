@@ -349,6 +349,20 @@ export default function PantallaVenta() {
     );
 
     if (resultado.success) {
+        setListaProductos((prevProductos) => 
+            prevProductos.map((producto) => {
+                const itemVendido = itemsParaDescontar.find(item => item.id === producto.id);
+                
+                if (itemVendido) {
+                    return {
+                        ...producto,
+                        stock: producto.stock - itemVendido.cantidad
+                    };
+                }
+                return producto;
+            })
+        );
+
         setCarrito([]);
         setCliente(null);
         setQueryCliente("");
