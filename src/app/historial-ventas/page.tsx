@@ -1,10 +1,18 @@
-"use client"; // Importante en Next.js para usar Hooks
+"use client";
 
 import React, { useState } from 'react';
+import FiltroFechaModal from '@/components/Historial/FiltroFechaModal'; // Ajusta esta ruta a donde guardes el componente
 
 export default function HistorialVentas() {
-  // 1. Estado para el término de búsqueda
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // 1. Estados para el Modal y los Filtros
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState({
+    year: "Todos",
+    month: "Todos",
+    day: "Todos"
+  });
 
   const ventas = [
     { fecha: "24/05/2023", id: "#V-1024", cuit: "20-30456789-2", monto: "$15,500.00" },
@@ -18,18 +26,39 @@ export default function HistorialVentas() {
     { fecha: "16/05/2023", id: "#V-1016", cuit: "23-45678901-5", monto: "$7,800.00" },
   ];
 
-  // 2. Lógica de filtrado
+  // 2. Lógica Combinada de Filtrado (Búsqueda + Fecha)
   const ventasFiltradas = ventas.filter((venta) => {
+    // A. Filtrado por término
     const term = searchTerm.toLowerCase();
-    return (
-      venta.id.toLowerCase().includes(term) || 
-      venta.cuit.toLowerCase().includes(term)
-    );
+    const matchSearch = venta.id.toLowerCase().includes(term) || venta.cuit.toLowerCase().includes(term);
+
+    // B. Filtrado por Fecha Exacta
+    // Asumimos que la fecha viene en formato DD/MM/YYYY
+    const [vDia, vMes, vAnio] = venta.fecha.split("/");
+
+    const matchDay = dateFilter.day === "Todos" || dateFilter.day === vDia;
+    const matchMonth = dateFilter.month === "Todos" || dateFilter.month === vMes;
+    const matchYear = dateFilter.year === "Todos" || dateFilter.year === vAnio;
+
+    return matchSearch && matchDay && matchMonth && matchYear;
   });
 
+  // Handler para recibir los filtros del modal
+  const handleApplyFilters = (filtros: any) => {
+    setDateFilter(filtros);
+  };
+
   return (
-    <main className="flex-1 flex flex-col overflow-hidden px-6 lg:px-20 py-6 max-w-360 mx-auto w-full gap-6 bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 h-full">
+    <main className="flex-1 flex flex-col overflow-hidden px-6 lg:px-20 py-6 max-w-360 mx-auto w-full gap-6 bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 h-full relative">
       
+      {/* 3. Renderizar Modal */}
+      <FiltroFechaModal 
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleApplyFilters}
+        currentFilter={dateFilter}
+      />
+
       {/* Breadcrumb y Título */}
       <div className="space-y-4 shrink-0">
         <nav className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -45,8 +74,8 @@ export default function HistorialVentas() {
         </div>
       </div>
 
-      {/* Barra de Búsqueda */}
-      <div className="shrink-0 flex flex-col xl:flex-row gap-4">
+      {/* Barra de Búsqueda y Botón de Filtro */}
+      <div className="shrink-0 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 group">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
             <span className="material-symbols-outlined">search</span>
@@ -54,41 +83,27 @@ export default function HistorialVentas() {
           <input 
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} // 3. Actualizar estado
-            className="block w-full pl-11 pr-4 py-4 bg-white dark:bg-slate-800 border-none rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary dark:focus:ring-primary shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all outline-none" 
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border-none rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary dark:focus:ring-primary shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all outline-none" 
             placeholder="Buscar por ID de venta o CUIT/CUIL..." 
           />
         </div>
 
-        {/* Filtros (Día, Mes, Año) */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm p-1">
-            <div className="flex flex-col px-3 border-r border-slate-200 dark:border-slate-700">
-              <label className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Día</label>
-              <select className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 dark:text-slate-100 focus:ring-0 cursor-pointer">
-                <option>Todos</option>
-                <option>01</option>
-                <option>02</option>
-              </select>
-            </div>
-            <div className="flex flex-col px-3 border-r border-slate-200 dark:border-slate-700">
-              <label className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Mes</label>
-              <select className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 dark:text-slate-100 focus:ring-0 cursor-pointer">
-                <option>Todos</option>
-                <option>Enero</option>
-                <option>Febrero</option>
-              </select>
-            </div>
-            <div className="flex flex-col px-3">
-              <label className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Año</label>
-              <select className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 dark:text-slate-100 focus:ring-0 cursor-pointer">
-                <option>2024</option>
-                <option>2023</option>
-                <option>2022</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        {/* 4. Nuevo Botón de Filtrar (Con los mismos estilos de Ver Detalles pero adaptado al Layout) */}
+        <button
+          onClick={() => setIsFilterOpen(true)}
+          className="group inline-flex items-center justify-center gap-1.5 px-6 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black shrink-0"
+        >
+          <span className="material-symbols-outlined text-[18px]">
+            calendar_month
+          </span>
+          <span>Filtrar Fecha</span>
+          
+          {/* Indicador visual si hay un filtro aplicado */}
+          {(dateFilter.year !== "Todos" || dateFilter.month !== "Todos" || dateFilter.day !== "Todos") && (
+            <span className="ml-1 w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+          )}
+        </button>
       </div>
 
       {/* Tabla con resultados filtrados */}
@@ -105,40 +120,39 @@ export default function HistorialVentas() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-  {ventasFiltradas.length > 0 ? (
-    ventasFiltradas.map((venta, index) => (
-      <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-        <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{venta.fecha}</td>
-        <td className="px-6 py-5 text-sm font-mono font-medium text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4">
-          {venta.id}
-        </td>
-        <td className={`px-6 py-5 text-sm font-mono font-medium ${venta.cuit === '-' ? 'text-slate-400 dark:text-slate-600' : 'text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4 dark:text-slate-300'}`}>
-          {venta.cuit}
-        </td>
-        <td className="px-6 py-5 text-sm font-bold text-slate-900 dark:text-white">{venta.monto}</td>
-        
-        {/* Celda de Acción con estilos de "Actualizar" adaptados */}
-        <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-neutral-50 dark:group-hover:bg-slate-800 transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
-          <button
-            onClick={() => console.log(`Navegando a detalle de: ${venta.id}`)}
-            className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              visibility
-            </span>
-            <span>Ver Detalles</span>
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan={5} className="px-6 py-10 text-center text-slate-500">
-        No se encontraron registros para "{searchTerm}"
-      </td>
-    </tr>
-  )}
-</tbody>
+              {ventasFiltradas.length > 0 ? (
+                ventasFiltradas.map((venta, index) => (
+                  <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
+                    <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{venta.fecha}</td>
+                    <td className="px-6 py-5 text-sm font-mono font-medium text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4">
+                      {venta.id}
+                    </td>
+                    <td className={`px-6 py-5 text-sm font-mono font-medium ${venta.cuit === '-' ? 'text-slate-400 dark:text-slate-600' : 'text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4 dark:text-slate-300'}`}>
+                      {venta.cuit}
+                    </td>
+                    <td className="px-6 py-5 text-sm font-bold text-slate-900 dark:text-white">{venta.monto}</td>
+                    
+                    <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-neutral-50 dark:group-hover:bg-slate-800 transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
+                      <button
+                        onClick={() => console.log(`Navegando a detalle de: ${venta.id}`)}
+                        className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          visibility
+                        </span>
+                        <span>Ver Detalles</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-slate-500">
+                    No se encontraron registros para la búsqueda actual
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       </div>
