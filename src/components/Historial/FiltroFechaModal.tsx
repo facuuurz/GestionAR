@@ -10,10 +10,9 @@ function CustomSelect({ value, options, onChange, disabled = false, gridMode = f
 
   // Buscamos la opción seleccionada actualmente
   const selectedOption = options.find((o: any) => o.value === value) || options[0];
-  // Extraemos solo el texto (string) para que el useEffect no se confunda con objetos
   const selectedLabel = selectedOption ? selectedOption.label : "";
 
-  // Sincronizar el input si el valor cambia desde afuera (ahora vigila el string)
+  // Sincronizar el input si el valor cambia desde afuera
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery(selectedLabel);
@@ -183,10 +182,10 @@ export default function FiltroFechaModal({ isOpen, onClose, onApply, currentFilt
     }
   }, [isOpen, currentFilter]);
 
+  // --- MODIFICACIÓN: Años ascendentes desde 2026 hasta 2099 ---
   const opcionesAnios = useMemo(() => {
-    const currentYear = new Date().getFullYear();
     const options = [{ value: "Todos", label: "Todos los años" }];
-    for (let i = currentYear + 5; i >= 2000; i--) {
+    for (let i = 2026; i <= 2099; i++) {
       options.push({ value: i.toString(), label: i.toString() });
     }
     return options;
@@ -204,7 +203,8 @@ export default function FiltroFechaModal({ isOpen, onClose, onApply, currentFilt
 
   const diasDelMes = useMemo(() => {
     if (month === "Todos") return 31;
-    const anioCalculo = year === "Todos" ? 2024 : parseInt(year);
+    // --- MODIFICACIÓN: Usamos 2028 (año bisiesto) como fallback para Febrero cuando está en "Todos los años"
+    const anioCalculo = year === "Todos" ? 2028 : parseInt(year);
     const mesCalculo = parseInt(month);
     return new Date(anioCalculo, mesCalculo, 0).getDate();
   }, [month, year]);
