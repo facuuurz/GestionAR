@@ -30,6 +30,8 @@ model Producto {
   esPorPeso        Boolean   @default(false)
   
   promociones   PromocionProducto[]
+
+  detallesVenta DetalleVenta[]
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -71,8 +73,9 @@ model Cuenta_corriente {
   saldo     Decimal  @default(0.00) @db.Decimal(10, 2)
   estado    String   @default("Al Día")
 
-  // ✅ NUEVO: Relación con los movimientos
   movimientos Movimiento[]
+
+  ventas Venta[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,4 +128,32 @@ model PromocionProducto {
 
   @@id([promocionId, productoId])
   @@map("promocion_productos")
+}
+
+model Venta {
+  id                Int       @id @default(autoincrement())
+  fecha             DateTime  @default(now())
+  total             Decimal   @db.Decimal(10, 2)
+  
+  // Relación opcional: Si es null, es Consumidor Final. Si tiene ID, es un cliente con Cuenta.
+  cuentaCorrienteId Int?
+  cuenta            Cuenta_corriente? @relation(fields: [cuentaCorrienteId], references: [id])
+
+  detalles          DetalleVenta[]
+
+  @@map("ventas")
+}
+
+model DetalleVenta {
+  id          Int      @id @default(autoincrement())
+  ventaId     Int
+  productoId  Int
+  cantidad    Decimal  @db.Decimal(10, 3) // Decimal para soportar peso (ej: 1.5 kg)
+  precioUnit  Decimal  @db.Decimal(10, 2) // Precio al momento de la venta
+  subtotal    Decimal  @db.Decimal(10, 2)
+
+  venta       Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  producto    Producto @relation(fields: [productoId], references: [id])
+
+  @@map("detalle_ventas")
 }

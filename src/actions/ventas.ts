@@ -101,7 +101,43 @@ export async function buscarClienteVenta(query: string) {
   }));
 }
 
-// 3. PROCESAR VENTA
+export async function obtenerHistorialVentas() {
+  try {
+    const ventas = await prisma.venta.findMany({
+      orderBy: { fecha: 'desc' },
+      include: {
+        cuenta: true,
+      },
+      take: 100 
+    });
+
+    return ventas.map((venta) => {
+      const dia = String(venta.fecha.getDate()).padStart(2, '0');
+      const mes = String(venta.fecha.getMonth() + 1).padStart(2, '0');
+      const anio = venta.fecha.getFullYear();
+
+      const montoFormateado = new Intl.NumberFormat("es-AR", {
+        style: "currency",
+        currency: "ARS",
+        minimumFractionDigits: 2,
+      }).format(Number(venta.total));
+
+      return {
+        idRaw: venta.id,
+        id: `#V-${venta.id}`,
+        fecha: `${dia}/${mes}/${anio}`,
+        cuit: venta.cuenta?.cuit || "-", 
+        clienteNombre: venta.cuenta?.nombre || "Consumidor Final",
+        monto: montoFormateado,
+      };
+    });
+
+  } catch (error) {
+    console.error("Error al obtener historial:", error);
+    return [];
+  }
+}
+
 export async function procesarVenta(
   items: { id: number; cantidad: number }[], 
   total: number, 
@@ -110,7 +146,14 @@ export async function procesarVenta(
   try {
     await prisma.$transaction(async (tx) => {
       
-      // 1. DESCONTAR STOCK DE PRODUCTOS
+      const nuevaVenta = await tx.venta.create({
+        data: {
+          total: total,
+          cuentaCorrienteId: clienteId || null,
+          fecha: new Date(),
+        }
+      });
+
       for (const item of items) {
         const producto = await tx.producto.findUnique({ where: { id: item.id } });
         
@@ -122,9 +165,18 @@ export async function procesarVenta(
           where: { id: item.id },
           data: { stock: { decrement: item.cantidad } }
         });
+
+        await tx.detalleVenta.create({
+          data: {
+            ventaId: nuevaVenta.id,
+            productoId: item.id,
+            cantidad: item.cantidad,
+            precioUnit: producto.precio, 
+            subtotal: Number(producto.precio) * item.cantidad
+          }
+        });
       }
 
-      // 2. SI HAY CLIENTE -> DESCONTAR SALDO Y CREAR MOVIMIENTO
       if (clienteId) {
         await tx.cuenta_corriente.update({
           where: { id: clienteId },
@@ -134,7 +186,7 @@ export async function procesarVenta(
         await tx.movimiento.create({
           data: {
             cuentaCorrienteId: clienteId,
-            descripcion: "Compra de productos / Venta Mostrador",
+            descripcion: `Compra #V-${nuevaVenta.id}`,
             monto: total,
             tipo: "DEBITO"
           }
@@ -142,12 +194,10 @@ export async function procesarVenta(
       }
     });
 
-    // 3. Revalidar
+    revalidatePath("/historial-ventas"); 
     revalidatePath("/inventario");
-    revalidatePath("/venta"); 
-    revalidatePath("/cuentas-corrientes"); 
     
-    return { success: true, message: "Venta procesada correctamente" };
+    return { success: true, message: "Venta registrada con éxito" };
 
   } catch (error: any) {
     console.error("Error al procesar venta:", error);
@@ -158,13 +208,84 @@ export async function procesarVenta(
 export async function obtenerCategorias() {
   try {
     const categorias = await prisma.categoria.findMany({
-      orderBy: { nombre: 'asc' }, // Ordenadas alfabéticamente
+      orderBy: { nombre: 'asc' }, 
     });
 
-    // Devolvemos solo un array de strings: ["Bebidas", "Limpieza", etc.]
     return categorias.map((c) => c.nombre);
   } catch (error) {
     console.error("Error al obtener categorías:", error);
     return [];
+  }
+}
+
+// Agrégalo al final de src/actions/ventas.ts
+
+export async function obtenerDetalleVenta(idRaw: number) {
+  try {
+    const venta = await prisma.venta.findUnique({
+      where: { id: idRaw },
+      include: {
+        cuenta: true,
+        detalles: {
+          include: { producto: true }
+        }
+      }
+    });
+
+    if (!venta) return null;
+
+    // Helper para formatear moneda
+    const formatear = (valor: any) => new Intl.NumberFormat("es-AR", {
+        style: "currency", currency: "ARS", minimumFractionDigits: 2
+    }).format(Number(valor));
+
+    const dia = String(venta.fecha.getDate()).padStart(2, '0');
+    const mes = String(venta.fecha.getMonth() + 1).padStart(2, '0');
+    const anio = venta.fecha.getFullYear();
+    const hora = String(venta.fecha.getHours()).padStart(2, '0');
+    const minutos = String(venta.fecha.getMinutes()).padStart(2, '0');
+
+    let subtotalGeneral = 0;
+    let descuentoTotal = 0;
+
+    // Mapear productos y calcular si hubo promociones
+    const productos = venta.detalles.map((det) => {
+        const precioLista = Number(det.producto.precio); 
+        const precioCobrado = Number(det.precioUnit);
+        const cantidad = Number(det.cantidad);
+
+        subtotalGeneral += (precioLista * cantidad);
+        
+        const esPromo = precioCobrado < precioLista;
+        if (esPromo) {
+            descuentoTotal += ((precioLista - precioCobrado) * cantidad);
+        }
+
+        return {
+            nombre: det.producto.nombre,
+            sku: det.producto.codigoBarra || "S/C",
+            // Si tiene decimales mostramos "kg", sino unidad normal
+            cantidad: cantidad % 1 !== 0 ? `${cantidad.toFixed(3)} kg` : `${cantidad}`,
+            precioUnitario: formatear(precioLista),
+            precioPromocional: esPromo ? formatear(precioCobrado) : null,
+            descuentoEtiqueta: esPromo ? "Precio Especial" : null,
+            subtotal: formatear(det.subtotal)
+        };
+    });
+
+    return {
+        idVisual: `#V-${venta.id}`,
+        fecha: `${dia}/${mes}/${anio}`,
+        hora: `${hora}:${minutos}`,
+        cliente: venta.cuenta ? `${venta.cuenta.nombre} (${venta.cuenta.cuit})` : "Consumidor Final",
+        productos,
+        subtotalGeneral: formatear(subtotalGeneral),
+        descuentoTotal: descuentoTotal > 0 ? `-${formatear(descuentoTotal)}` : null,
+        totalFinal: formatear(venta.total)
+    };
+
+  } catch (error) {
+    console.error("Error obteniendo detalle:", error);
+    return null;
   }
 }

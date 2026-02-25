@@ -1,84 +1,74 @@
 import React from 'react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { obtenerDetalleVenta } from '@/actions/ventas';
 
-export default function DetalleVenta() {
-  // Datos simulados de los productos
-  const productos = [
-    {
-      nombre: 'Monitor LED 24" Full HD',
-      sku: 'MON-24-FHD',
-      cantidad: 2,
-      precioUnitario: '$150.000,00',
-      precioPromocional: '$135.000,00',
-      descuentoEtiqueta: 'Promo 10% OFF',
-      subtotal: '$270.000,00',
-    },
-    {
-      nombre: 'Teclado Mecánico RGB',
-      sku: 'TEC-RGB-MK',
-      cantidad: 1,
-      precioUnitario: '$45.500,00',
-      precioPromocional: null,
-      subtotal: '$45.500,00',
-    },
-    {
-      nombre: 'Mouse Gamer Pro',
-      sku: 'MOU-GPRO-01',
-      cantidad: 3,
-      precioUnitario: '$22.000,00',
-      precioPromocional: '$18.700,00',
-      descuentoEtiqueta: '3x2 Oferta',
-      subtotal: '$56.100,00',
-    },
-  ];
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function DetalleVentaPage({ params }: PageProps) {
+  const { id } = await params;
+  const idVenta = parseInt(id, 10);
+
+  if (isNaN(idVenta)) {
+    notFound();
+  }
+
+  const venta = await obtenerDetalleVenta(idVenta);
+
+  if (!venta) {
+    notFound(); 
+  }
 
   return (
-    <main className="flex-1 max-w-300 mx-auto w-full px-4 py-8 bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+    <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 bg-[#f6f6f8] dark:bg-[#101622] text-slate-900 dark:text-slate-100 min-h-screen">
       
       {/* Breadcrumbs */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <a className="text-primary text-sm font-medium hover:underline" href="#">Panel</a>
+        <Link className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline" href="/">Panel</Link>
         <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-        <a className="text-primary text-sm font-medium hover:underline" href="#">Historial de Ventas</a>
+        <Link className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline" href="/historial-ventas">Historial de Ventas</Link>
         <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-        <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Detalle de Venta #1234</span>
+        <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Detalle de Venta {venta.idVisual}</span>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         
         {/* Info General (Grid de Tarjetas) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
-          
-          <InfoCard icon="tag" label="ID Venta" value="#1234" color="text-primary" bgColor="bg-primary/10" />
-          <InfoCard icon="calendar_today" label="Fecha" value="24/05/2024" color="text-orange-600" bgColor="bg-orange-100 dark:bg-orange-900/30" />
-          <InfoCard icon="schedule" label="Hora" value="14:35" color="text-emerald-600" bgColor="bg-emerald-100 dark:bg-emerald-900/30" />
-          <InfoCard icon="person" label="Sujeto / Cliente" value="Consumidor Final" color="text-purple-600" bgColor="bg-purple-100 dark:bg-purple-900/30" />
-          
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
+          <InfoCard icon="tag" label="ID Venta" value={venta.idVisual} color="text-blue-600" bgColor="bg-blue-100 dark:bg-blue-900/30" />
+          <InfoCard icon="calendar_today" label="Fecha" value={venta.fecha} color="text-orange-600" bgColor="bg-orange-100 dark:bg-orange-900/30" />
+          <InfoCard icon="schedule" label="Hora" value={venta.hora} color="text-emerald-600" bgColor="bg-emerald-100 dark:bg-emerald-900/30" />
+          <InfoCard icon="person" label="Sujeto / Cliente" value={venta.cliente} color="text-purple-600" bgColor="bg-purple-100 dark:bg-purple-900/30" />
         </div>
 
         {/* Tabla de Productos */}
         <div className="px-6 py-6">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Desglose de Productos</h3>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
               <thead className="bg-slate-50 dark:bg-slate-800/50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Producto</th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Cantidad</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Precio Unitario</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Precio Promocional</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Precio de Lista</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Precio Cobrado</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Subtotal</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800">
-                {productos.map((prod, idx) => (
-                  <tr key={idx}>
+              <tbody className="bg-white dark:bg-[#1e2736] divide-y divide-slate-100 dark:divide-slate-700">
+                {venta.productos.map((prod, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-900 dark:text-white">{prod.nombre}</span>
                         <span className="text-xs text-slate-400">SKU: {prod.sku}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600 dark:text-slate-300">{prod.cantidad}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600 dark:text-slate-300">
+                      {prod.cantidad}
+                    </td>
                     <td className={`px-6 py-4 whitespace-nowrap text-right text-sm ${prod.precioPromocional ? 'text-slate-400 line-through' : 'text-slate-600 dark:text-slate-300'}`}>
                       {prod.precioUnitario}
                     </td>
@@ -86,7 +76,7 @@ export default function DetalleVenta() {
                       {prod.precioPromocional ? (
                         <div className="flex flex-col items-end">
                           <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{prod.precioPromocional}</span>
-                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1.5 rounded-full font-medium">
+                          <span className="text-[10px] mt-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">
                             {prod.descuentoEtiqueta}
                           </span>
                         </div>
@@ -94,7 +84,9 @@ export default function DetalleVenta() {
                         <span className="text-sm text-slate-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900 dark:text-white">{prod.subtotal}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900 dark:text-white">
+                      {prod.subtotal}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -103,25 +95,25 @@ export default function DetalleVenta() {
         </div>
 
         {/* Resumen y Acciones */}
-        <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 bg-slate-50 dark:bg-slate-800/30">
+        <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-700">
           <div className="flex gap-3">
-            <button className="px-6 h-11 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 transition-colors flex items-center gap-2">
+            <Link href="/historial-ventas" className="px-6 h-11 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">arrow_back</span>
               Volver
-            </button>
-            <button className="px-6 h-11 bg-slate-900 dark:bg-slate-700 rounded-lg text-white font-bold text-sm hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10">
-              <span className="material-symbols-outlined text-lg">print</span>
-              Reimprimir Ticket
-            </button>
+            </Link>
           </div>
 
           <div className="w-full md:w-80 flex flex-col gap-3">
-            <SummaryRow label="Subtotal General:" value="$389.500,00" />
-            <SummaryRow label="Descuento Promociones:" value="-$17.900,00" isDiscount />
-            <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            {venta.descuentoTotal && (
+              <>
+                <SummaryRow label="Subtotal General:" value={venta.subtotalGeneral} />
+                <SummaryRow label="Descuento Total:" value={venta.descuentoTotal} isDiscount />
+                <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+              </>
+            )}
             <div className="flex justify-between items-center text-slate-900 dark:text-white">
-              <span className="text-base font-bold">Total Final:</span>
-              <span className="text-2xl font-black text-primary">$371.600,00</span>
+              <span className="text-lg font-bold">Total Final:</span>
+              <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{venta.totalFinal}</span>
             </div>
           </div>
         </div>
@@ -138,17 +130,17 @@ export default function DetalleVenta() {
   );
 }
 
-// --- Subcomponentes auxiliares para evitar repetición ---
+// Subcomponentes auxiliares 
 
 function InfoCard({ icon, label, value, color, bgColor }: any) {
   return (
-    <div className="flex items-center gap-4 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+    <div className="flex items-center gap-4 p-3 rounded-lg bg-white dark:bg-[#1A202C] border border-slate-100 dark:border-slate-700 shadow-sm">
       <div className={`size-10 rounded-lg ${bgColor} flex items-center justify-center ${color}`}>
         <span className="material-symbols-outlined">{icon}</span>
       </div>
-      <div className="flex flex-col">
-        <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">{label}</span>
-        <span className="text-sm font-bold text-slate-900 dark:text-white">{value}</span>
+      <div className="flex flex-col overflow-hidden">
+        <span className="text-xs text-slate-500 font-medium uppercase tracking-wider truncate">{label}</span>
+        <span className="text-sm font-bold text-slate-900 dark:text-white truncate" title={value}>{value}</span>
       </div>
     </div>
   );
