@@ -193,11 +193,15 @@ interface ProductFilters {
   priceMin?: string;
   priceMax?: string;
   sort?: string;
+  page?: number; // <-- NUEVO: Recibimos la página actual
 }
 
-// ⚠️ FUNCIÓN MODIFICADA PARA FILTRAR Y ORDENAR EN LA BD
+const ITEMS_POR_PAGINA = 15; // <-- NUEVO: Cantidad de productos por página
+
+// ⚠️ FUNCIÓN MODIFICADA PARA PAGINAR, FILTRAR Y ORDENAR EN LA BD
 export async function obtenerProductosDB(filters?: ProductFilters) {
   try {
+
     // 1. Construir cláusula WHERE (Filtros)
     const where: Prisma.ProductoWhereInput = {};
 
@@ -273,24 +277,37 @@ export async function obtenerProductosDB(filters?: ProductFilters) {
         orderBy = [{ createdAt: "desc" }];
     }
 
-    // 3. Ejecutar consulta
+    // --- 3. NUEVA LÓGICA DE PAGINACIÓN ---
+    const page = filters?.page || 1;
+    const skip = (page - 1) * ITEMS_POR_PAGINA;
+
+    // Contar el TOTAL de productos para saber cuántas páginas hay
+    const totalProductos = await prisma.producto.count({ where });
+
+    // 4. Ejecutar consulta con Skip y Take
     const productos = await prisma.producto.findMany({
       where,
       orderBy,
+      skip,                    // <-- Saltamos los registros anteriores
+      take: ITEMS_POR_PAGINA,  // <-- Tomamos solo los de esta página
     });
 
-    return productos.map((p) => ({
-      ...p,
-      precio: Number(p.precio), // Convertir Decimal a Number para el frontend
-    }));
+    // 5. Devolver objeto con productos y total de páginas
+    return {
+      productos: productos.map((p) => ({
+        ...p,
+        precio: Number(p.precio), // Convertir Decimal a Number para el frontend
+      })),
+      totalPages: Math.ceil(totalProductos / ITEMS_POR_PAGINA) || 1
+    };
 
   } catch (error) {
     console.error("Error al obtener productos:", error);
-    return [];
+    // En caso de error, devolvemos la estructura por defecto para no romper el front
+    return { productos: [], totalPages: 1 }; 
   }
 }
 
-// ... (MANTENER cargarDatosDePrueba y obtenerProductoPorId IGUAL QUE ANTES) ...
 export async function cargarDatosDePrueba() {
   try {
     await prisma.producto.createMany({
