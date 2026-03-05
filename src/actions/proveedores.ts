@@ -93,40 +93,59 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
   redirect("/proveedores");
 }
 
-/**
- * OBTENER PROVEEDORES (Server Function)
- */
-export async function obtenerProveedores(query: string = "", sort: string = "") {
-  try {
-    let orderBy: any = { id: 'desc' };
 
-    switch (sort) {
-      case "Contacto-asc":
-        orderBy = { contacto: 'asc'}; 
-        break;
-      case "Contacto-desc":
-        orderBy = { contacto: 'desc'};
-        break;
-      case "razon-social-asc":
-        orderBy = { razonSocial: 'asc' }; 
-        break;
+
+const ITEMS_POR_PAGINA = 15; // Puedes cambiar este número
+
+export async function obtenerProveedores(query: string = "", sort: string = "", page: number = 1) {
+  try {
+    // 1. Construir filtros de búsqueda
+    const where: any = {};
+    if (query) {
+      where.OR = [
+        { codigo: { contains: query, mode: "insensitive" } },
+        { razonSocial: { contains: query, mode: "insensitive" } },
+        { contacto: { contains: query, mode: "insensitive" } },
+      ];
     }
 
+    // (Aquí iría tu lógica del switch de 'sort' si ya la tienes armada, por defecto ordenamos por ID)
+    let orderBy: any = { id: "desc" };
+    if (sort === "nombre-asc") orderBy = { razonSocial: "asc" };
+    if (sort === "nombre-desc") orderBy = { razonSocial: "desc" };
+    // ... agrega más casos según necesites
+
+    // 2. Lógica de Paginación
+    const skip = (page - 1) * ITEMS_POR_PAGINA;
+    
+    // Contar el total real para calcular las páginas
+    const totalProveedores = await prisma.proveedor.count({ where });
+
+    // 3. Traer solo los de esta página
     const proveedores = await prisma.proveedor.findMany({
-      where: {
-        OR: [
-          { razonSocial: { contains: query, mode: 'insensitive' } },
-          { contacto: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-          { codigo: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      orderBy: orderBy,
+      where,
+      orderBy,
+      skip,
+      take: ITEMS_POR_PAGINA,
     });
-    return proveedores;
+
+    // 4. Devolvemos un objeto completo en lugar de solo el arreglo
+    return {
+      proveedores,
+      totalProveedores, 
+      totalPages: Math.ceil(totalProveedores / ITEMS_POR_PAGINA) || 1,
+      error: null // Todo salió bien
+    };
+
   } catch (error) {
     console.error("Error al obtener proveedores:", error);
-    return [];
+    // Si la DB falla, no rompemos la app, devolvemos un error controlado
+    return { 
+      proveedores: [], 
+      totalProveedores: 0, 
+      totalPages: 1, 
+      error: "No se pudo conectar con la base de datos de proveedores." 
+    };
   }
 }
 
