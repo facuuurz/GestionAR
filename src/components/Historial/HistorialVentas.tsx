@@ -4,11 +4,10 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import FiltroFechaModal from '@/components/Historial/FiltroFechaModal'; 
 
-// 1. Definimos la interfaz de los datos que vienen del servidor
 interface VentaData {
   idRaw: number;
-  id: string;       // "#V-1024"
-  fecha: string;    // "24/05/2023"
+  id: string;       // Ej: "#V-1024"
+  fecha: string;    // Ej: "24/05/2023"
   cuit: string;
   monto: string;
 }
@@ -26,12 +25,13 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
     day: "Todos"
   });
 
-  // 2. Usamos ventasIniciales en lugar del array fijo
+  // Lógica Combinada de Filtrado (Búsqueda + Fecha)
   const ventasFiltradas = ventasIniciales.filter((venta) => {
-    // A. Filtrado por término
+    // A. Filtrado por término (ID o CUIT)
     const term = searchTerm.toLowerCase();
-    // Agregamos seguridad (venta.cuit || "") por si viene nulo
-    const matchSearch = venta.id.toLowerCase().includes(term) || (venta.cuit || "").toLowerCase().includes(term);
+    const matchSearch = 
+      venta.id.toLowerCase().includes(term) || 
+      (venta.cuit || "").toLowerCase().includes(term);
 
     // B. Filtrado por Fecha Exacta
     const [vDia, vMes, vAnio] = venta.fecha.split("/");
@@ -46,6 +46,8 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
   const handleApplyFilters = (filtros: any) => {
     setDateFilter(filtros);
   };
+
+  const hasActiveFilter = dateFilter.year !== "Todos" || dateFilter.month !== "Todos" || dateFilter.day !== "Todos";
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden px-6 lg:px-20 py-6 max-w-360 mx-auto w-full gap-6 bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 h-full relative">
@@ -63,7 +65,6 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table className="w-full border-collapse text-left">
-            {/* ... THEAD igual ... */}
             <thead className="sticky top-0 bg-slate-50 dark:bg-slate-950 z-20 shadow-sm">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fecha</th>

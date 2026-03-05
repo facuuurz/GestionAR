@@ -12,7 +12,7 @@ export type Producto = {
   stock: number;
   precio: number;
   descripcion: string | null;
-  fechaVencimiento: Date | string | null; // 🆕 Nuevo campo
+  fechaVencimiento: Date | string | null; 
   createdAt: Date;
   updatedAt: Date;
 };
@@ -25,23 +25,35 @@ type FiltrosHook = {
   priceMin?: string;
   priceMax?: string;
   sort?: string;
+  page?: number; // <-- NUEVO: Agregamos la página a la interfaz
 };
 
 export function useProductos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // --- NUEVOS ESTADOS ---
+  const [totalPages, setTotalPages] = useState(1); // Para la paginación
+  const [error, setError] = useState<string | null>(null); // Para el manejo de errores (Punto 3)
 
-  // 2. Función para cargar datos (ahora acepta filtros)
-  // Usamos useCallback para que no se re-cree en cada render
+  // 2. Función para cargar datos (ahora acepta filtros y página)
   const recargar = useCallback(async (filtros?: FiltrosHook) => {
     setLoading(true);
+    setError(null); // Reseteamos el error antes de cada nueva petición
+    
     try {
       // Llamamos al Server Action pasando los filtros
       const datos = await obtenerProductosDB(filtros);
-      setProductos(datos as any); // 'as any' por si hay conflicto de tipos con Decimal/Number
+      
+      // Ahora 'datos' es un objeto con dos propiedades
+      setProductos(datos.productos as any); 
+      setTotalPages(datos.totalPages); 
+      
     } catch (error) {
       console.error("Error cargando productos:", error);
+      setError("No se pudo conectar con el servidor de inventario."); // Mensaje amigable
       setProductos([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -58,13 +70,12 @@ export function useProductos() {
     await recargar();
   }
 
-  // 3. Ya no necesitamos 'useMemo' para ordenar ni 'criterioOrden' como estado local,
-  // porque el servidor nos devuelve la lista ya ordenada y filtrada.
-
   return {
-    productos, // Devolvemos directo el estado
+    productos, 
+    totalPages, // <-- Exportamos el total de páginas para la botonera
+    error,      // <-- Exportamos el error por si la UI quiere mostrar una alerta
     loading,
-    recargar, // Esta función ahora es la clave para filtrar/ordenar
+    recargar, 
     generarDatosPrueba,
   };
 }

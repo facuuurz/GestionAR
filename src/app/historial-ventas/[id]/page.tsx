@@ -26,13 +26,29 @@ export default async function DetalleVentaPage({ params }: PageProps) {
       
       {/* Breadcrumbs */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <Link className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline" href="/">Panel</Link>
+        <Link className="hover:text-blue-600 text-slate-500 dark:text-blue-400 text-sm font-medium hover:underline" href="/">Panel</Link>
         <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-        <Link className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline" href="/historial-ventas">Historial de Ventas</Link>
+        <Link className="hover:text-blue-600 text-slate-500 dark:text-blue-400 text-sm font-medium hover:underline" href="/historial-ventas">Historial de Ventas</Link>
         <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-        <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Detalle de Venta {venta.idVisual}</span>
+        <span className="text-slate-900 dark:text-slate-400 text-sm font-medium">venta</span>
       </div>
 
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white font-display">
+              Detalle de venta
+            </h2>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold mt-1`}>
+            </span>
+          </div>
+          <p className="text-slate-500 dark:text-gray-400 text-base max-w-2xl">
+            ID de venta: {venta.idVisual}
+          </p>
+        </div>
+        </div>
+    
       <div className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         
         {/* Info General (Grid de Tarjetas) */}

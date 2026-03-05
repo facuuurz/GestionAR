@@ -107,7 +107,7 @@ function CustomSelect({ value, options, onChange, disabled = false, gridMode = f
             </div>
           ) : gridMode ? (
             <div className="p-2 bg-white dark:bg-[#2a2a2a] rounded-lg">
-              <div className="grid grid-cols-7 gap-1 max-h-[16rem] overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-7 gap-1 max-h-64 overflow-y-auto custom-scrollbar">
                 {filteredOptions.map((opt: any) => {
                   const isSelected = value === opt.value;
                   if (opt.value === "Todos") {
@@ -143,7 +143,7 @@ function CustomSelect({ value, options, onChange, disabled = false, gridMode = f
               </div>
             </div>
           ) : (
-            <ul className="max-h-[13.5rem] overflow-y-auto py-1 custom-scrollbar bg-white dark:bg-[#2a2a2a] rounded-lg">
+            <ul className="max-h-54 overflow-y-auto py-1 custom-scrollbar bg-white dark:bg-[#2a2a2a] rounded-lg">
               {filteredOptions.map((opt: any) => (
                 <li
                   key={opt.value}
@@ -238,7 +238,7 @@ export default function FiltroFechaModal({ isOpen, onClose, onApply, currentFilt
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
         onClick={onClose}
