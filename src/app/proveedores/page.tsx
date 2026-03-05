@@ -1,139 +1,111 @@
-import { obtenerProveedores } from "@/actions/proveedores";
 import Link from "next/link";
-import Search from "@/components/Proveedores/Search";
-import SortProveedoresWrapper from "@/components/Proveedores/SortProveedoresWrapper";
-import { Suspense } from "react"; // 🆕 IMPORTANTE: Viene de React
+import { obtenerProveedores } from "@/actions/proveedores";
+
+// Componentes
+import EncabezadoProveedores from "@/components/Proveedores/EncabezadoProveedores";
+import BarraNavegacionProveedores from "@/components/Proveedores/BarraNavegacionProveedores";
+import TablaProveedores from "@/components/Proveedores/TablaProveedores";
 
 export default async function ProveedoresPage(props: {
-  searchParams?: Promise<{ query?: string; sort?: string }>;
+  searchParams?: Promise<{ query?: string; sort?: string; page?: string }>;
 }) {
+  // --- 1. LEER PARÁMETROS DE LA URL ---
   const searchParams = await props.searchParams;
-  const params = await searchParams;
   const query = searchParams?.query || "";
-  const sort = params?.sort || "";
+  const sort = searchParams?.sort || "";
   
-  const proveedores = await obtenerProveedores(query, sort);
+  // NUEVO: Leer la página actual de la URL
+  const currentPage = Number(searchParams?.page) || 1;
+  
+  // --- 2. TRAER DATOS DEL SERVIDOR ---
+  // Ahora desestructuramos el objeto robusto que armamos en el backend
+  const { proveedores, totalProveedores, totalPages, error } = await obtenerProveedores(query, sort, currentPage);
 
-  let totalProveedores = proveedores.length;
-  if (query) {
-     const todosLosProveedores = await obtenerProveedores("", ""); 
-     totalProveedores = todosLosProveedores.length;
-  }
-
-  const getAvatarColor = (id: number) => {
-    const colors = [
-      "bg-blue-100 text-primary dark:bg-blue-900 dark:text-blue-300",
-      "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300",
-      "bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300",
-      "bg-teal-100 text-teal-600 dark:bg-teal-900 dark:text-teal-300",
-      "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300",
-    ];
-    return colors[id % colors.length];
+  // Helper para crear URLs de paginación manteniendo la búsqueda y el orden
+  const createPageUrl = (newPage: number) => {
+    const params = new URLSearchParams();
+    if (query) params.set("query", query);
+    if (sort) params.set("sort", sort);
+    params.set("page", newPage.toString());
+    return `/proveedores?${params.toString()}`;
   };
 
+  // --- 3. RENDERIZAR ORQUESTADOR ---
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
-      <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative">
+      <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-[1440px] mx-auto overflow-hidden relative">
         <div className="w-full flex flex-col gap-6 h-full">
           
-          {/* Breadcrumbs */}
-          <div className="flex flex-wrap gap-2 items-center text-sm shrink-0">
-            <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors">
-              Panel
-            </Link>
-            <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
-            <span className="text-primary dark:text-white font-bold">Proveedores</span>
-          </div>
+          <EncabezadoProveedores />
+          
+          <BarraNavegacionProveedores />
 
-          {/* Título y Botón */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-primary dark:text-white tracking-tight text-[32px] font-bold leading-tight">
-                Proveedores
-              </h1>
-              <p className="text-neutral-500 dark:text-neutral-400 text-sm font-normal">
-                Gestione la lista de sus proveedores y sus códigos.
-              </p>
-            </div>
-            <Link 
-              className="group flex items-center gap-2 cursor-pointer justify-center rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all hover:bg-black" 
-              href="/proveedores/nuevo"
-            >
-              <span className="material-symbols-outlined text-[20px]">add</span>
-              <span className="text-sm font-bold truncate">Agregar Proveedor</span>
-            </Link>
-          </div>
-
-          {/* Barra de Navegación con SUSPENSE */}
-          <div className="bg-white dark:bg-[#1e2736] p-4 rounded-xl border border-[#ededed] dark:border-[#333] shadow-sm flex flex-col md:flex-row items-center gap-4 shrink-0">
-              
-              <div className="w-full md:flex-1">
-                {/* 🆕 Si Search usa useSearchParams, también debería ir en Suspense */}
-                <Suspense fallback={<div className="h-10 w-full bg-gray-100 animate-pulse rounded-lg" />}>
-                   <Search placeholder="Buscar por Código, Razón Social o Contacto..." />
-                </Suspense>
+          {/* --- CARTEL DE ERROR DE CONEXIÓN --- */}
+          {error && (
+            <div className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-red-500 dark:text-red-400 text-2xl">cloud_off</span>
+                <div className="flex flex-col">
+                  <p className="text-red-800 dark:text-red-300 font-semibold text-sm">Problema de conexión</p>
+                  <p className="text-red-600 dark:text-red-400 text-xs">{error}</p>
+                </div>
               </div>
-
-              <div className="flex shrink-0">
-                 {/* 🆕 AQUÍ ESTABA EL ERROR: SortProveedoresWrapper usa useSearchParams */}
-                 <Suspense fallback={<div className="h-10 w-32 bg-gray-100 animate-pulse rounded-lg" />}>
-                    <SortProveedoresWrapper />
-                 </Suspense>
-              </div>
-          </div>
-
-          {/* TABLA (se mantiene igual) */}
-          <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
-            <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-[#f9f9f9] dark:bg-[#151a25] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
-                  <tr>
-                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Código</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Razón Social</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 z-20 bg-[#f9f9f9] dark:bg-[#151a25]">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#ededed] dark:divide-[#333] text-sm">
-                  {proveedores.map((prov) => (
-                    <tr key={prov.id} className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
-                      <td className="px-4 py-3 font-medium text-[#135bec] dark:text-blue-400 font-mono">
-                        {prov.codigo}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          {/* Avatar (Opcional: también podrías envolver esto en el Link si quieres) */}
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${getAvatarColor(prov.id)}`}>
-                            {prov.razonSocial.substring(0, 2).toUpperCase()}
-                          </div>
-                          
-                          {/* 🔴 AQUÍ ESTÁ EL CAMBIO PRINCIPAL */}
-                          <Link 
-                            href={`/proveedores/${prov.id}`}
-                            className="font-medium text-neutral-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors"
-                          >
-                            {prov.razonSocial}
-                          </Link>
-                          {/* ---------------------------------- */}
-
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">{prov.contacto || "-"}</td>
-                      <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-[#222] z-10">
-                        <Link href={`/proveedores/editar/${prov.id}`} className="px-3 py-1.5 rounded text-xs font-bold text-white bg-neutral-800 hover:bg-black">
-                          Actualizar
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* En los Server Components, para reintentar simplemente recargamos la página base */}
+              <Link href="/proveedores" className="shrink-0 px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-800/50 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-bold rounded-lg transition-colors">
+                Reintentar
+              </Link>
             </div>
-            <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
-                <span>Mostrando {proveedores.length} proveedores</span>
-                <span>Total: {totalProveedores}</span>
-            </div>
-          </div>
+          )}
+
+          {/* --- TABLA Y PAGINACIÓN (Solo si NO hay error) --- */}
+          {!error && (
+            <>
+              <TablaProveedores 
+                proveedores={proveedores} 
+                totalProveedores={totalProveedores} 
+              />
+
+              {/* Controles de Paginación */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4 px-2">
+                  
+                  {/* Botón Anterior */}
+                  {currentPage > 1 ? (
+                    <Link 
+                      href={createPageUrl(currentPage - 1)} 
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1e2736] border border-gray-300 dark:border-[#333] rounded-md hover:bg-gray-50 dark:hover:bg-[#2a3649] transition-colors"
+                    >
+                      Anterior
+                    </Link>
+                  ) : (
+                    <button disabled className="px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-[#151a25] border border-gray-200 dark:border-[#333] rounded-md cursor-not-allowed">
+                      Anterior
+                    </button>
+                  )}
+
+                  <span className="text-sm text-gray-700 dark:text-gray-400">
+                    Página <span className="font-semibold text-primary dark:text-white">{currentPage}</span> de <span className="font-semibold text-primary dark:text-white">{totalPages}</span>
+                  </span>
+
+                  {/* Botón Siguiente */}
+                  {currentPage < totalPages ? (
+                    <Link 
+                      href={createPageUrl(currentPage + 1)} 
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1e2736] border border-gray-300 dark:border-[#333] rounded-md hover:bg-gray-50 dark:hover:bg-[#2a3649] transition-colors"
+                    >
+                      Siguiente
+                    </Link>
+                  ) : (
+                    <button disabled className="px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-[#151a25] border border-gray-200 dark:border-[#333] rounded-md cursor-not-allowed">
+                      Siguiente
+                    </button>
+                  )}
+                  
+                </div>
+              )}
+            </>
+          )}
+
         </div>
       </main>
     </div>
