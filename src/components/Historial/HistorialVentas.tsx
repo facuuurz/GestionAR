@@ -50,7 +50,6 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
   return (
     <main className="flex-1 flex flex-col overflow-hidden px-6 lg:px-20 py-6 max-w-360 mx-auto w-full gap-6 bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 h-full relative">
       
-      {/* ... (El resto de tu JSX del Modal, Header y Buscador se mantiene IGUAL) ... */}
       
       <FiltroFechaModal 
         isOpen={isFilterOpen}
@@ -59,7 +58,6 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
         currentFilter={dateFilter}
       />
 
-      {/* ... Título y Buscador ... */}
 
       {/* TABLA */}
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
