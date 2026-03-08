@@ -1,130 +1,117 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-// Componentes y Hooks
-import BarraNavegacionPromociones from "@/components/promociones/BarraNavegacionPromociones"; 
-import PromocionRow from "@/components/promociones/PromocionRow";
+// Hooks
 import { usePromociones } from "@/hooks/usePromociones";
 
+// Componentes
+import EncabezadoPromociones from "@/components/promociones/EncabezadoPromociones";
+import BarraNavegacionPromociones from "@/components/promociones/BarraNavegacionPromociones"; 
+import TablaPromociones from "@/components/promociones/TablaPromociones";
+
 export default function PromocionesPage() {
-  const [busqueda, setBusqueda] = useState(""); 
-  const { promociones, loading } = usePromociones();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Filtrado en el cliente para mayor velocidad
-  const promocionesFiltradas = useMemo(() => {
-    if (!busqueda) return promociones;
-    const termino = busqueda.toLowerCase();
-    
-    return promociones.filter((promo) => {
-      const matches = [promo.nombre, promo.descripcion];
-      return matches.some(field => field?.toLowerCase().includes(termino));
+  // 1. Estados de búsqueda
+  const urlQuery = searchParams.get("q") || "";
+  const currentPage = Number(searchParams.get("page")) || 1;
+  
+  const [busqueda, setBusqueda] = useState(urlQuery);
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState(urlQuery);
+
+  // 2. Traemos los datos (ahora el hook debe devolver 'totalPages' también)
+const { promociones, loading, totalPages = 1, error, recargar } = usePromociones();
+
+  // 3. Debounce para la búsqueda (espera 400ms antes de buscar en la BD)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedBusqueda(busqueda);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [busqueda]);
+
+  // 4. Utilidad para modificar la URL sin recargar la página
+  const createQueryString = useCallback(
+    (updates: Record<string, string | number | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || (key === 'page' && value === 1)) {
+          params.delete(key);
+        } else {
+          params.set(key, String(value));
+        }
+      });
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  // 5. Efecto principal: Recargar datos cuando cambia la página o la búsqueda debounced
+  useEffect(() => {
+    // Actualizamos la URL con la búsqueda si cambió
+    if (debouncedBusqueda !== urlQuery) {
+      router.push(`${pathname}?${createQueryString({ q: debouncedBusqueda, page: 1 })}`, { scroll: false });
+    }
+
+    // Llamamos al backend
+    recargar({
+      query: debouncedBusqueda,
+      page: currentPage
     });
-  }, [promociones, busqueda]);
+  }, [debouncedBusqueda, currentPage, recargar, router, pathname, createQueryString, urlQuery]);
 
-  return (
-    <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-360 mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
-      
+  // Manejador de cambio de página
+  const handlePageChange = (newPage: number) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      router.push(`${pathname}?${createQueryString({ page: newPage })}`, { scroll: false });
+    }
+  };
+
+return (
+    <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-[1440px] mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       <div className="w-full flex flex-col gap-6 h-full">
+        <EncabezadoPromociones />
         
-        {/* Breadcrumbs */}
-        <div className="flex flex-wrap gap-2 items-center text-sm shrink-0">
-          <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors">
-            Panel
-          </Link>
-          <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
-          <span className="text-primary dark:text-white font-bold">Promociones</span>
-        </div>
-
-        {/* Encabezado */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-primary dark:text-white tracking-tight text-[32px] font-bold leading-tight">
-              Listado de Promociones
-            </h1>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm font-normal">
-              Gestiona tus ofertas activas, precios promocionales y vigencias.
-            </p>
-          </div>
-          <Link 
-             href="/promociones/nuevo"
-             className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:rotate-90">add</span>
-            <span className="text-sm font-bold truncate">Nueva Promoción</span>
-          </Link>
-        </div>
-
-        {/* Barra de Búsqueda */}
         <BarraNavegacionPromociones 
             busqueda={busqueda}
-            onSearchChange={setBusqueda}
+            onSearchChange={setBusqueda} 
         />
 
-        {/* Tabla de Resultados */}
-        <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
-          <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-200">
-              <thead className="bg-[#f9f9f9] dark:bg-[#151a25] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%]">Nombre</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[25%]">Descripción</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[15%]">Precio</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%]">Vigencia</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[10%]">Estado</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
-                </tr>
-              </thead>
-              
-              <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
-                {loading ? (
-                   <tr>
-                     <td colSpan={6} className="text-center py-20">
-                       <div className="flex flex-col items-center justify-center gap-2">
-                          <span className="material-symbols-outlined animate-spin text-3xl text-primary dark:text-white">progress_activity</span>
-                          <span className="text-neutral-400 text-sm">Cargando promociones...</span>
-                       </div>
-                     </td>
-                   </tr>
-                ) : promocionesFiltradas.length > 0 ? (
-                   promocionesFiltradas.map((promo) => (
-                     <PromocionRow key={promo.id} promo={promo} />
-                   ))
-                ) : (
-                   <tr>
-                       <td colSpan={6} className="text-center py-12 text-neutral-500 text-sm">
-                           <div className="flex flex-col items-center gap-2">
-                               <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
-                               <p>
-                                 {busqueda 
-                                    ? `No se encontraron promociones que coincidan con "${busqueda}"` 
-                                    : "No hay promociones registradas con productos."}
-                               </p>
-                               {busqueda && (
-                                   <button 
-                                     onClick={() => setBusqueda("")}
-                                     className="text-blue-600 hover:underline text-xs font-bold mt-1"
-                                   >
-                                     Limpiar búsqueda
-                                   </button>
-                               )}
-                           </div>
-                       </td>
-                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Footer de la Tabla */}
-          {!loading && (
-            <div className="px-4 py-3 border-t border-[#ededed] dark:border-[#333] bg-[#f9f9f9] dark:bg-[#151a25] text-xs text-neutral-500 font-medium flex justify-between">
-                <span>Mostrando {promocionesFiltradas.length} promociones</span>
-                <span>Total: {promociones.length}</span>
+        {/* 2. CARTEL DE ERROR DE CONEXIÓN */}
+        {error && (
+          <div className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-red-500 dark:text-red-400 text-2xl">cloud_off</span>
+              <div className="flex flex-col">
+                <p className="text-red-800 dark:text-red-300 font-semibold text-sm">Problema de conexión</p>
+                <p className="text-red-600 dark:text-red-400 text-xs">{error}</p>
+              </div>
             </div>
-          )}
-        </div>
+            <button 
+              onClick={() => recargar({ query: debouncedBusqueda, page: currentPage })} 
+              className="shrink-0 px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-800/50 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-bold rounded-lg transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {/* 3. OCULTAMOS LA TABLA SI HAY ERROR */}
+        {!error && (
+          <TablaPromociones 
+              promociones={promociones}
+              loading={loading}
+              busqueda={debouncedBusqueda}
+              onClearBusqueda={() => setBusqueda("")}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </main>
   );

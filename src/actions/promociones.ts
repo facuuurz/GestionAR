@@ -81,24 +81,32 @@ export async function buscarProductosParaPromocion(query: string) {
   }
 }
 
-// --- OBTENER PROMOCIONES (CON FILTRO DE INTEGRIDAD) ---
-export async function obtenerPromociones(query: string = "", soloActivas: boolean = false) {
+const ITEMS_POR_PAGINA = 15; // Ajusta este número según prefieras
+
+export async function obtenerPromociones(query: string = "", soloActivas: boolean = false, page: number = 1) {
   try {
-    const promociones = await prisma.promocion.findMany({
-      where: {
-        // ✅ FILTRO CLAVE: Solo trae promociones que tengan al menos 1 producto
-        // Esto oculta las promociones cuyos productos fueron eliminados
-        items: {
-          some: {} 
-        },
-        ...(soloActivas ? { activo: true } : {}),
-        ...(query ? {
-            OR: [
-                { nombre: { contains: query, mode: "insensitive" } },
-                { descripcion: { contains: query, mode: "insensitive" } },
-            ],
-        } : {})
+    // 1. Construir las condiciones (WHERE)
+    const where: any = {
+      // ✅ FILTRO CLAVE: Solo trae promociones que tengan al menos 1 producto
+      items: {
+        some: {} 
       },
+      ...(soloActivas ? { activo: true } : {}),
+      ...(query ? {
+          OR: [
+              { nombre: { contains: query, mode: "insensitive" } },
+              { descripcion: { contains: query, mode: "insensitive" } },
+          ],
+      } : {})
+    };
+
+    // 2. Calcular paginación
+    const skip = (page - 1) * ITEMS_POR_PAGINA;
+    const totalPromociones = await prisma.promocion.count({ where });
+
+    // 3. Traer datos
+    const promociones = await prisma.promocion.findMany({
+      where,
       include: {
         items: {
           include: {
@@ -107,9 +115,12 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
         }
       },
       orderBy: { fechaInicio: 'desc' }, 
+      skip,
+      take: ITEMS_POR_PAGINA
     });
 
-    return promociones.map((promo) => ({
+    // 4. Formatear datos y devolver objeto de paginación
+    const promocionesFormateadas = promociones.map((promo) => ({
       ...promo,
       precio: Number(promo.precio),
       items: promo.items.map(item => ({
@@ -121,9 +132,15 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
       }))
     }));
 
+    return {
+      promociones: promocionesFormateadas,
+      totalPages: Math.ceil(totalPromociones / ITEMS_POR_PAGINA) || 1,
+      totalPromociones
+    };
+
   } catch (error) {
     console.error("Error obteniendo promociones:", error);
-    return [];
+    return { promociones: [], totalPages: 1, totalPromociones: 0 };
   }
 }
 
