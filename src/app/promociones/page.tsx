@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 // Hooks
@@ -8,10 +8,10 @@ import { usePromociones } from "@/hooks/usePromociones";
 
 // Componentes
 import EncabezadoPromociones from "@/components/promociones/EncabezadoPromociones";
-import BarraNavegacionPromociones from "@/components/promociones/BarraNavegacionPromociones"; 
+import BarraNavegacionPromociones from "@/components/promociones/BarraNavegacionPromociones";
 import TablaPromociones from "@/components/promociones/TablaPromociones";
 
-export default function PromocionesPage() {
+function PromocionesContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -19,12 +19,12 @@ export default function PromocionesPage() {
   // 1. Estados de búsqueda
   const urlQuery = searchParams.get("q") || "";
   const currentPage = Number(searchParams.get("page")) || 1;
-  
+
   const [busqueda, setBusqueda] = useState(urlQuery);
   const [debouncedBusqueda, setDebouncedBusqueda] = useState(urlQuery);
 
   // 2. Traemos los datos (ahora el hook debe devolver 'totalPages' también)
-const { promociones, loading, totalPages = 1, error, recargar } = usePromociones();
+  const { promociones, loading, totalPages = 1, error, recargar } = usePromociones();
 
   // 3. Debounce para la búsqueda (espera 400ms antes de buscar en la BD)
   useEffect(() => {
@@ -71,14 +71,14 @@ const { promociones, loading, totalPages = 1, error, recargar } = usePromociones
     }
   };
 
-return (
+  return (
     <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-[1440px] mx-auto overflow-hidden relative min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       <div className="w-full flex flex-col gap-6 h-full">
         <EncabezadoPromociones />
-        
-        <BarraNavegacionPromociones 
-            busqueda={busqueda}
-            onSearchChange={setBusqueda} 
+
+        <BarraNavegacionPromociones
+          busqueda={busqueda}
+          onSearchChange={setBusqueda}
         />
 
         {/* 2. CARTEL DE ERROR DE CONEXIÓN */}
@@ -91,8 +91,8 @@ return (
                 <p className="text-red-600 dark:text-red-400 text-xs">{error}</p>
               </div>
             </div>
-            <button 
-              onClick={() => recargar({ query: debouncedBusqueda, page: currentPage })} 
+            <button
+              onClick={() => recargar({ query: debouncedBusqueda, page: currentPage })}
               className="shrink-0 px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-800/50 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-bold rounded-lg transition-colors"
             >
               Reintentar
@@ -102,17 +102,25 @@ return (
 
         {/* 3. OCULTAMOS LA TABLA SI HAY ERROR */}
         {!error && (
-          <TablaPromociones 
-              promociones={promociones}
-              loading={loading}
-              busqueda={debouncedBusqueda}
-              onClearBusqueda={() => setBusqueda("")}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
+          <TablaPromociones
+            promociones={promociones}
+            loading={loading}
+            busqueda={debouncedBusqueda}
+            onClearBusqueda={() => setBusqueda("")}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
           />
         )}
       </div>
     </main>
+  );
+}
+
+export default function PromocionesPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><span className="material-symbols-outlined animate-spin text-3xl">progress_activity</span></div>}>
+      <PromocionesContent />
+    </Suspense>
   );
 }

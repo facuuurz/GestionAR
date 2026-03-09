@@ -87,7 +87,7 @@ export default function TablaPromociones({
           <button 
             onClick={() => onPageChange(currentPage - 1)} 
             disabled={currentPage === 1}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1e2736] border border-gray-300 dark:border-[#333] rounded-md hover:bg-gray-50 dark:hover:bg-[#2a3649] disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             Anterior
           </button>
@@ -99,7 +99,7 @@ export default function TablaPromociones({
           <button 
             onClick={() => onPageChange(currentPage + 1)} 
             disabled={currentPage === totalPages}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1e2736] border border-gray-300 dark:border-[#333] rounded-md hover:bg-gray-50 dark:hover:bg-[#2a3649] disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             Siguiente
           </button>

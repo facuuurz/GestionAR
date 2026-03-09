@@ -36,14 +36,14 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
 
   return (
     <div className="min-h-screen bg-[#f6f6f8] dark:bg-[#101622] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
-      
+
       <main className="w-full min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-4xl space-y-8">
-          
+
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
             <Link href="/" className="hover:text-blue-600 dark:hover:text-white transition-colors">
-                  Panel
+              Panel
             </Link>
             <span className="material-symbols-outlined text-base">chevron_right</span>
             <Link href="/inventario" className="hover:text-blue-600 dark:hover:text-white transition-colors">
@@ -69,7 +69,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
           {/* Card Principal */}
           <div className="bg-white dark:bg-[#151a25] rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="p-6 md:p-8">
-              
+
               {/* Pasamos producto Y categorias al formulario */}
               <EditProductForm producto={productoFormateado} categorias={categorias} />
 

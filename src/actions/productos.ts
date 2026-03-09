@@ -303,8 +303,8 @@ export async function obtenerProductosDB(filters?: ProductFilters) {
 
   } catch (error) {
     console.error("Error al obtener productos:", error);
-    // En caso de error, devolvemos la estructura por defecto para no romper el front
-    return { productos: [], totalPages: 1 }; 
+    // Lanza el error para que el hook de React pueda capturarlo y mostrar la UI de error
+    throw new Error("Error interno al conectarse con la base de datos."); 
   }
 }
 

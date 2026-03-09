@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 // Asegúrate de que la ruta sea correcta
-import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos"; 
+import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos";
 
 // 1. Actualizamos el tipo para incluir la fecha
 export type Producto = {
@@ -12,7 +12,7 @@ export type Producto = {
   stock: number;
   precio: number;
   descripcion: string | null;
-  fechaVencimiento: Date | string | null; 
+  fechaVencimiento: Date | string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -31,7 +31,7 @@ type FiltrosHook = {
 export function useProductos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // --- NUEVOS ESTADOS ---
   const [totalPages, setTotalPages] = useState(1); // Para la paginación
   const [error, setError] = useState<string | null>(null); // Para el manejo de errores (Punto 3)
@@ -40,15 +40,15 @@ export function useProductos() {
   const recargar = useCallback(async (filtros?: FiltrosHook) => {
     setLoading(true);
     setError(null); // Reseteamos el error antes de cada nueva petición
-    
+
     try {
       // Llamamos al Server Action pasando los filtros
       const datos = await obtenerProductosDB(filtros);
-      
+
       // Ahora 'datos' es un objeto con dos propiedades
-      setProductos(datos.productos as any); 
-      setTotalPages(datos.totalPages); 
-      
+      setProductos(datos.productos as any);
+      setTotalPages(datos.totalPages);
+
     } catch (error) {
       console.error("Error cargando productos:", error);
       setError("No se pudo conectar con el servidor de inventario."); // Mensaje amigable
@@ -71,11 +71,11 @@ export function useProductos() {
   }
 
   return {
-    productos, 
+    productos,
     totalPages, // <-- Exportamos el total de páginas para la botonera
     error,      // <-- Exportamos el error por si la UI quiere mostrar una alerta
     loading,
-    recargar, 
+    recargar,
     generarDatosPrueba,
   };
 }
