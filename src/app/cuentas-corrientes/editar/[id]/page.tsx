@@ -1,57 +1,59 @@
-import { obtenerClientePorId, actualizarCliente, eliminarCliente } from "@/actions/cuentas-corrientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import EditarClienteForm from "@/components/Cuentas-corrientes/EditarClienteForm"; // Asegúrate de importar el componente creado arriba
+import { obtenerClientePorId, actualizarCliente, eliminarCliente } from "@/actions/cuentas-corrientes";
+import EditarClienteForm from "@/components/Cuentas-corrientes/EditarClienteForm"; // Ajusta la ruta si es necesario
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function EditarClientePage({ params }: PageProps) {
-  const { id } = await params;
-  const clienteId = parseInt(id);
+export default async function EditarClientePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const id = parseInt(params.id);
   
-  if (isNaN(clienteId)) return notFound();
-  
-  const cliente = await obtenerClientePorId(clienteId);
-  if (!cliente) return notFound();
+  // 1. Obtener datos
+  const cliente = await obtenerClientePorId(id);
 
-  // Bind del ID para las acciones
-  const actualizarConId = actualizarCliente.bind(null, clienteId);
-  const eliminarConId = eliminarCliente.bind(null, clienteId);
+  if (!cliente) {
+    notFound();
+  }
+
+  // 2. Preparar acciones (Bind del ID)
+  const actualizarConId = actualizarCliente.bind(null, cliente.id);
+  const eliminarConId = eliminarCliente.bind(null, cliente.id);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#101622] text-[#111318] dark:text-white font-display">
+    <div className="flex flex-col min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] text-slate-800 dark:text-slate-200">
+      <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 w-full">
+        <div className="w-full max-w-7xl">
+            
+            {/* Breadcrumbs */}
+            <nav aria-label="Breadcrumb" className="flex mb-4 text-sm text-slate-500 dark:text-slate-400">
+              <div className="inline-flex items-center space-x-1 md:space-x-3">
+                  <Link href="/" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                      Panel
+                  </Link>
+                  <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                  <Link href="/cuentas-corrientes" className="text-neutral-500 hover:text-blue-600 dark:hover:text-white font-medium transition-colors">
+                      Cuentas Corrientes
+                  </Link>
+                  <span className="material-symbols-outlined text-neutral-400 text-base mx-2">chevron_right</span>
+                  <span className="text-slate-900 dark:text-white font-bold">
+                      Editar Cliente
+                  </span>
+              </div>
+            </nav>
 
-      <main className="flex-1 w-full max-w-300 mx-auto px-4 py-8 md:px-8">
-        
-        {/* BREADCRUMBS CON ESTILOS SOLICITADOS */}
-        <nav className="text-sm text-slate-500 dark:text-slate-400 mb-6 flex items-center gap-2">
-            <Link href="/" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600">
-                Panel
-            </Link>
-            <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
-            <Link href="/cuentas-corrientes" className="text-neutral-500 hover:text-primary dark:hover:text-white font-medium transition-colors hover:text-blue-600">
-                Cuentas Corrientes
-            </Link>
-            <span className="material-symbols-outlined text-neutral-400 text-base">chevron_right</span>
-            <p className="text-black dark:text-white font-bold">Editar Cuenta</p>
-        </nav>
+            {/* Título */}
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Editar Cliente</h1>
+                <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">Modifique los detalles de la cuenta o elimínela.</p>
+            </div>
 
-        {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#111318] dark:text-white mb-2">Editar Cuenta Corriente</h1>
-          <p className="text-[#616f89] dark:text-gray-400">Actualice la información de la cuenta corriente del cliente seleccionado.</p>
+            {/* Renderizar Formulario */}
+            <EditarClienteForm 
+                cliente={cliente} 
+                actualizarAction={actualizarConId}
+                eliminarAction={eliminarConId}    
+            />
+
         </div>
-
-        {/* COMPONENTE CLIENTE DEL FORMULARIO */}
-        {/* Le pasamos el cliente y las acciones del servidor */}
-        <EditarClienteForm 
-            cliente={cliente} 
-            actualizarAction={actualizarConId} 
-            eliminarAction={eliminarConId}
-        />
-
       </main>
     </div>
   );

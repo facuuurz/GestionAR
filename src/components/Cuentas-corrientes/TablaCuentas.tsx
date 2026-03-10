@@ -1,42 +1,33 @@
 "use client";
 
-import PromocionRow from "@/components/promociones/PromocionRow";
+import FilaCliente from "@/components/Cuentas-corrientes/FilaCliente/FilaCliente";
 
-interface TablaPromocionesProps {
-  promociones: any[]; 
+interface TablaCuentasProps {
+  clientes: any[]; 
   loading: boolean;
   busqueda: string;
-  onClearBusqueda: () => void;
-  // NUEVAS PROPS PARA PAGINACIÓN:
+  hasActiveFilters: boolean;
+  onClearAll: () => void;
+  // Nuevas props para paginación
   currentPage: number;
   totalPages: number;
   onPageChange: (newPage: number) => void;
 }
 
-export default function TablaPromociones({ 
-  promociones, 
-  loading, 
-  busqueda, 
-  onClearBusqueda,
-  currentPage,
-  totalPages,
-  onPageChange
-}: TablaPromocionesProps) {
-  
-  // OJO: Ya no filtramos con useMemo aquí. 
-  // La búsqueda ahora la mandaremos al servidor para que nos traiga la página correcta ya filtrada.
+export default function TablaCuentas({ 
+  clientes, loading, busqueda, hasActiveFilters, onClearAll, currentPage, totalPages, onPageChange 
+}: TablaCuentasProps) {
 
   return (
     <div className="flex flex-col rounded-xl border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#1e2736] overflow-hidden shadow-sm flex-1 min-h-0">
       <div className="overflow-x-auto overflow-y-auto h-full relative custom-scrollbar">
-        <table className="w-full text-left border-collapse min-w-200">
+        <table className="w-full text-left border-collapse">
           <thead className="bg-[#f9f9f9] dark:bg-[#151a25] border-b border-[#ededed] dark:border-[#333] sticky top-0 z-20">
             <tr>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%]">Nombre</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[25%]">Descripción</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[15%]">Precio</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%]">Vigencia</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[10%]">Estado</th>
+              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">ID Cliente</th>
+              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider min-w-50">Cliente / Razón Social</th>
+              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Estado</th>
+              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Saldo Actual</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
             </tr>
           </thead>
@@ -44,33 +35,31 @@ export default function TablaPromociones({
           <tbody className="divide-y divide-[#ededed] dark:divide-[#333]">
             {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-20">
+                  <td colSpan={5} className="text-center py-20">
                     <div className="flex flex-col items-center justify-center gap-2">
                         <span className="material-symbols-outlined animate-spin text-3xl text-primary dark:text-white">progress_activity</span>
-                        <span className="text-neutral-400 text-sm">Cargando promociones...</span>
+                        <span className="text-neutral-400 text-sm">Cargando cuentas...</span>
                     </div>
                   </td>
                 </tr>
-            ) : promociones.length > 0 ? (
-                promociones.map((promo) => (
-                  <PromocionRow key={promo.id} promo={promo} />
+            ) : clientes.length > 0 ? (
+                // Mapeamos directamente 'clientes', ya vienen filtrados del backend
+                clientes.map((cliente) => (
+                  <FilaCliente key={cliente.id} cliente={cliente} />
                 ))
             ) : (
                 <tr>
-                    <td colSpan={6} className="text-center py-12 text-neutral-500 text-sm">
+                    <td colSpan={5} className="text-center py-12 text-neutral-500 text-sm">
                         <div className="flex flex-col items-center gap-2">
                             <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
                             <p>
                               {busqueda 
-                                ? `No se encontraron promociones que coincidan con "${busqueda}"` 
-                                : "No hay promociones registradas con productos."}
+                                ? `No se encontraron clientes para "${busqueda}"` 
+                                : "No se encontraron cuentas con los filtros aplicados."}
                             </p>
-                            {busqueda && (
-                                <button 
-                                  onClick={onClearBusqueda}
-                                  className="text-blue-600 hover:underline text-xs font-bold mt-1"
-                                >
-                                  Limpiar búsqueda
+                            {hasActiveFilters && (
+                                <button onClick={onClearAll} className="text-blue-600 hover:underline text-xs font-bold mt-1">
+                                  Limpiar búsqueda, filtros y orden
                                 </button>
                             )}
                         </div>
@@ -81,7 +70,7 @@ export default function TablaPromociones({
         </table>
       </div>
       
-      {/* Controles de Paginación */}
+      {/* Footer Paginación */}
       {!loading && totalPages > 1 && (
         <div className="flex justify-between items-center mt-4 px-2">
           
