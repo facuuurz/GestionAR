@@ -1,44 +1,53 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { obtenerClientes } from "@/actions/cuentas-corrientes"; 
 
-export function useClientes() {
-  const [clientesBase, setClientesBase] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [criterioOrden, setCriterioOrden] = useState("");
+// Tipamos los filtros para que coincidan con lo que espera el Server Action
+interface FiltrosClientes {
+  query?: string;
+  estado?: string;
+  minSaldo?: string;
+  maxSaldo?: string;
+  sort?: string;
+  page?: number;
+}
 
-  useEffect(() => {
-    recargar();
+export function useClientes() {
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+
+  // Usamos useCallback para que el orquestador pueda llamarlo en sus useEffects sin crear loops infinitos
+  const recargar = useCallback(async (filtros?: FiltrosClientes) => {
+    setLoading(true);
+    setError(null); // Reseteamos posibles errores previos
+
+    try {
+      // Llamamos a la Action pasándole el objeto de filtros
+      const data = await obtenerClientes(filtros); 
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setClientes(data.clientes || []);
+      setTotalPages(data.totalPages || 1);
+      
+    } catch (err) {
+      console.error("Error cargando clientes:", err);
+      setError("No se pudo conectar con el servidor de cuentas corrientes.");
+      setClientes([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  async function recargar() {
-    setLoading(true);
-    // Asumimos que obtenerClientes sin params devuelve todo, 
-    // o pasamos strings vacíos si es necesario para traer la lista completa
-    const datos = await obtenerClientes("", ""); 
-    setClientesBase(datos);
-    setLoading(false);
-  }
-
-  const clientesOrdenados = useMemo(() => {
-    let ordenados = [...clientesBase];
-    if (!criterioOrden) return ordenados;
-
-    ordenados.sort((a, b) => {
-      switch (criterioOrden) {
-        case "nombre-asc": return a.nombre.localeCompare(b.nombre);
-        case "nombre-desc": return b.nombre.localeCompare(a.nombre);
-        case "saldo-desc": return Number(b.saldo) - Number(a.saldo); // Mayor deuda/saldo
-        case "saldo-asc": return Number(a.saldo) - Number(b.saldo); // Menor deuda/saldo
-        default: return 0;
-      }
-    });
-    return ordenados;
-  }, [clientesBase, criterioOrden]);
-
   return {
-    clientes: clientesOrdenados,
+    clientes,
     loading,
+    totalPages,
+    error,
     recargar,
-    setCriterioOrden, 
   };
 }

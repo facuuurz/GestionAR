@@ -8,31 +8,24 @@ import { z } from "zod";
 // --- 1. ESQUEMA DE VALIDACIÓN ---
 const clienteSchema = z.object({
   nombre: z.string().min(1, "El nombre del cliente es obligatorio").trim(),
-  
   cuit: z.string()
     .trim()
     .min(1, "El CUIT/CUIL es obligatorio")
     .regex(/^\d{2}-\d{7,8}-\d{1}$/, {
       message: "Formato de CUIT/CUIL inválido (ej: 20-8954756-5)"
     }),
-  
   telefono: z.string()
     .trim()
     .min(1, "El teléfono es obligatorio")
     .refine((val) => /^\+?[0-9]+$/.test(val), {
       message: "Solo números (ej: 112233) o + al inicio",
     }),
-  
   email: z.string()
     .trim()
     .min(1, "El correo electrónico es obligatorio")
     .email("El formato del email no es válido"),
-    
   direccion: z.string().trim().optional().or(z.literal("")), 
-
   ciudad: z.string().trim().optional().or(z.literal("")),
-
-  // coerce.number() convierte strings a números, pero si es undefined/null lo manejamos aparte
   saldo: z.coerce.number().optional(),
 });
 
@@ -51,12 +44,47 @@ export type State = {
   payload?: any;
 };
 
-// --- 3. OBTENER TODOS LOS CLIENTES (CON FILTROS) ---
-export async function obtenerClientes(query: string = "", sort: string = "") {
-  try {
-    let orderBy: any = { id: 'desc' };
+// --- 3. OBTENER TODOS LOS CLIENTES (PAGINADOS Y FILTRADOS) ---
+const ITEMS_POR_PAGINA = 15;
 
-    switch (sort) {
+export async function obtenerClientes(filtros?: {
+  query?: string;
+  estado?: string;
+  minSaldo?: string;
+  maxSaldo?: string;
+  sort?: string;
+  page?: number;
+}) {
+  try {
+    const where: any = {};
+
+    // A. Búsqueda (Nombre o CUIT o ID)
+    if (filtros?.query) {
+      where.OR = [
+        { nombre: { contains: filtros.query, mode: "insensitive" } },
+        { cuit: { contains: filtros.query, mode: "insensitive" } },
+      ];
+      // Si es un número válido, buscar también por ID
+      if (!isNaN(Number(filtros.query))) {
+        where.OR.push({ id: Number(filtros.query) });
+      }
+    }
+
+    // B. Estado
+    if (filtros?.estado && filtros.estado !== "Todos") {
+      where.estado = filtros.estado;
+    }
+
+    // C. Rango de Saldo
+    if (filtros?.minSaldo || filtros?.maxSaldo) {
+      where.saldo = {};
+      if (filtros.minSaldo) where.saldo.gte = parseFloat(filtros.minSaldo);
+      if (filtros.maxSaldo) where.saldo.lte = parseFloat(filtros.maxSaldo);
+    }
+
+    // D. Ordenamiento
+    let orderBy: any = { id: "desc" };
+    switch (filtros?.sort) {
       case "nombre-asc": orderBy = { nombre: 'asc' }; break;
       case "nombre-desc": orderBy = { nombre: 'desc' }; break;
       case "saldo-mayor": orderBy = { saldo: 'desc' }; break;
@@ -64,14 +92,18 @@ export async function obtenerClientes(query: string = "", sort: string = "") {
       case "antiguos": orderBy = { createdAt: 'asc' }; break;
     }
 
+    // E. Paginación
+    const page = filtros?.page || 1;
+    const skip = (page - 1) * ITEMS_POR_PAGINA;
+
+    // Ejecutar consultas
+    const totalClientes = await prisma.cuenta_corriente.count({ where });
+    
     const clientesRaw = await prisma.cuenta_corriente.findMany({
-      where: {
-        OR: [
-          { nombre: { contains: query, mode: 'insensitive' } },
-          { cuit: { contains: query } },
-        ],
-      },
-      orderBy: orderBy,
+      where,
+      orderBy,
+      skip,
+      take: ITEMS_POR_PAGINA,
     });
 
     const clientes = clientesRaw.map((cliente) => ({
@@ -79,10 +111,16 @@ export async function obtenerClientes(query: string = "", sort: string = "") {
       saldo: cliente.saldo.toNumber(), 
     }));
 
-    return clientes;
+    return {
+      clientes,
+      totalPages: Math.ceil(totalClientes / ITEMS_POR_PAGINA) || 1,
+      totalClientes,
+      error: null
+    };
+
   } catch (error) {
     console.error("Error al obtener cuentas:", error);
-    return [];
+    return { clientes: [], totalPages: 1, totalClientes: 0, error: "Error conectando a la base de datos." };
   }
 }
 
@@ -109,7 +147,6 @@ export async function crearCliente(prevState: State, formData: FormData) {
   }
 
   try {
-    // A. Verificar si el CUIT ya existe
     const cuitExistente = await prisma.cuenta_corriente.findFirst({
         where: { cuit: validatedFields.data.cuit }
     });
@@ -122,7 +159,6 @@ export async function crearCliente(prevState: State, formData: FormData) {
         };
     }
 
-    // B. Crear si no existe
     const saldoInicial = validatedFields.data.saldo ?? 0;
     const estadoInicial = saldoInicial < 0 ? "Deudor" : "Al Día";
 
@@ -153,7 +189,6 @@ export async function crearCliente(prevState: State, formData: FormData) {
 
 // --- 5. ACTUALIZAR CLIENTE ---
 export async function actualizarCliente(id: number, prevState: State, formData: FormData) {
-  // Manejo especial para el saldo: si viene vacío, lo tratamos como undefined para no sobrescribirlo con 0
   const saldoRaw = formData.get("saldo")?.toString();
 
   const rawData = {
@@ -177,11 +212,10 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
   }
 
   try {
-    // A. Verificar CUIT duplicado en OTROS clientes (excluyendo al actual)
     const cuitExistente = await prisma.cuenta_corriente.findFirst({
         where: { 
             cuit: validatedFields.data.cuit,
-            NOT: { id: id } // Excluir ID actual
+            NOT: { id: id } 
         }
     });
 
@@ -193,7 +227,6 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
         };
     }
 
-    // B. Obtener cliente actual para preservar saldo si no se envió dato
     const cuentaActual = await prisma.cuenta_corriente.findUnique({
         where: { id }
     });
@@ -202,7 +235,6 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
         return { message: "El cliente no existe." };
     }
 
-    // Si validatedFields.data.saldo es undefined, usamos el saldo de la BDD
     const nuevoSaldo = validatedFields.data.saldo ?? cuentaActual.saldo.toNumber();
     const nuevoEstado = nuevoSaldo < 0 ? "Deudor" : "Al Día";
 
@@ -267,20 +299,14 @@ export async function eliminarCliente(id: number) {
   redirect("/cuentas-corrientes");
 }
 
-// Agregar al final de actions/cuentas-corrientes.ts
-
-// ... imports anteriores
-
-// 1. MODIFICAR: Actualizar saldo y REGISTRAR MOVIMIENTO
+// --- 8. ACTUALIZAR SALDO Y REGISTRAR MOVIMIENTO ---
 export async function actualizarSaldoCliente(id: number, monto: number) {
   try {
-    // Determinar tipo y descripción automática
     const esCredito = monto > 0;
     const tipo = esCredito ? "CREDITO" : "DEBITO";
     const descripcion = esCredito ? "Pago recibido / Ajuste a favor" : "Ajuste de deuda / Cargo";
 
     await prisma.$transaction(async (tx) => {
-      // A. Actualizar saldo
       await tx.cuenta_corriente.update({
         where: { id },
         data: {
@@ -288,17 +314,15 @@ export async function actualizarSaldoCliente(id: number, monto: number) {
         },
       });
 
-      // B. Registrar Movimiento
       await tx.movimiento.create({
         data: {
           cuentaCorrienteId: id,
-          monto: Math.abs(monto), // Guardamos siempre positivo, el tipo define si suma o resta visualmente
+          monto: Math.abs(monto), 
           tipo: tipo,
           descripcion: descripcion,
         }
       });
 
-      // C. Actualizar estado (lógica existente)
       const cuenta = await tx.cuenta_corriente.findUnique({ where: { id } });
       if (cuenta) {
         const nuevoEstado = cuenta.saldo.toNumber() < 0 ? "Deudor" : "Al Día";
@@ -312,7 +336,7 @@ export async function actualizarSaldoCliente(id: number, monto: number) {
     });
 
     revalidatePath("/cuentas-corrientes");
-    revalidatePath(`/cuentas-corrientes/${id}`); // Revalidar la página de detalle
+    revalidatePath(`/cuentas-corrientes/${id}`); 
     return { success: true, message: "Saldo actualizado y movimiento registrado." };
   } catch (error) {
     console.error("Error al actualizar saldo:", error);
@@ -320,12 +344,12 @@ export async function actualizarSaldoCliente(id: number, monto: number) {
   }
 }
 
-// 2. NUEVA FUNCIÓN: Obtener historial
+// --- 9. OBTENER HISTORIAL DE MOVIMIENTOS ---
 export async function obtenerMovimientosCliente(id: number) {
   try {
     const movimientos = await prisma.movimiento.findMany({
       where: { cuentaCorrienteId: id },
-      orderBy: { fecha: 'desc' }, // Ordenar por fecha, más reciente primero
+      orderBy: { fecha: 'desc' },
     });
 
     return movimientos.map(m => ({
