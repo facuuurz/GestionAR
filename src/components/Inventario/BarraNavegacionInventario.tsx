@@ -1,5 +1,7 @@
 "use client";
 
+import BotonAccion from "@/components/Inventario/ui/BotonAccion";
+
 interface BarraNavegacionInventario {
   // Búsqueda
   busqueda: string;
@@ -41,33 +43,20 @@ export default function BarraNavegacion({
       {/* Botones de Acción */}
       <div className="flex gap-3 overflow-x-auto p-1"> 
         
-        {/* BOTÓN FILTRAR */}
-        <button 
+        <BotonAccion 
+          icon="filter_list" 
+          label="Filtrar" 
+          isActive={hasActiveFilters} 
           onClick={onOpenFilters} 
-          className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
-        >
-          <span className="material-symbols-outlined text-[18px]">filter_list</span>
-          <span>Filtrar</span>
-          
-          {/* Indicador azul */}
-          {hasActiveFilters && (
-            <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1 animate-in fade-in zoom-in duration-300"></span>
-          )}
-        </button>
+        />
 
-        {/* BOTÓN ORDENAR */}
-        <button 
+        <BotonAccion 
+          icon="sort" 
+          label="Ordenar" 
+          isActive={hasActiveSort} 
           onClick={onOpenSort} 
-          className="group flex items-center gap-2 h-10 px-4 rounded-lg border border-[#ededed] dark:border-[#333] bg-white dark:bg-[#151a25] text-primary dark:text-white text-sm font-medium cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md hover:bg-[#222] hover:text-white"
-        >
-          <span className="material-symbols-outlined text-[18px]">sort</span>
-          <span>Ordenar</span>
-          
-          {/* Indicador azul */}
-          {hasActiveSort && (
-            <span className="flex h-2 w-2 rounded-full bg-blue-600 ml-1 animate-in fade-in zoom-in duration-300"></span>
-          )}
-        </button>
+        />
+
       </div>
     </div>
   );

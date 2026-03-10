@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const Header = () => {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
     { name: "Panel", href: "/" },
@@ -26,7 +28,18 @@ const Header = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 justify-end gap-4 sm:gap-8 items-center">
+      <div className="flex flex-1 justify-end gap-4 sm:gap-8 items-center relative">
+        {/* HAMBURGER MENU BUTTON (MOBILE ONLY) */}
+        <button 
+          className="md:hidden flex items-center justify-center p-2 rounded-lg text-primary dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-[60] relative"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <span className="material-symbols-outlined text-3xl">
+            {isMobileMenuOpen ? "close" : "menu"}
+          </span>
+        </button>
+
+        {/* DESKTOP MENU */}
         <div className="hidden md:flex items-center gap-9">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
@@ -46,6 +59,35 @@ const Header = () => {
             );
           })}
         </div>
+
+        {/* MOBILE FULLSCREEN MENU */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 bg-[#f6f6f8]/95 dark:bg-[#191919]/95 backdrop-blur-md md:hidden flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex flex-col gap-8 w-full px-12 text-center">
+              {navLinks.map((link, index) => {
+                const isActive = pathname === link.href;
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`text-2xl py-4 border-b border-black/10 dark:border-white/10 transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in`}
+                    style={{ animationDelay: `${index * 100}ms`, animationFillMode: "both" }}
+                  >
+                    <span className={
+                      isActive
+                        ? "font-black text-black dark:text-white" 
+                        : "font-medium text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                    }>
+                      {link.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

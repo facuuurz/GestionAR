@@ -5,6 +5,9 @@ import Link from "next/link";
 import { actualizarProducto, eliminarProducto, State } from "@/actions/productos";
 import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTipoModal"; 
 import EliminarProductoModal from "@/components/Inventario/Modal/EliminarProductoModal";
+import InputConIcono from "@/components/Inventario/ui/InputConIcono";
+import TextareaConContador from "@/components/Inventario/ui/TextareaConContador";
+import ToggleSwitch from "@/components/Inventario/ui/ToggleSwitch";
 
 // --- TIPOS ---
 interface ProductFormProps {
@@ -28,15 +31,7 @@ interface ProductFormProps {
 
 const CATEGORIAS_BASICAS = ["bebidas", "alimentos", "limpieza", "otros"];
 
-function ErrorMessage({ errors }: { errors?: string[] }) {
-  if (!errors || errors.length === 0) return null;
-  return (
-    <p className="text-red-500 text-xs mt-1 font-medium ml-1 flex items-center gap-1">
-      <span className="material-symbols-outlined text-[14px]">error</span>
-      {errors[0]}
-    </p>
-  );
-}
+
 
 const formatDateForInput = (date?: Date | string | null) => {
   if (!date) return "";
@@ -156,39 +151,31 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
           
-          <label className="flex flex-col gap-2 relative">
-              <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de barra *</span>
-              <div className="relative w-full">
-                <input 
-                  name="codigoBarra"
-                  defaultValue={state.payload?.codigoBarra ?? producto.codigoBarra ?? ""}
-                  className={`flex w-full rounded-lg border ${state.errors?.codigoBarra ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-4 pr-14 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                  placeholder="Escanee o ingrese código" 
-                  type="text"
-                />
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700">
-                  <span className="material-symbols-outlined text-lg">barcode_scanner</span>
-                </div>
-              </div>
-              <ErrorMessage errors={state.errors?.codigoBarra} />
-          </label>
+          <InputConIcono
+            name="codigoBarra"
+            label="Código de barra *"
+            icon="barcode_scanner"
+            iconBgColor="bg-purple-100 text-purple-700"
+            placeholder="Escanee o ingrese código"
+            type="text"
+            defaultValue={state.payload?.codigoBarra ?? producto.codigoBarra ?? ""}
+            error={state.errors?.codigoBarra?.[0]}
+            rightElement={
+              <button type="button" className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors cursor-pointer">
+                <span className="material-symbols-outlined text-lg">qr_code_scanner</span>
+              </button>
+            }
+          />
 
-          <label className="flex flex-col gap-2">
-              <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Nombre del producto *</span>
-              <div className="relative w-full">
-                <input 
-                  name="nombre"
-                  defaultValue={state.payload?.nombre ?? producto.nombre}
-                  className={`flex w-full rounded-lg border ${state.errors?.nombre ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                  placeholder="Ej. Coca Cola 2L" 
-                  type="text"
-                />
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-                  <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                </div>
-              </div>
-              <ErrorMessage errors={state.errors?.nombre} />
-          </label>
+          <InputConIcono
+            name="nombre"
+            label="Nombre del producto *"
+            icon="shopping_bag"
+            placeholder="Ej. Coca Cola 2L"
+            type="text"
+            defaultValue={state.payload?.nombre ?? producto.nombre}
+            error={state.errors?.nombre?.[0]}
+          />
 
           {/* ... (SECCIÓN TIPO DE PRODUCTO - IGUAL QUE ANTES) ... */}
           <div className="flex flex-col gap-2 relative z-20">
@@ -246,66 +233,50 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                   <span className="material-symbols-outlined text-[20px] mr-2">add</span>Agregar
                 </button>
               </div>
-              <ErrorMessage errors={state.errors?.tipo} />
+              {state.errors?.tipo && (
+                  <p className="text-red-500 text-xs mt-1 font-medium ml-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">error</span>
+                      {state.errors.tipo[0]}
+                  </p>
+              )}
           </div>
 
-          <label className="flex flex-col gap-2">
-              <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de Proveedor *</span>
-              <div className="relative w-full">
-                <input 
-                  name="proveedor"
-                  defaultValue={state.payload?.proveedor ?? producto.proveedor ?? ""}
-                  className={`flex w-full rounded-lg border ${state.errors?.proveedor ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                  placeholder="REF-000" 
-                  type="text"
-                />
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700">
-                  <span className="material-symbols-outlined text-lg">local_shipping</span>
-                </div>
-              </div>
-              <ErrorMessage errors={state.errors?.proveedor} />
-          </label>
+          <InputConIcono
+            className="z-20"
+            name="proveedor"
+            label="Código de Proveedor *"
+            icon="local_shipping"
+            iconBgColor="bg-teal-100 text-teal-700"
+            placeholder="REF-000"
+            type="text"
+            defaultValue={state.payload?.proveedor ?? producto.proveedor ?? ""}
+            error={state.errors?.proveedor?.[0]}
+          />
 
-          <label className="flex flex-col gap-2">
-              <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Fecha de Vencimiento</span>
-              <div className="relative w-full">
-                <input 
-                  name="fechaVencimiento"
-                  defaultValue={formatDateForInput(state.payload?.fechaVencimiento ?? producto.fechaVencimiento)}
-                  type="date"
-                  className="flex w-full rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20"
-                />
-                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300">
-                  <span className="material-symbols-outlined text-lg">event</span>
-                </div>
-              </div>
-          </label>
-          
-          <div className="md:col-span-1"> 
-            <label className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Descripción breve</span>
-                <span className={`text-xs ${descLength >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                  (Opcional {descLength} de 200)
-                </span>
-              </div>
-              <div className="relative w-full">
-                <textarea 
-                  ref={textareaRef}
-                  name="descripcion"
-                  maxLength={200}
-                  rows={1} 
-                  defaultValue={state.payload?.descripcion ?? producto.descripcion ?? ""}
-                  onChange={handleDescriptionChange}
-                  className={`flex w-full rounded-lg border ${state.errors?.descripcion ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white p-3 pl-12 text-sm font-medium resize-none outline-none focus:ring-2 focus:ring-black/20 overflow-hidden min-h-12`}
-                  placeholder="Ingrese detalles..." 
-                />
-                <div className="pointer-events-none absolute left-3 top-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                  <span className="material-symbols-outlined text-lg">description</span>
-                </div>
-              </div>
-              <ErrorMessage errors={state.errors?.descripcion} />
-            </label>
+          <InputConIcono
+            className="z-10"
+            name="fechaVencimiento"
+            label="Fecha de Vencimiento"
+            icon="event"
+            iconBgColor="bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300"
+            type="date"
+            defaultValue={formatDateForInput(state.payload?.fechaVencimiento ?? producto.fechaVencimiento)}
+          />
+
+          <div className="md:col-span-1 z-10">
+            <TextareaConContador
+              name="descripcion"
+              label="Descripción breve"
+              icon="description"
+              maxLength={200}
+              placeholder="Ingrese detalles..."
+              initialValue={state.payload?.descripcion ?? producto.descripcion ?? ""}
+              onValueChange={(val) => {
+                setDescLength(val.length);
+                adjustHeight();
+              }}
+              error={state.errors?.descripcion?.[0]}
+            />
           </div>
         </div>
 
@@ -314,35 +285,14 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
         {/* SECCIÓN TOGGLE, STOCK Y PRECIO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          <div className={`md:col-span-2 flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-300 ${
-            esPorPeso 
-              ? 'bg-blue-600 border-blue-700 shadow-lg' 
-              : 'bg-sky-100 dark:bg-sky-900/30 border-sky-200 dark:border-sky-800 shadow-sm'
-          }`}>
-            <div className="flex flex-col">
-              <span className={`text-sm font-bold ${esPorPeso ? 'text-white' : 'text-sky-900 dark:text-sky-100'}`}>
-                ¿Producto por Peso?
-              </span>
-              <span className={`text-xs ${esPorPeso ? 'text-blue-100 font-medium' : 'text-sky-700 dark:text-sky-400 font-medium'}`}>
-                {esPorPeso 
-                  ? "El stock se guardará en Gramos y el precio será por Kilo." 
-                  : "El stock se guardará por Unidades y el precio será Unitario."}
-              </span>
-            </div>
-            <button 
-              type="button"
-              onClick={() => setEsPorPeso(!esPorPeso)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer ${
-                esPorPeso 
-                  ? 'bg-white focus:ring-blue-400' 
-                  : 'bg-slate-500 dark:bg-slate-600 focus:ring-sky-500'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full transition duration-200 ease-in-out shadow-md ${
-                esPorPeso ? 'translate-x-6 bg-blue-600' : 'translate-x-1 bg-white'
-              }`} />
-            </button>
-          </div>
+          <ToggleSwitch
+            label="¿Producto por Peso?"
+            descriptionTruphy="El stock se guardará en Gramos y el precio será por Kilo."
+            descriptionFalsy="El stock se guardará por Unidades y el precio será Unitario."
+            checked={esPorPeso}
+            onChange={() => setEsPorPeso(!esPorPeso)}
+            className="md:col-span-2"
+          />
 
           {/* Stock */}
           <div className="flex flex-col gap-2">
@@ -355,61 +305,47 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
                   </span>
               </div>
               <div className="relative w-full flex items-center gap-2">
-                 <button type="button" onClick={handleRestarStock} className="h-12 w-12 flex items-center justify-center rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 transition-colors cursor-pointer">
+                 <button type="button" onClick={handleRestarStock} className="h-12 w-12 flex items-center justify-center rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 transition-colors cursor-pointer shrink-0">
                     <span className="material-symbols-outlined">remove</span>
                  </button>
-                 <div className="relative w-full">
-                   <input 
+                 
+                 <div className="w-full">
+                   <InputConIcono
                      name="stock"
+                     label=""
+                     icon={esPorPeso ? "scale" : "inventory"}
+                     iconBgColor={esPorPeso ? 'bg-blue-100 text-blue-700' : 'bg-sky-100 text-sky-700'}
+                     placeholder={esPorPeso ? "Ej. 1500" : "0"}
+                     type="number"
                      value={stockActual}
                      onChange={(e) => {
                        const val = e.target.value;
                        setStockActual(val === "" ? "" : Number(val));
                      }}
-                     className={`flex w-full rounded-lg border ${state.errors?.stock ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                     placeholder={esPorPeso ? "Ej. 1500" : "0"} type="number"
+                     error={state.errors?.stock?.[0]}
+                     rightElement={esPorPeso ? <span className="text-xs font-bold text-blue-600 mr-2">gr</span> : undefined}
                    />
-                   <div className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full ${esPorPeso ? 'bg-blue-100 text-blue-700' : 'bg-sky-100 text-sky-700'}`}>
-                     <span className="material-symbols-outlined text-lg">
-                        {esPorPeso ? "scale" : "inventory"}
-                     </span>
-                   </div>
-                   {esPorPeso && (
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-600">
-                      gr
-                    </span>
-                   )}
                  </div>
-                 <button type="button" onClick={handleSumarStock} className="h-12 w-12 flex items-center justify-center rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 transition-colors cursor-pointer">
+
+                 <button type="button" onClick={handleSumarStock} className="h-12 w-12 flex items-center justify-center rounded-lg border border-[#cfd7e7] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 transition-colors cursor-pointer shrink-0">
                     <span className="material-symbols-outlined">add</span>
                  </button>
               </div>
-              <ErrorMessage errors={state.errors?.stock} />
           </div>
 
           {/* Precio */}
-          <label className="flex flex-col gap-2">
-             <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">
-                {esPorPeso ? "Precio por Kilo *" : "Precio Unitario *"}
-             </span>
-             <div className="relative w-full">
-               <input 
-                 name="precio"
-                 defaultValue={state.payload?.precio ?? producto.precio}
-                 className={`flex w-full rounded-lg border ${state.errors?.precio ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
-                 placeholder="0.00" step="0.01" type="number"
-               />
-               <div className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full ${esPorPeso ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                 <span className="material-symbols-outlined text-lg">attach_money</span>
-               </div>
-               {esPorPeso && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-600">
-                  /kg
-                </span>
-               )}
-             </div>
-             <ErrorMessage errors={state.errors?.precio} />
-          </label>
+          <InputConIcono
+            name="precio"
+            label={esPorPeso ? "Precio por Kilo *" : "Precio Unitario *"}
+            icon="attach_money"
+            iconBgColor={esPorPeso ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}
+            placeholder="0.00"
+            step="0.01"
+            type="number"
+            defaultValue={state.payload?.precio ?? producto.precio}
+            error={state.errors?.precio?.[0]}
+            rightElement={esPorPeso ? <span className="text-xs font-bold text-blue-600 mr-2">/kg</span> : undefined}
+          />
         </div>
 
         <div className="flex flex-col items-end gap-2">
