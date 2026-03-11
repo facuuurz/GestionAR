@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+// 1. Importamos nuestro átomo UI
+import BotonAccion from "@/components/Proveedores/ui/BotonAccion";
 
 interface Props {
   isOpen: boolean;
@@ -117,7 +119,7 @@ export default function OrdenarProveedores({ isOpen, onClose, onAplicar, valorAc
 
         </div>
 
-        {/* Footer */}
+        {/* Footer Refactorizado con el Átomo */}
         <div className="p-5 bg-neutral-50 dark:bg-[#252525]/50 border-t border-[#ededed] dark:border-[#333] flex flex-col sm:flex-row justify-between gap-3">
           
            <button 
@@ -130,14 +132,13 @@ export default function OrdenarProveedores({ isOpen, onClose, onAplicar, valorAc
            </button>
           
           <div className="flex gap-3 w-full sm:w-auto">
-            <button 
-                type="button"
-                onClick={handleApply} 
-                className="w-full sm:w-auto h-10 px-6 rounded-lg text-sm font-bold bg-neutral-800 hover:bg-black text-white shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 dark:bg-white dark:text-black"
-            >
-                <span className="material-symbols-outlined text-[18px]">check</span>
-                Aplicar
-            </button>
+            <BotonAccion 
+              type="button"
+              onClick={handleApply}
+              texto="Aplicar"
+              icono="check"
+              className="w-full sm:w-auto" // Para que ocupe todo el ancho en mobile
+            />
           </div>
         </div>
 
