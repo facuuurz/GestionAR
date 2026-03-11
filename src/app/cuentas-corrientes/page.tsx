@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 // Hooks
@@ -13,7 +13,7 @@ import BarraNavegacionCuentas from "@/components/Cuentas-corrientes/BarraNavegac
 import EncabezadoCuentas from "@/components/Cuentas-corrientes/EncabezadoCuentas";
 import TablaCuentas from "@/components/Cuentas-corrientes/TablaCuentas";
 
-export default function CuentasCorrientesPage() {
+function CuentasCorrientesContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -178,5 +178,13 @@ export default function CuentasCorrientesPage() {
 
       </div>
     </main>
+  );
+}
+
+export default function CuentasCorrientesPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><span className="material-symbols-outlined animate-spin text-3xl text-gray-400">progress_activity</span></div>}>
+      <CuentasCorrientesContent />
+    </Suspense>
   );
 }
