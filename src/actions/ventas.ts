@@ -2,57 +2,45 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 
 // --- TIPOS ---
 type Filters = {
-    category?: string;
-    stockStatus?: string; // 'all' | 'low' | 'none'
-    priceRange?: { min: string; max: string };
+  category?: string;
+  stockStatus?: string; // 'all' | 'low' | 'none'
+  priceRange?: { min: string; max: string };
 };
 
 // 1. BUSCAR PRODUCTOS (CON FILTROS AVANZADOS)
 export async function buscarProductosVenta(query: string, filters?: Filters) {
   try {
-    // A. Construir la condición básica (Texto)
     const whereClause: any = {
       OR: query ? [
         { nombre: { contains: query, mode: "insensitive" } },
         { codigoBarra: { contains: query, mode: "insensitive" } },
       ] : undefined,
-      // Por defecto solo mostramos stock > 0 si no hay filtro de stock específico,
-      // PERO si el usuario filtra por "Sin Stock", debemos permitir verlos.
-      // Lo manejamos abajo en el paso C.
     };
 
-    // B. Filtro: Categoría (Tipo de producto)
     if (filters?.category && filters.category !== "Todas") {
         whereClause.tipo = { equals: filters.category, mode: "insensitive" };
     }
 
-    // C. Filtro: Estado del Stock
     if (filters?.stockStatus && filters.stockStatus !== 'all') {
         if (filters.stockStatus === 'low') {
-            // Bajo stock: mayor a 0 y menor o igual a 10
             whereClause.stock = { gt: 0, lte: 10 }; 
         } else if (filters.stockStatus === 'none') {
-            // Sin stock: 0 o menos
             whereClause.stock = { lte: 0 }; 
         }
     } else {
-        // Comportamiento por defecto: Si no hay filtro de stock explícito, 
-        // normalmente queremos ver cosas que se puedan vender (stock > 0).
-        // Si prefieres ver TODO siempre, borra este bloque else.
         if (!whereClause.stock) { 
              whereClause.stock = { gt: 0 }; 
         }
     }
 
-    // D. Filtro: Rango de Precio
     if (filters?.priceRange) {
         const min = parseFloat(filters.priceRange.min);
         const max = parseFloat(filters.priceRange.max);
         
-        // Solo aplicamos si al menos uno es un número válido
         if (!isNaN(min) || !isNaN(max)) {
             whereClause.precio = {};
             if (!isNaN(min)) whereClause.precio.gte = min;
@@ -60,10 +48,9 @@ export async function buscarProductosVenta(query: string, filters?: Filters) {
         }
     }
 
-    // E. Ejecutar la consulta
     const productos = await prisma.producto.findMany({
       where: whereClause,
-      take: 20, // Limitamos para rendimiento
+      take: 20, 
       orderBy: [
         { fechaVencimiento: 'asc' },
         { nombre: 'asc' }
@@ -72,11 +59,11 @@ export async function buscarProductosVenta(query: string, filters?: Filters) {
 
     return productos.map((producto) => ({
       ...producto,
-      precio: producto.precio.toNumber(), // Decimal -> Number
+      precio: producto.precio.toNumber(), 
     }));
 
   } catch (error) {
-      console.error("Error buscando productos:", error);
+      logger.error({ err: error, query, filters }, "Error al buscar productos en el Punto de Venta");
       return [];
   }
 }
@@ -85,22 +72,28 @@ export async function buscarProductosVenta(query: string, filters?: Filters) {
 export async function buscarClienteVenta(query: string) {
   if (!query) return [];
   
-  const clientes = await prisma.cuenta_corriente.findMany({
-    where: {
-      OR: [
-        { nombre: { contains: query, mode: "insensitive" } },
-        { cuit: { contains: query } },
-      ]
-    },
-    take: 5
-  });
+  try {
+    const clientes = await prisma.cuenta_corriente.findMany({
+      where: {
+        OR: [
+          { nombre: { contains: query, mode: "insensitive" } },
+          { cuit: { contains: query } },
+        ]
+      },
+      take: 5
+    });
 
-  return clientes.map((cliente) => ({
-    ...cliente,
-    saldo: cliente.saldo.toNumber(),
-  }));
+    return clientes.map((cliente) => ({
+      ...cliente,
+      saldo: cliente.saldo.toNumber(),
+    }));
+  } catch (error) {
+    logger.error({ err: error, query }, "Error al buscar cliente en el Punto de Venta");
+    return [];
+  }
 }
 
+// 3. OBTENER HISTORIAL
 export async function obtenerHistorialVentas() {
   try {
     const ventas = await prisma.venta.findMany({
@@ -133,11 +126,12 @@ export async function obtenerHistorialVentas() {
     });
 
   } catch (error) {
-    console.error("Error al obtener historial:", error);
+    logger.error({ err: error }, "Error al obtener el historial de ventas");
     return [];
   }
 }
 
+// 4. PROCESAR VENTA (CRÍTICO)
 export async function procesarVenta(
   items: { id: number; cantidad: number }[], 
   total: number, 
@@ -192,19 +186,30 @@ export async function procesarVenta(
           }
         });
       }
+
+      // Log de éxito con contexto comercial
+      logger.info({ 
+        ventaId: nuevaVenta.id, 
+        total, 
+        clienteId: clienteId || "Consumidor Final",
+        cantidadItems: items.length 
+      }, "Venta procesada y registrada exitosamente");
     });
 
     revalidatePath("/historial-ventas"); 
     revalidatePath("/inventario");
+    if (clienteId) revalidatePath("/cuentas-corrientes");
     
     return { success: true, message: "Venta registrada con éxito" };
 
   } catch (error: any) {
-    console.error("Error al procesar venta:", error);
+    // Log crítico: Pasamos los items exactos que se intentaron vender para poder rastrear qué falló
+    logger.error({ err: error, items, total, clienteId }, "Fallo transaccional crítico al procesar la venta");
     return { success: false, message: error.message || "Error al procesar la venta" };
   }
 }
 
+// 5. OBTENER CATEGORÍAS
 export async function obtenerCategorias() {
   try {
     const categorias = await prisma.categoria.findMany({
@@ -213,13 +218,12 @@ export async function obtenerCategorias() {
 
     return categorias.map((c) => c.nombre);
   } catch (error) {
-    console.error("Error al obtener categorías:", error);
+    logger.error({ err: error }, "Error al obtener categorías en ventas");
     return [];
   }
 }
 
-// Agrégalo al final de src/actions/ventas.ts
-
+// 6. OBTENER DETALLE VENTA
 export async function obtenerDetalleVenta(idRaw: number) {
   try {
     const venta = await prisma.venta.findUnique({
@@ -232,9 +236,11 @@ export async function obtenerDetalleVenta(idRaw: number) {
       }
     });
 
-    if (!venta) return null;
+    if (!venta) {
+      logger.warn({ ventaId: idRaw }, "Intento de acceder a un detalle de venta inexistente");
+      return null;
+    }
 
-    // Helper para formatear moneda
     const formatear = (valor: any) => new Intl.NumberFormat("es-AR", {
         style: "currency", currency: "ARS", minimumFractionDigits: 2
     }).format(Number(valor));
@@ -248,7 +254,6 @@ export async function obtenerDetalleVenta(idRaw: number) {
     let subtotalGeneral = 0;
     let descuentoTotal = 0;
 
-    // Mapear productos y calcular si hubo promociones
     const productos = venta.detalles.map((det) => {
         const precioLista = Number(det.producto.precio); 
         const precioCobrado = Number(det.precioUnit);
@@ -264,7 +269,6 @@ export async function obtenerDetalleVenta(idRaw: number) {
         return {
             nombre: det.producto.nombre,
             sku: det.producto.codigoBarra || "S/C",
-            // Si tiene decimales mostramos "kg", sino unidad normal
             cantidad: cantidad % 1 !== 0 ? `${cantidad.toFixed(3)} kg` : `${cantidad}`,
             precioUnitario: formatear(precioLista),
             precioPromocional: esPromo ? formatear(precioCobrado) : null,
@@ -285,7 +289,7 @@ export async function obtenerDetalleVenta(idRaw: number) {
     };
 
   } catch (error) {
-    console.error("Error obteniendo detalle:", error);
+    logger.error({ err: error, ventaId: idRaw }, "Error al intentar obtener el detalle de la venta");
     return null;
   }
 }

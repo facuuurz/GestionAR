@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 
 // ----------------------------------------------------------------------
 // 1. ESQUEMA DE VALIDACIÓN Y TIPOS
@@ -17,7 +18,6 @@ const productoSchema = z.object({
   
   tipo: z.string().min(1, "Seleccione un tipo válido"),
 
-  // Usamos 'message' en lugar de 'invalid_type_error' para evitar conflictos de tipos
   stock: z.coerce
     .number({ message: "El stock debe ser un número" }) 
     .int("El stock debe ser un número entero")
@@ -32,7 +32,6 @@ const productoSchema = z.object({
   esPorPeso: z.coerce.boolean().optional(),
 });
 
-// Definición del Estado para useActionState
 export type State = {
   errors?: {
     nombre?: string[];
@@ -45,7 +44,6 @@ export type State = {
     fechaVencimiento?: string[];
   };
   message?: string | null;
-  // 'payload' almacena lo que el usuario escribió para devolverlo si hay error
   payload?: any; 
 };
 
@@ -58,7 +56,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
   const rawEsPorPeso = formData.get("esPorPeso");
   const esPorPesoBoolean = rawEsPorPeso === "on" || rawEsPorPeso === "true";
 
-  const validatedFields = productoSchema.safeParse({
+  const rawData = {
     nombre: formData.get("nombre"),
     codigoBarra: formData.get("codigoBarra"),
     proveedor: formData.get("proveedor"),
@@ -68,13 +66,15 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
     descripcion: formData.get("descripcion"),
     fechaVencimiento: formData.get("fechaVencimiento"),
     esPorPeso: esPorPesoBoolean,
-  });
+  };
+
+  const validatedFields = productoSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: "Faltan campos requeridos. Revisa el formulario.",
-      payload: Object.fromEntries(formData.entries()), // Retornamos lo escrito
+      payload: Object.fromEntries(formData.entries()),
     };
   }
 
@@ -83,7 +83,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
   try {
     const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
 
-    await prisma.producto.create({
+    const nuevoProducto = await prisma.producto.create({
       data: {
         nombre,
         codigoBarra,
@@ -96,8 +96,11 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
         esPorPeso: esPorPeso || false,
       },
     });
+
+    logger.info({ productoId: nuevoProducto.id, codigoBarra }, "Producto creado exitosamente");
+
   } catch (error) {
-    console.error("Error DB:", error);
+    logger.error({ err: error, payload: rawData }, "Error crítico de base de datos al intentar crear un producto");
     return {
       message: "Error al guardar en la base de datos.",
       payload: Object.fromEntries(formData.entries()),
@@ -118,8 +121,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
   const rawEsPorPeso = formData.get("esPorPeso");
   const esPorPesoBoolean = rawEsPorPeso === "on" || rawEsPorPeso === "true";
 
-  // 1. Validar datos
-  const validatedFields = productoSchema.safeParse({
+  const rawData = {
     nombre: formData.get("nombre"),
     codigoBarra: formData.get("codigoBarra"),
     proveedor: formData.get("proveedor"),
@@ -129,9 +131,10 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
     descripcion: formData.get("descripcion"),
     fechaVencimiento: formData.get("fechaVencimiento"),
     esPorPeso: esPorPesoBoolean,
-  });
+  };
 
-  // 2. Si falla, retornamos errores Y los datos que escribió el usuario (payload)
+  const validatedFields = productoSchema.safeParse(rawData);
+
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
@@ -142,7 +145,6 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
 
   const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento, esPorPeso } = validatedFields.data;
 
-  // 3. Actualizar DB
   try {
     const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
     
@@ -160,8 +162,11 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
         esPorPeso: esPorPeso || false,
       },
     });
+
+    logger.info({ productoId: id, codigoBarra }, "Producto actualizado exitosamente");
+
   } catch (error) {
-    console.error("Error al actualizar DB:", error);
+    logger.error({ err: error, productoId: id, payload: rawData }, "Error interno al actualizar producto en base de datos");
     return {
       message: "Error interno al actualizar la base de datos.",
       payload: Object.fromEntries(formData.entries()),
@@ -175,14 +180,20 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
 }
 
 // ----------------------------------------------------------------------
-// 4. OTRAS FUNCIONES (Eliminar, Obtener, Cargar Prueba)
+// 4. OTRAS FUNCIONES
 // ----------------------------------------------------------------------
 
 export async function eliminarProducto(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
-  await prisma.producto.delete({ where: { id } });
-  revalidatePath("/inventario");
-  redirect("/inventario");
+  try {
+    await prisma.producto.delete({ where: { id } });
+    logger.info({ productoId: id }, "Producto eliminado exitosamente");
+    revalidatePath("/inventario");
+    redirect("/inventario");
+  } catch (error) {
+    logger.error({ err: error, productoId: id }, "Error al intentar eliminar un producto");
+    throw new Error("No se pudo eliminar el producto.");
+  }
 }
 
 // DEFINICIÓN DE LOS FILTROS
@@ -193,19 +204,15 @@ interface ProductFilters {
   priceMin?: string;
   priceMax?: string;
   sort?: string;
-  page?: number; // <-- NUEVO: Recibimos la página actual
+  page?: number;
 }
 
-const ITEMS_POR_PAGINA = 15; // <-- NUEVO: Cantidad de productos por página
+const ITEMS_POR_PAGINA = 15; 
 
-// ⚠️ FUNCIÓN MODIFICADA PARA PAGINAR, FILTRAR Y ORDENAR EN LA BD
 export async function obtenerProductosDB(filters?: ProductFilters) {
   try {
-
-    // 1. Construir cláusula WHERE (Filtros)
     const where: Prisma.ProductoWhereInput = {};
 
-    // A. Búsqueda General (Nombre, Código, Tipo, Proveedor)
     if (filters?.query) {
       const search = filters.query.trim();
       where.OR = [
@@ -216,94 +223,63 @@ export async function obtenerProductosDB(filters?: ProductFilters) {
       ];
     }
 
-    // B. Categoría
     if (filters?.category && filters.category !== "Todas") {
       where.tipo = { equals: filters.category, mode: "insensitive" };
     }
 
-    // C. Estado del Stock
     if (filters?.stockStatus) {
       if (filters.stockStatus === "low") {
-        // Stock Bajo: entre 1 y 20
         where.stock = { gt: 0, lte: 20 };
       } else if (filters.stockStatus === "none") {
-        // Sin Stock: 0
         where.stock = { equals: 0 };
       } else if (filters.stockStatus === "expiring") {
-        // Por Vencer: Fecha entre HOY y 30 días en el futuro
         const hoy = new Date();
         const futuro = new Date();
         futuro.setDate(hoy.getDate() + 30);
-        
-        where.fechaVencimiento = {
-          gte: hoy,
-          lte: futuro
-        };
+        where.fechaVencimiento = { gte: hoy, lte: futuro };
       }
     }
 
-    // D. Rango de Precio
     if (filters?.priceMin || filters?.priceMax) {
       where.precio = {};
       if (filters.priceMin) where.precio.gte = parseFloat(filters.priceMin);
       if (filters.priceMax) where.precio.lte = parseFloat(filters.priceMax);
     }
 
-    // 2. Construir cláusula ORDER BY (Ordenamiento)
     let orderBy: Prisma.ProductoOrderByWithRelationInput[] = [];
 
     switch (filters?.sort) {
-      case "nombre-asc":
-        orderBy = [{ nombre: "asc" }];
-        break;
-      case "stock-desc":
-        orderBy = [{ stock: "desc" }];
-        break;
-      case "stock-asc":
-        orderBy = [{ stock: "asc" }];
-        break;
-      case "precio-desc":
-        orderBy = [{ precio: "desc" }];
-        break;
-      case "precio-asc":
-        orderBy = [{ precio: "asc" }];
-        break;
-      case "vencimiento-asc":
-        // Primero los que vencen pronto, los nulos al final
-        orderBy = [{ fechaVencimiento: "asc" }]; 
-        break;
-      default:
-        // Por defecto: Creados recientemente
-        orderBy = [{ createdAt: "desc" }];
+      case "nombre-asc": orderBy = [{ nombre: "asc" }]; break;
+      case "stock-desc": orderBy = [{ stock: "desc" }]; break;
+      case "stock-asc": orderBy = [{ stock: "asc" }]; break;
+      case "precio-desc": orderBy = [{ precio: "desc" }]; break;
+      case "precio-asc": orderBy = [{ precio: "asc" }]; break;
+      case "vencimiento-asc": orderBy = [{ fechaVencimiento: "asc" }]; break;
+      default: orderBy = [{ createdAt: "desc" }];
     }
 
-    // --- 3. NUEVA LÓGICA DE PAGINACIÓN ---
     const page = filters?.page || 1;
     const skip = (page - 1) * ITEMS_POR_PAGINA;
 
-    // Contar el TOTAL de productos para saber cuántas páginas hay
     const totalProductos = await prisma.producto.count({ where });
 
-    // 4. Ejecutar consulta con Skip y Take
     const productos = await prisma.producto.findMany({
       where,
       orderBy,
-      skip,                    // <-- Saltamos los registros anteriores
-      take: ITEMS_POR_PAGINA,  // <-- Tomamos solo los de esta página
+      skip,
+      take: ITEMS_POR_PAGINA,
     });
 
-    // 5. Devolver objeto con productos y total de páginas
     return {
       productos: productos.map((p) => ({
         ...p,
-        precio: Number(p.precio), // Convertir Decimal a Number para el frontend
+        precio: Number(p.precio), 
       })),
       totalPages: Math.ceil(totalProductos / ITEMS_POR_PAGINA) || 1
     };
 
   } catch (error) {
-    console.error("Error al obtener productos:", error);
-    // Lanza el error para que el hook de React pueda capturarlo y mostrar la UI de error
+    logger.error({ err: error, filters }, "Error en consulta obtenerProductosDB");
     throw new Error("Error interno al conectarse con la base de datos."); 
   }
 }
@@ -317,9 +293,10 @@ export async function cargarDatosDePrueba() {
       ],
       skipDuplicates: true,
     });
+    logger.info("Datos de prueba de inventario cargados exitosamente");
     revalidatePath("/inventario");
   } catch (error) {
-    console.error("Error cargando datos de prueba:", error);
+    logger.error({ err: error }, "Fallo al intentar cargar datos de prueba en inventario");
   }
 }
 
@@ -327,12 +304,16 @@ export async function obtenerProductoPorId(id: number) {
   if (!id || typeof id !== 'number' || isNaN(id)) return null;
   try {
     const prod = await prisma.producto.findUnique({ where: { id } });
-    if (!prod) return null;
+    if (!prod) {
+      logger.warn({ productoId: id }, "Se intentó buscar un producto por ID pero no existe");
+      return null;
+    }
     return {
         ...prod,
         precio: Number(prod.precio)
     }
   } catch (error) {
+    logger.error({ err: error, productoId: id }, "Error al obtener producto por ID");
     return null;
   }
 }

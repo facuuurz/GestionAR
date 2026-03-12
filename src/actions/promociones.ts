@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 
 // 1. Esquema de Validación
 const promocionSchema = z.object({
@@ -49,6 +50,8 @@ export async function buscarProductosParaPromocion(query: string) {
          precio: Number(prod.precio)
        }));
      } catch (error) {
+       // Log de error silencioso
+       logger.error({ err: error, query: "vacío" }, "Error al cargar productos iniciales para promoción");
        return [];
      }
   }
@@ -76,7 +79,7 @@ export async function buscarProductosParaPromocion(query: string) {
     }));
 
   } catch (error) {
-    console.error("Error buscando productos:", error);
+    logger.error({ err: error, query }, "Error buscando productos específicos para promoción");
     return [];
   }
 }
@@ -85,9 +88,7 @@ const ITEMS_POR_PAGINA = 15; // Ajusta este número según prefieras
 
 export async function obtenerPromociones(query: string = "", soloActivas: boolean = false, page: number = 1) {
   try {
-    // 1. Construir las condiciones (WHERE)
     const where: any = {
-      // ✅ FILTRO CLAVE: Solo trae promociones que tengan al menos 1 producto
       items: {
         some: {} 
       },
@@ -100,11 +101,9 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
       } : {})
     };
 
-    // 2. Calcular paginación
     const skip = (page - 1) * ITEMS_POR_PAGINA;
     const totalPromociones = await prisma.promocion.count({ where });
 
-    // 3. Traer datos
     const promociones = await prisma.promocion.findMany({
       where,
       include: {
@@ -119,7 +118,6 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
       take: ITEMS_POR_PAGINA
     });
 
-    // 4. Formatear datos y devolver objeto de paginación
     const promocionesFormateadas = promociones.map((promo) => ({
       ...promo,
       precio: Number(promo.precio),
@@ -139,7 +137,7 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
     };
 
   } catch (error) {
-    console.error("Error obteniendo promociones:", error);
+    logger.error({ err: error, query, soloActivas, page }, "Error obteniendo el listado de promociones");
     return { promociones: [], totalPages: 1, totalPromociones: 0 };
   }
 }
@@ -163,7 +161,8 @@ export async function crearPromocion(prevState: State, formData: FormData) {
         productosParaInsertar = JSON.parse(productosDataRaw);
     }
   } catch (e) {
-    console.error("Error parseando JSON de productos", e);
+    // Usamos warn (advertencia) porque es un problema de formato de datos del cliente, no una caída del servidor
+    logger.warn({ err: e, rawData: productosDataRaw }, "Fallo al parsear el JSON de productosDataRaw en crearPromocion");
   }
 
   const validatedFields = promocionSchema.safeParse({
@@ -187,7 +186,7 @@ export async function crearPromocion(prevState: State, formData: FormData) {
   }
 
   try {
-    await prisma.promocion.create({
+    const nuevaPromocion = await prisma.promocion.create({
       data: {
         nombre: validatedFields.data.nombre,
         descripcion: validatedFields.data.descripcion || "",
@@ -203,8 +202,11 @@ export async function crearPromocion(prevState: State, formData: FormData) {
         }
       },
     });
+
+    logger.info({ promocionId: nuevaPromocion.id, nombre: nuevaPromocion.nombre }, "Promoción creada exitosamente");
+
   } catch (error) {
-    console.error("Error creando promoción:", error);
+    logger.error({ err: error, payload: rawData }, "Error de base de datos al intentar crear la promoción");
     return {
       message: "Error de base de datos al crear la promoción.",
       payload: rawData,
@@ -233,7 +235,9 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     if (productosDataRaw) {
       productosParaInsertar = JSON.parse(productosDataRaw);
     }
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    logger.warn({ err: e, promocionId: id, rawData: productosDataRaw }, "Fallo al parsear el JSON de productosDataRaw en actualizarPromocion");
+  }
 
   const validatedFields = promocionSchema.safeParse({
       ...rawData,
@@ -279,8 +283,10 @@ export async function actualizarPromocion(id: number, prevState: State, formData
       });
     });
 
+    logger.info({ promocionId: id }, "Promoción y sus productos actualizados exitosamente");
+
   } catch (error) {
-    console.error("Error actualizando promoción:", error);
+    logger.error({ err: error, promocionId: id, payload: rawData }, "Fallo transaccional al actualizar la promoción");
     return {
       message: "Error al actualizar la promoción.",
       payload: rawData,
@@ -295,9 +301,11 @@ export async function actualizarPromocion(id: number, prevState: State, formData
 export async function eliminarPromocion(id: number) {
   try {
     await prisma.promocion.delete({ where: { id } });
+    
+    logger.info({ promocionId: id }, "Promoción eliminada exitosamente");
     revalidatePath("/promociones");
   } catch (error) {
-    console.error("Error al eliminar:", error);
+    logger.error({ err: error, promocionId: id }, "Error crítico al intentar eliminar la promoción");
   }
   redirect("/promociones");
 }
@@ -316,7 +324,10 @@ export async function obtenerPromocionPorId(id: number) {
       },
     });
 
-    if (!promocion) return null;
+    if (!promocion) {
+      logger.warn({ promocionId: id }, "Se intentó buscar una promoción por ID pero no existe");
+      return null;
+    }
 
     return {
       ...promocion,
@@ -337,7 +348,7 @@ export async function obtenerPromocionPorId(id: number) {
       })),
     };
   } catch (error) {
-    console.error("Error obteniendo promoción:", error);
+    logger.error({ err: error, promocionId: id }, "Error obteniendo detalles de promoción por ID");
     return null;
   }
 }

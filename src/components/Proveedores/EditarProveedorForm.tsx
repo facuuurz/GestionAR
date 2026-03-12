@@ -1,10 +1,15 @@
 "use client";
 
-import { useActionState, useState, startTransition } from "react"; // 1. Importamos useState
+import { useActionState, useState, startTransition } from "react";
 import { actualizarProveedor, eliminarProveedor, State } from "@/actions/proveedores";
 import Link from "next/link";
-// 2. Importamos el nuevo modal
+
+// Importamos el Modal
 import EliminarProveedorModal from "@/components/Proveedores/Modal/EliminarProveedorModal";
+
+// --- IMPORTAMOS LOS COMPONENTES UI ATÓMICOS ---
+import InputConIcono from "@/components/Proveedores/ui/InputConIcono";
+import BotonAccion from "@/components/Proveedores/ui/BotonAccion";
 
 interface ProveedorData {
   id: number;
@@ -15,16 +20,6 @@ interface ProveedorData {
   email?: string | null;
 }
 
-function ErrorMessage({ errors }: { errors?: string[] }) {
-  if (!errors || errors.length === 0) return null;
-  return (
-    <p className="text-red-500 text-xs mt-1 font-medium ml-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
-      <span className="material-symbols-outlined text-[16px]">error</span>
-      {errors[0]}
-    </p>
-  );
-}
-
 export default function EditarProveedorForm({ proveedor }: { proveedor: ProveedorData }) {
   const initialState: State = { message: null, errors: {} };
   
@@ -32,20 +27,18 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
   const [stateUpdate, formActionUpdate, isPendingUpdate] = useActionState(actualizarProveedor, initialState);
   const [stateDelete, formActionDelete, isPendingDelete] = useActionState(eliminarProveedor, initialState);
 
-  // 3. Estado para controlar el Modal
+  // Estado para controlar el Modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // 4. Función para confirmar la eliminación (Se ejecuta al dar "Sí" en el modal)
+  // Función para confirmar la eliminación (Se ejecuta al dar "Sí" en el modal)
   const handleConfirmDelete = () => {
-      // Como estamos llamando a la acción manualmente (no desde un submit de form),
-      // creamos el FormData con el ID.
       const formData = new FormData();
       formData.append("id", proveedor.id.toString());
       
       startTransition(() => {
           formActionDelete(formData);
       });
-      setShowDeleteModal(false); // Cerramos el modal (la redirección la hace el server action)
+      setShowDeleteModal(false); 
   };
 
   return (
@@ -100,95 +93,76 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                 </div>
               )}
 
+              {/* --- TUS INPUTS CON COMPONENTES UI --- */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 
-                {/* --- TUS INPUTS (Igual que antes) --- */}
-                
-                <div className="col-span-1 md:col-span-6">
-                  <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="codigo">
-                    Código <span className="text-black dark:text-white">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 pointer-events-none">
-                      <span className="material-symbols-outlined text-[18px]">badge</span>
-                    </div>
-                    <input 
-                      defaultValue={stateUpdate.payload?.codigo || proveedor.codigo}
-                      className={`w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 pl-14 pr-4 py-3 text-[#111318] dark:text-white transition-all outline-none ring-0 focus:bg-white dark:focus:bg-gray-900 
-                        ${stateUpdate.errors?.codigo ? 'border-red-500' : 'border-transparent focus:border-[#135bec]'}`}
-                      id="codigo" name="codigo" type="text"
-                    />
-                  </div>
-                  <ErrorMessage errors={stateUpdate.errors?.codigo} />
-                </div>
+                {/* 1. Código */}
+                <InputConIcono
+                  className="col-span-1 md:col-span-6"
+                  label="Código"
+                  name="codigo"
+                  iconName="badge"
+                  iconColorClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  defaultValue={stateUpdate.payload?.codigo || proveedor.codigo}
+                  errors={stateUpdate.errors?.codigo}
+                  requiredMark
+                />
 
-                <div className="col-span-1 md:col-span-6">
-                  <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="razonSocial">
-                    Razón Social <span className="text-black dark:text-white">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 pointer-events-none">
-                      <span className="material-symbols-outlined text-[18px]">domain</span>
-                    </div>
-                    <input 
-                      defaultValue={stateUpdate.payload?.razonSocial || proveedor.razonSocial}
-                      className={`w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 pl-14 pr-4 py-3 text-[#111318] dark:text-white transition-all outline-none ring-0 focus:bg-white dark:focus:bg-gray-900
-                        ${stateUpdate.errors?.razonSocial ? 'border-red-500' : 'border-transparent focus:border-[#135bec]'}`}
-                      id="razonSocial" name="razonSocial" type="text"
-                    />
-                  </div>
-                  <ErrorMessage errors={stateUpdate.errors?.razonSocial} />
-                </div>
+                {/* 2. Razón Social */}
+                <InputConIcono
+                  className="col-span-1 md:col-span-6"
+                  label="Razón Social"
+                  name="razonSocial"
+                  iconName="domain"
+                  iconColorClass="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                  defaultValue={stateUpdate.payload?.razonSocial || proveedor.razonSocial}
+                  errors={stateUpdate.errors?.razonSocial}
+                  requiredMark
+                />
 
-                <div className="col-span-1 md:col-span-6">
-                  <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="contacto">Contacto</label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 pointer-events-none">
-                      <span className="material-symbols-outlined text-[18px]">person</span>
-                    </div>
-                    <input 
-                      defaultValue={stateUpdate.payload?.contacto || proveedor.contacto || ""}
-                      className="w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent focus:border-[#135bec] focus:bg-white dark:focus:bg-gray-900 pl-14 pr-4 py-3 text-[#111318] dark:text-white transition-all outline-none" 
-                      id="contacto" name="contacto" type="text"
-                    />
-                  </div>
-                </div>
+                {/* 3. Contacto */}
+                <InputConIcono
+                  className="col-span-1 md:col-span-6"
+                  label="Contacto"
+                  name="contacto"
+                  iconName="person"
+                  iconColorClass="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
+                  defaultValue={stateUpdate.payload?.contacto || proveedor.contacto || ""}
+                  errors={stateUpdate.errors?.contacto}
+                />
 
-                <div className="col-span-1 md:col-span-6">
-                  <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="telefono">Teléfono</label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 pointer-events-none">
-                      <span className="material-symbols-outlined text-[18px]">call</span>
-                    </div>
-                    <input 
-                      defaultValue={stateUpdate.payload?.telefono || proveedor.telefono || ""}
-                      className="w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent focus:border-[#135bec] focus:bg-white dark:focus:bg-gray-900 pl-14 pr-4 py-3 text-[#111318] dark:text-white transition-all outline-none" 
-                      id="telefono" name="telefono" type="tel"
-                    />
-                  </div>
-                  <ErrorMessage errors={stateUpdate.errors?.telefono} />
-                </div>
+                {/* 4. Teléfono */}
+                <InputConIcono
+                  className="col-span-1 md:col-span-6"
+                  label="Teléfono"
+                  name="telefono"
+                  type="tel"
+                  iconName="call"
+                  iconColorClass="bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400"
+                  defaultValue={stateUpdate.payload?.telefono || proveedor.telefono || ""}
+                  errors={stateUpdate.errors?.telefono}
+                  requiredMark
+                />
 
-                <div className="col-span-1 md:col-span-12">
-                  <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2" htmlFor="email">Correo Electrónico</label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 pointer-events-none">
-                      <span className="material-symbols-outlined text-[18px]">mail</span>
-                    </div>
-                    <input 
-                      defaultValue={stateUpdate.payload?.email || proveedor.email || ""}
-                      className="w-full rounded-lg bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent focus:border-[#135bec] focus:bg-white dark:focus:bg-gray-900 pl-14 pr-4 py-3 text-[#111318] dark:text-white transition-all outline-none" 
-                      id="email" name="email" type="email"
-                    />
-                  </div>
-                  <ErrorMessage errors={stateUpdate.errors?.email} />
-                </div>
+                {/* 5. Email */}
+                <InputConIcono
+                  className="col-span-1 md:col-span-12"
+                  label="Correo Electrónico"
+                  name="email"
+                  type="email"
+                  iconName="mail"
+                  iconColorClass="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                  defaultValue={stateUpdate.payload?.email || proveedor.email || ""}
+                  errors={stateUpdate.errors?.email}
+                />
+
               </div>
             </div>
 
+            {/* Footer Botones */}
             <div className="px-6 md:px-8 py-5 bg-[#f8f9fa] dark:bg-gray-800/50 border-t border-[#e5e7eb] dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
                
-               {/* 5. BOTÓN ELIMINAR: Tipo 'button' y abre el modal */}
+               {/* BOTÓN ELIMINAR */}
                <button 
                   type="button" 
                   onClick={() => setShowDeleteModal(true)}
@@ -209,32 +183,21 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                     Cancelar
                   </Link>
                   
-                  <button 
-                    type="submit" 
-                    disabled={isPendingUpdate || isPendingDelete}
-                    className={`hover:cursor-pointer w-full md:w-auto h-10 px-6 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
-                      ${(isPendingUpdate || isPendingDelete) ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-[#135bec] dark:hover:bg-blue-600'}
-                    `}
-                  >
-                    {isPendingUpdate ? (
-                      <>
-                        <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[18px]">save</span>
-                        Guardar Cambios
-                      </>
-                    )}
-                  </button>
+                  {/* BOTÓN ACTUALIZAR (Atómico) */}
+                  <BotonAccion 
+                    type="submit"
+                    isPending={isPendingUpdate || isPendingDelete}
+                    texto="Guardar Cambios"
+                    textoCargando="Guardando..."
+                    icono="save"
+                  />
                </div>
             </div>
           </form>
         </div>
       </main>
 
-      {/* 6. RENDERIZAR EL MODAL */}
+      {/* RENDERIZAR EL MODAL */}
       <EliminarProveedorModal 
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

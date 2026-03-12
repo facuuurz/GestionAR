@@ -3,8 +3,11 @@
 import { useActionState, useState, useEffect, useRef } from "react";
 import { State, buscarProductosParaPromocion } from "@/actions/promociones"; 
 import Link from "next/link";
-// 1. IMPORTAR EL MODAL
 import EliminarPromocionModal from "@/components/promociones/Modal/EliminarPromocionModal"; 
+
+// --- COMPONENTES UI ATÓMICOS ---
+import InputConIcono from "@/components/promociones/ui/InputConIcono";
+import BotonAccion from "@/components/promociones/ui/BotonAccion";
 
 // --- TIPOS ---
 type Producto = {
@@ -67,7 +70,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
     const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
     const [mostrarResultados, setMostrarResultados] = useState(false);
     
-    // 2. ESTADOS PARA EL MODAL DE ELIMINAR
+    // ESTADOS PARA EL MODAL DE ELIMINAR
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -82,7 +85,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
         }))
     );
 
-    // --- ESTADOS PARA INPUTS CONTROLADOS (Igual que antes) ---
+    // --- ESTADOS PARA INPUTS CONTROLADOS ---
     const [nombre, setNombre] = useState(promocion.nombre);
     const [descripcion, setDescripcion] = useState(promocion.descripcion);
     const fechaInicioDefault = new Date(promocion.fechaInicio).toISOString().split('T')[0];
@@ -98,7 +101,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
         productos?: string;
     }>({});
 
-    // --- EFECTOS (Búsqueda y Recuperación de errores) ---
+    // --- EFECTOS ---
     useEffect(() => {
         const buscar = async () => {
             setCargandoBusqueda(true);
@@ -228,19 +231,15 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
         return acc + (cant * item.precioPromoUnitario);
     }, 0);
 
-    // --- 3. NUEVA LOGICA DE ELIMINAR ---
-    
-    // A. Función que solo abre el modal
+    // --- NUEVA LOGICA DE ELIMINAR ---
     const handleDeleteClick = () => {
         setShowDeleteModal(true);
     };
 
-    // B. Función que ejecuta la eliminación real (se pasa al Modal)
     const handleConfirmDelete = async () => {
         setIsDeleting(true);
         try {
             await eliminarAction();
-            // El componente se desmontará o redirigirá, no hace falta cerrar modal
         } catch (error) {
             console.error(error);
             setIsDeleting(false);
@@ -317,57 +316,47 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     
-                    {/* NOMBRE */}
-                    <div className="col-span-1">
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Nombre de la Promoción <span className="text-black dark:text-white">*</span>
-                        </label>
-                        <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.nombre ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all`}>
-                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md flex items-center justify-center">
-                                <span className="material-symbols-outlined text-xl">loyalty</span>
-                            </div>
-                            <input 
-                                className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                name="nombre" type="text"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
-                            />
-                        </div>
-                        {erroresCliente.nombre && (<p className="text-xs text-red-500 mt-1 flex items-center"><span className="material-symbols-outlined text-xs mr-1">info</span>{erroresCliente.nombre}</p>)}
-                    </div>
+                    {/* NOMBRE USANDO UI ATÓMICO */}
+                    <InputConIcono
+                        className="col-span-1"
+                        label="Nombre de la Promoción"
+                        name="nombre"
+                        iconName="loyalty"
+                        iconColorClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        errors={erroresCliente.nombre ? [erroresCliente.nombre] : state.errors?.nombre}
+                        requiredMark
+                    />
 
-                    {/* DESCRIPCIÓN */}
-                    <div className="col-span-1">
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Descripción <span className="text-black dark:text-white">*</span>
-                        </label>
-                        <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.descripcion ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5 focus-within:ring-2 focus-within:ring-slate-200 dark:focus-within:ring-slate-600 transition-all h-[54px]`}>
-                            <div className="flex-shrink-0 h-10 w-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md flex items-center justify-center">
-                                <span className="material-symbols-outlined text-xl">description</span>
-                            </div>
-                            <input 
-                                className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 sm:text-sm focus:outline-none" 
-                                name="descripcion" type="text"
-                                value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value)}
-                            />
-                        </div>
-                        {erroresCliente.descripcion && (<p className="text-xs text-red-500 mt-1 flex items-center"><span className="material-symbols-outlined text-xs mr-1">info</span>{erroresCliente.descripcion}</p>)}
-                    </div>
+                    {/* DESCRIPCIÓN USANDO UI ATÓMICO */}
+                    <InputConIcono
+                        className="col-span-1"
+                        label="Descripción"
+                        name="descripcion"
+                        iconName="description"
+                        iconColorClass="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                        value={descripcion}
+                        onChange={(e) => setDescripcion(e.target.value)}
+                        errors={erroresCliente.descripcion ? [erroresCliente.descripcion] : state.errors?.descripcion}
+                        requiredMark
+                    />
 
-                    {/* --- SECCIÓN PRODUCTOS --- (Código igual, abreviado para claridad) */}
+                    {/* --- SECCIÓN PRODUCTOS --- */}
                     <div className="col-span-1 md:col-span-2 relative" ref={wrapperRef}>
-                        {/* ... (BUSCADOR y LISTA DE PRODUCTOS - SIN CAMBIOS) ... */}
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Productos Incluidos *</label>
+                        <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2">Productos Incluidos *</label>
+                        
+                        {/* Buscador */}
                         <div className="relative mb-4">
-                             {/* ... Buscador ... */}
-                             <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.productos ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5`}>
-                                <div className="flex-shrink-0 h-10 w-10 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-md flex items-center justify-center">
+                             <div className={`flex items-center bg-[#f8fafa] dark:bg-gray-800 border-2 rounded-lg py-1 px-1 transition-all ${erroresCliente.productos ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : 'border-transparent focus-within:border-[#135bec] focus-within:ring-2 focus-within:ring-[#135bec]/20'}`}>
+                                <div className="flex-shrink-0 h-10 w-10 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-md flex items-center justify-center ml-1">
                                     {cargandoBusqueda ? <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span> : <span className="material-symbols-outlined text-xl">inventory_2</span>}
                                 </div>
                                 <input className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white focus:ring-0 sm:text-sm focus:outline-none" placeholder="Buscar producto..." type="text" value={textoBusqueda} onChange={handleSearchInput} onFocus={handleSearchFocus} autoComplete="off" />
                                 <div className="p-2 text-slate-400"><span className="material-symbols-outlined">search</span></div>
                             </div>
+                            
+                            {/* Resultados */}
                             {mostrarResultados && resultados.length > 0 && (
                                 <div className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                                     {resultados.map((prod) => (
@@ -379,7 +368,9 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
                                 </div>
                             )}
                         </div>
+                        
                         {erroresCliente.productos && <p className="text-xs text-red-500 mb-2 flex items-center"><span className="material-symbols-outlined text-xs mr-1">info</span>{erroresCliente.productos}</p>}
+                        
                         <div className="space-y-3">
                             {productosSeleccionados.map((item, index) => (
                                 <div key={item.producto.id} className="flex flex-col xl:flex-row items-start xl:items-center justify-between p-4 bg-white dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm gap-4">
@@ -404,39 +395,50 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
                     <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Total Final */}
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Precio Promocional Final</label>
-                            <div className="flex items-center bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg p-1.5 transition-all">
-                                <div className="flex-shrink-0 h-10 w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md flex items-center justify-center"><span className="material-symbols-outlined text-xl">attach_money</span></div>
+                            <label className="block text-sm font-bold text-[#111318] dark:text-gray-200 mb-2">Precio Promocional Final</label>
+                            <div className="flex items-center bg-[#f8fafa] dark:bg-gray-800 border-2 border-transparent rounded-lg py-1 px-1 transition-all">
+                                <div className="flex-shrink-0 h-10 w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md flex items-center justify-center ml-1"><span className="material-symbols-outlined text-xl">attach_money</span></div>
                                 <input className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white sm:text-sm font-bold focus:ring-0 focus:outline-none" readOnly type="text" value={formatCurrency(totalGeneral)} />
                             </div>
                         </div>
-                        {/* Fecha Inicio */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Fecha de Inicio *</label>
-                            <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.fechas ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5`}>
-                                <div className="flex-shrink-0 h-10 w-10 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-md flex items-center justify-center"><span className="material-symbols-outlined text-xl">calendar_today</span></div>
-                                <input className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white focus:ring-0 sm:text-sm focus:outline-none" name="fechaInicio" type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
-                            </div>
-                            {erroresCliente.fechas && <p className="text-xs text-red-500 mt-1 flex items-center"><span className="material-symbols-outlined text-xs mr-1">info</span>{erroresCliente.fechas}</p>}
-                        </div>
-                        {/* Fecha Fin */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Fecha de Fin *</label>
-                            <div className={`flex items-center bg-slate-50 dark:bg-slate-800 border ${erroresCliente.fechas ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'} rounded-lg p-1.5`}>
-                                <div className="flex-shrink-0 h-10 w-10 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-md flex items-center justify-center"><span className="material-symbols-outlined text-xl">event_busy</span></div>
-                                <input className="block w-full border-0 bg-transparent p-2 text-slate-900 dark:text-white focus:ring-0 sm:text-sm focus:outline-none" name="fechaFin" type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
-                            </div>
-                        </div>
+
+                        {/* FECHA INICIO USANDO UI ATÓMICO */}
+                        <InputConIcono
+                            className="col-span-1"
+                            label="Fecha de Inicio"
+                            name="fechaInicio"
+                            type="date"
+                            iconName="calendar_today"
+                            iconColorClass="bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400"
+                            value={fechaInicio}
+                            onChange={(e) => setFechaInicio(e.target.value)}
+                            errors={erroresCliente.fechas ? [erroresCliente.fechas] : state.errors?.fechaInicio}
+                            requiredMark
+                        />
+
+                        {/* FECHA FIN USANDO UI ATÓMICO */}
+                        <InputConIcono
+                            className="col-span-1"
+                            label="Fecha de Fin"
+                            name="fechaFin"
+                            type="date"
+                            iconName="event_busy"
+                            iconColorClass="bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
+                            value={fechaFin}
+                            onChange={(e) => setFechaFin(e.target.value)}
+                            errors={state.errors?.fechaFin}
+                            requiredMark
+                        />
                     </div>
                 </div>
 
                 {/* --- FOOTER: BOTONES --- */}
                 <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col-reverse md:flex-row justify-between items-center gap-4">
                     
-                    {/* BOTÓN ELIMINAR MODIFICADO */}
+                    {/* BOTÓN ELIMINAR */}
                     <button 
                         type="button" 
-                        onClick={handleDeleteClick} // Ahora abre el modal
+                        onClick={handleDeleteClick} 
                         className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -447,15 +449,20 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
                         <Link href="/promociones" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 dark:text-slate-200 border border-neutral-300 dark:border-slate-600 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md">
                             Cancelar
                         </Link>
-                        <button type="submit" disabled={isPending} className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-neutral-200'}`}>
-                            {isPending ? <><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</> : <><span className="material-symbols-outlined text-[18px]">save</span>Guardar Cambios</>}
-                        </button>
+                        
+                        {/* BOTON GUARDAR ATÓMICO */}
+                        <BotonAccion 
+                            type="submit"
+                            isPending={isPending}
+                            texto="Guardar Cambios"
+                            icono="save"
+                        />
                     </div>
                 </div>
 
             </form>
 
-            {/* 4. RENDERIZAR EL MODAL */}
+            {/* RENDERIZAR EL MODAL */}
             <EliminarPromocionModal 
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
