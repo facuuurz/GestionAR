@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 
 // --- 1. ESQUEMA DE VALIDACIÓN ---
 const clienteSchema = z.object({
@@ -58,31 +59,26 @@ export async function obtenerClientes(filtros?: {
   try {
     const where: any = {};
 
-    // A. Búsqueda (Nombre o CUIT o ID)
     if (filtros?.query) {
       where.OR = [
         { nombre: { contains: filtros.query, mode: "insensitive" } },
         { cuit: { contains: filtros.query, mode: "insensitive" } },
       ];
-      // Si es un número válido, buscar también por ID
       if (!isNaN(Number(filtros.query))) {
         where.OR.push({ id: Number(filtros.query) });
       }
     }
 
-    // B. Estado
     if (filtros?.estado && filtros.estado !== "Todos") {
       where.estado = filtros.estado;
     }
 
-    // C. Rango de Saldo
     if (filtros?.minSaldo || filtros?.maxSaldo) {
       where.saldo = {};
       if (filtros.minSaldo) where.saldo.gte = parseFloat(filtros.minSaldo);
       if (filtros.maxSaldo) where.saldo.lte = parseFloat(filtros.maxSaldo);
     }
 
-    // D. Ordenamiento
     let orderBy: any = { id: "desc" };
     switch (filtros?.sort) {
       case "nombre-asc": orderBy = { nombre: 'asc' }; break;
@@ -92,11 +88,9 @@ export async function obtenerClientes(filtros?: {
       case "antiguos": orderBy = { createdAt: 'asc' }; break;
     }
 
-    // E. Paginación
     const page = filtros?.page || 1;
     const skip = (page - 1) * ITEMS_POR_PAGINA;
 
-    // Ejecutar consultas
     const totalClientes = await prisma.cuenta_corriente.count({ where });
     
     const clientesRaw = await prisma.cuenta_corriente.findMany({
@@ -119,7 +113,7 @@ export async function obtenerClientes(filtros?: {
     };
 
   } catch (error) {
-    console.error("Error al obtener cuentas:", error);
+    logger.error({ err: error, filtros }, "Error al obtener lista de clientes (Cuentas Corrientes)");
     return { clientes: [], totalPages: 1, totalClientes: 0, error: "Error conectando a la base de datos." };
   }
 }
@@ -162,7 +156,7 @@ export async function crearCliente(prevState: State, formData: FormData) {
     const saldoInicial = validatedFields.data.saldo ?? 0;
     const estadoInicial = saldoInicial < 0 ? "Deudor" : "Al Día";
 
-    await prisma.cuenta_corriente.create({
+    const nuevoCliente = await prisma.cuenta_corriente.create({
       data: {
         nombre: validatedFields.data.nombre,
         cuit: validatedFields.data.cuit,
@@ -175,8 +169,10 @@ export async function crearCliente(prevState: State, formData: FormData) {
       },
     });
 
+    logger.info({ clienteId: nuevoCliente.id, cuit: nuevoCliente.cuit }, "Cliente de Cuenta Corriente creado exitosamente");
+
   } catch (error) {
-    console.error("Error al crear cuenta:", error);
+    logger.error({ err: error, payload: rawData }, "Error crítico en base de datos al intentar crear un cliente");
     return {
       message: "Error de base de datos.",
       payload: rawData,
@@ -232,6 +228,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
     });
 
     if (!cuentaActual) {
+        logger.warn({ clienteId: id }, "Intento de actualizar cliente que no existe");
         return { message: "El cliente no existe." };
     }
 
@@ -251,8 +248,11 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
         estado: nuevoEstado,
       },
     });
+
+    logger.info({ clienteId: id }, "Datos del cliente actualizados exitosamente");
+
   } catch (error) {
-    console.error("Error al actualizar:", error);
+    logger.error({ err: error, clienteId: id, payload: rawData }, "Error al actualizar cuenta de cliente en base de datos");
     return {
       message: "No se pudo actualizar la cuenta.",
       payload: rawData,
@@ -271,7 +271,10 @@ export async function obtenerClientePorId(id: number) {
       where: { id },
     });
 
-    if (!cuenta) return null;
+    if (!cuenta) {
+      logger.warn({ clienteId: id }, "Se intentó obtener un cliente por ID pero no existe");
+      return null;
+    }
 
     return {
       ...cuenta,
@@ -279,7 +282,7 @@ export async function obtenerClientePorId(id: number) {
     };
 
   } catch (error) {
-    console.error("Error al obtener cliente:", error);
+    logger.error({ err: error, clienteId: id }, "Error obteniendo datos del cliente por ID");
     return null;
   }
 }
@@ -290,8 +293,9 @@ export async function eliminarCliente(id: number) {
     await prisma.cuenta_corriente.delete({
       where: { id },
     });
+    logger.info({ clienteId: id }, "Cuenta corriente de cliente eliminada exitosamente");
   } catch (error) {
-    console.error("Error al eliminar:", error);
+    logger.error({ err: error, clienteId: id }, "Error crítico al intentar eliminar un cliente");
     throw new Error("No se pudo eliminar");
   }
 
@@ -335,11 +339,15 @@ export async function actualizarSaldoCliente(id: number, monto: number) {
       }
     });
 
+    // Log de auditoría vital: Quién, Cuánto y en Qué Cuenta
+    logger.info({ clienteId: id, monto, operacion: tipo }, "Saldo actualizado y movimiento de cuenta corriente registrado");
+
     revalidatePath("/cuentas-corrientes");
     revalidatePath(`/cuentas-corrientes/${id}`); 
     return { success: true, message: "Saldo actualizado y movimiento registrado." };
+
   } catch (error) {
-    console.error("Error al actualizar saldo:", error);
+    logger.error({ err: error, clienteId: id, monto }, "Fallo transaccional crítico al actualizar saldo de cliente");
     return { success: false, message: "Error al actualizar el saldo" };
   }
 }
@@ -357,7 +365,7 @@ export async function obtenerMovimientosCliente(id: number) {
       monto: m.monto.toNumber(),
     }));
   } catch (error) {
-    console.error("Error al obtener movimientos:", error);
+    logger.error({ err: error, clienteId: id }, "Error al obtener historial de movimientos de cuenta corriente");
     return [];
   }
 }

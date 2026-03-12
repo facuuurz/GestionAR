@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 
 // --- SCHEMA DE VALIDACIÓN ---
 const proveedorSchema = z.object({
@@ -81,8 +82,13 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
         email: validatedFields.data.email || null,
       },
     });
+    
+    // Log informativo opcional (bueno para auditoría)
+    logger.info({ codigo: validatedFields.data.codigo }, "Proveedor creado exitosamente");
+
   } catch (error) {
-    console.error("Error al crear proveedor:", error);
+    // <-- 2. APLICAMOS EL LOGGER CON CONTEXTO
+    logger.error({ err: error, payload: rawData }, "Error crítico al intentar crear un proveedor");
     return {
       message: "Error de base de datos. Intente nuevamente.",
       payload: rawData,
@@ -93,13 +99,10 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
   redirect("/proveedores");
 }
 
-
-
-const ITEMS_POR_PAGINA = 15; // Puedes cambiar este número
+const ITEMS_POR_PAGINA = 15; 
 
 export async function obtenerProveedores(query: string = "", sort: string = "", page: number = 1) {
   try {
-    // 1. Construir filtros de búsqueda
     const where: any = {};
     if (query) {
       where.OR = [
@@ -109,19 +112,14 @@ export async function obtenerProveedores(query: string = "", sort: string = "", 
       ];
     }
 
-    // (Aquí iría tu lógica del switch de 'sort' si ya la tienes armada, por defecto ordenamos por ID)
     let orderBy: any = { id: "desc" };
     if (sort === "nombre-asc") orderBy = { razonSocial: "asc" };
     if (sort === "nombre-desc") orderBy = { razonSocial: "desc" };
-    // ... agrega más casos según necesites
 
-    // 2. Lógica de Paginación
     const skip = (page - 1) * ITEMS_POR_PAGINA;
     
-    // Contar el total real para calcular las páginas
     const totalProveedores = await prisma.proveedor.count({ where });
 
-    // 3. Traer solo los de esta página
     const proveedores = await prisma.proveedor.findMany({
       where,
       orderBy,
@@ -129,17 +127,16 @@ export async function obtenerProveedores(query: string = "", sort: string = "", 
       take: ITEMS_POR_PAGINA,
     });
 
-    // 4. Devolvemos un objeto completo en lugar de solo el arreglo
     return {
       proveedores,
       totalProveedores, 
       totalPages: Math.ceil(totalProveedores / ITEMS_POR_PAGINA) || 1,
-      error: null // Todo salió bien
+      error: null 
     };
 
   } catch (error) {
-    console.error("Error al obtener proveedores:", error);
-    // Si la DB falla, no rompemos la app, devolvemos un error controlado
+    // <-- 3. APLICAMOS EL LOGGER PASANDO LOS PARÁMETROS DE BÚSQUEDA
+    logger.error({ err: error, query, page, sort }, "Error al consultar la lista de proveedores");
     return { 
       proveedores: [], 
       totalProveedores: 0, 
@@ -176,8 +173,12 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
         email: rawData.email,
       },
     });
+    
+    logger.info({ proveedorId: id }, "Proveedor actualizado exitosamente");
+
   } catch (error) {
-    console.error("Error al actualizar proveedor:", error);
+    // <-- 4. APLICAMOS EL LOGGER CON EL ID DEL PROVEEDOR
+    logger.error({ err: error, proveedorId: id, payload: rawData }, "Error al actualizar el proveedor en la base de datos");
     return {
       message: "No se pudo actualizar el proveedor en la base de datos.",
       payload: rawData,
@@ -198,37 +199,35 @@ export async function eliminarProveedor(prevState: State, formData: FormData): P
   if (!id || isNaN(id)) return { message: "ID de proveedor no válido" };
 
   try {
-    // 1. Primero buscamos el proveedor para obtener su CÓDIGO
     const proveedor = await prisma.proveedor.findUnique({
       where: { id },
-      select: { codigo: true } // Solo necesitamos el código
+      select: { codigo: true } 
     });
 
     if (!proveedor) {
       return { message: "El proveedor no existe." };
     }
 
-    // 2. Usamos una transacción para asegurar integridad
-    // Primero borramos los productos asociados a ese código, luego el proveedor.
     await prisma.$transaction([
-      // Paso A: Borrar productos donde el campo 'proveedor' coincida con el código
       prisma.producto.deleteMany({
         where: { proveedor: proveedor.codigo },
       }),
-      // Paso B: Borrar el proveedor por su ID
       prisma.proveedor.delete({
         where: { id },
       }),
     ]);
 
+    logger.info({ proveedorId: id, codigoAfectado: proveedor.codigo }, "Proveedor y productos asociados eliminados correctamente");
+
   } catch (error) {
-    console.error("Error al eliminar proveedor y productos:", error);
+    // <-- 5. APLICAMOS EL LOGGER A LA TRANSACCIÓN
+    logger.error({ err: error, proveedorId: id }, "Fallo transaccional al intentar eliminar el proveedor y sus productos");
     return { 
       message: "Ocurrió un error al intentar eliminar el proveedor y sus productos." 
     };
   }
 
   revalidatePath("/proveedores");
-  revalidatePath("/inventario"); // También revalidamos inventario porque borramos productos
+  revalidatePath("/inventario"); 
   redirect("/proveedores");
 }
