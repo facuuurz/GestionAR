@@ -97,7 +97,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
       },
     });
 
-    logger.info({ productoId: nuevoProducto.id, codigoBarra }, "Producto creado exitosamente");
+    logger.info({ productoId: nuevoProducto.id, nombre, codigoBarra }, "Producto creado exitosamente");
 
   } catch (error) {
     logger.error({ err: error, payload: rawData }, "Error crítico de base de datos al intentar crear un producto");
@@ -163,7 +163,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
       },
     });
 
-    logger.info({ productoId: id, codigoBarra }, "Producto actualizado exitosamente");
+    logger.info({ productoId: id, nombre, codigoBarra }, "Producto actualizado exitosamente");
 
   } catch (error) {
     logger.error({ err: error, productoId: id, payload: rawData }, "Error interno al actualizar producto en base de datos");
@@ -284,7 +284,7 @@ export async function obtenerProductosDB(filters?: ProductFilters) {
   }
 }
 
-export async function cargarDatosDePrueba() {
+/*export async function cargarDatosDePrueba() {
   try {
     await prisma.producto.createMany({
       data: [
@@ -298,7 +298,7 @@ export async function cargarDatosDePrueba() {
   } catch (error) {
     logger.error({ err: error }, "Fallo al intentar cargar datos de prueba en inventario");
   }
-}
+}*/
 
 export async function obtenerProductoPorId(id: number) {
   if (!id || typeof id !== 'number' || isNaN(id)) return null;

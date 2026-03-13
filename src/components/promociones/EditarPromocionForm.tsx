@@ -29,6 +29,7 @@ type PromocionData = {
     precio: number;
     fechaInicio: Date;
     fechaFin: Date;
+    activo: boolean; // <-- ¡NUEVO! Agregamos el campo al tipo
     productos: ItemPromocionDB[];
 };
 
@@ -92,6 +93,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
     const fechaFinDefault = new Date(promocion.fechaFin).toISOString().split('T')[0];
     const [fechaInicio, setFechaInicio] = useState(fechaInicioDefault);
     const [fechaFin, setFechaFin] = useState(fechaFinDefault);
+    const [activo, setActivo] = useState(promocion.activo ?? true); // <-- ¡NUEVO ESTADO!
 
     // --- VALIDACIÓN CLIENTE ---
     const [erroresCliente, setErroresCliente] = useState<{
@@ -118,6 +120,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
             setDescripcion(state.payload.descripcion || "");
             setFechaInicio(state.payload.fechaInicio || "");
             setFechaFin(state.payload.fechaFin || "");
+            if (state.payload.activo !== undefined) setActivo(state.payload.activo);
         }
     }, [state]);
 
@@ -306,6 +309,9 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
                     value={JSON.stringify(productosSeleccionados)} 
                 />
                 <input type="hidden" name="precio" value={totalGeneral} />
+                
+                {/* INPUT OCULTO QUE ENVÍA EL ESTADO REAL */}
+                {activo && <input type="hidden" name="activo" value="on" />} 
 
                 {state.message && (
                     <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900 text-sm font-medium flex items-center gap-2">
@@ -430,10 +436,31 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
                             requiredMark
                         />
                     </div>
+                    
+                    {/* --- NUEVO: TOGGLE DE ESTADO ACTIVO/INACTIVO --- */}
+                    <div className="col-span-1 md:col-span-2 mt-4 p-5 bg-slate-50 dark:bg-[#151a25] rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Estado de la Promoción</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Activa o desactiva esta promoción manualmente, sin importar las fechas.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                checked={activo} 
+                                onChange={(e) => setActivo(e.target.checked)} 
+                                className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                            <span className={`ml-3 text-sm font-bold w-16 ${activo ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                                {activo ? 'Activa' : 'Inactiva'}
+                            </span>
+                        </label>
+                    </div>
+
                 </div>
 
                 {/* --- FOOTER: BOTONES --- */}
-                <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col-reverse md:flex-row justify-between items-center gap-4">
+                <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700/50 flex flex-col-reverse md:flex-row justify-between items-center gap-4">
                     
                     {/* BOTÓN ELIMINAR */}
                     <button 

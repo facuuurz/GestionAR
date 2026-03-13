@@ -84,7 +84,7 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
     });
     
     // Log informativo opcional (bueno para auditoría)
-    logger.info({ codigo: validatedFields.data.codigo }, "Proveedor creado exitosamente");
+    logger.info({ codigo: validatedFields.data.codigo, razonSocial: validatedFields.data.razonSocial }, "Proveedor creado exitosamente");
 
   } catch (error) {
     // <-- 2. APLICAMOS EL LOGGER CON CONTEXTO
@@ -174,7 +174,7 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
       },
     });
     
-    logger.info({ proveedorId: id }, "Proveedor actualizado exitosamente");
+    logger.info({ proveedorId: id, razonSocial: rawData.razonSocial }, "Proveedor actualizado exitosamente");
 
   } catch (error) {
     // <-- 4. APLICAMOS EL LOGGER CON EL ID DEL PROVEEDOR

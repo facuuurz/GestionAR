@@ -169,7 +169,7 @@ export async function crearCliente(prevState: State, formData: FormData) {
       },
     });
 
-    logger.info({ clienteId: nuevoCliente.id, cuit: nuevoCliente.cuit }, "Cliente de Cuenta Corriente creado exitosamente");
+    logger.info({ clienteId: nuevoCliente.id, cuit: nuevoCliente.cuit, nombre: nuevoCliente.nombre }, "Cliente de Cuenta Corriente creado exitosamente");
 
   } catch (error) {
     logger.error({ err: error, payload: rawData }, "Error crítico en base de datos al intentar crear un cliente");
@@ -249,7 +249,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
       },
     });
 
-    logger.info({ clienteId: id }, "Datos del cliente actualizados exitosamente");
+    logger.info({ clienteId: id, nombre: validatedFields.data.nombre }, "Datos del cliente actualizados exitosamente");
 
   } catch (error) {
     logger.error({ err: error, clienteId: id, payload: rawData }, "Error al actualizar cuenta de cliente en base de datos");
