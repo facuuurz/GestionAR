@@ -89,9 +89,6 @@ const ITEMS_POR_PAGINA = 15; // Ajusta este número según prefieras
 export async function obtenerPromociones(query: string = "", soloActivas: boolean = false, page: number = 1) {
   try {
     const where: any = {
-      items: {
-        some: {} 
-      },
       ...(soloActivas ? { activo: true } : {}),
       ...(query ? {
           OR: [
@@ -144,13 +141,17 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
 
 // --- CREAR PROMOCIÓN ---
 export async function crearPromocion(prevState: State, formData: FormData) {
+  const activoRaw = formData.get("activo");
+  // OJO: Chequeamos si llega "on" (checkbox nativo) o "true" (toggles de React)
+  const isActivo = activoRaw === "on" || activoRaw === "true";
+
   const rawData = {
     nombre: formData.get("nombre"),
     descripcion: formData.get("descripcion"),
     precio: formData.get("precio"),
     fechaInicio: formData.get("fechaInicio"),
     fechaFin: formData.get("fechaFin"),
-    activo: formData.get("activo") === "on", 
+    activo: isActivo, 
   };
 
   const productosDataRaw = formData.get("productosData") as string;
@@ -283,7 +284,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
       });
     });
 
-    logger.info({ promocionId: id }, "Promoción y sus productos actualizados exitosamente");
+    logger.info({ promocionId: id, nombre: validatedFields.data.nombre }, "Promoción y sus productos actualizados exitosamente");
 
   } catch (error) {
     logger.error({ err: error, promocionId: id, payload: rawData }, "Fallo transaccional al actualizar la promoción");

@@ -121,11 +121,11 @@ export default function PantallaVenta() {
     }
   }, [debouncedCliente]);
 
-  useEffect(() => {
-    obtenerPromociones("", false).then((data) => {
-        setListaPromociones(data as unknown as PromocionBackend[]);
+useEffect(() => {
+    obtenerPromociones("", true).then((data) => {
+        setListaPromociones(data.promociones as unknown as PromocionBackend[]);
     });
-  }, []);
+  }, []);;
 
   // --- LÓGICA CARRITO (PRODUCTOS) ---
 

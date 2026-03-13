@@ -23,7 +23,20 @@ export default function PromocionRow({ promo }: PromocionRowProps) {
     }).format(date);
   };
 
-  const getEstadoPromocion = (inicio: Date | string, fin: Date | string) => {
+  const getEstadoPromocion = (activo: boolean, inicio: Date | string, fin: Date | string) => {
+    
+    // 1. Prioridad máxima: Lo que diga la Base de Datos
+    if (!activo) {
+      return {
+        label: "Inactiva",
+        badgeColor: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+        btnText: "Activar",
+        btnIcon: "power_settings_new",
+        btnColor: "bg-neutral-800 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+      };
+    }
+
+    // 2. Si está activa en la BD, calculamos el estado por las fechas
     const hoy = new Date();
     const fechaInicio = new Date(inicio);
     const fechaFin = new Date(fin);
@@ -55,7 +68,7 @@ export default function PromocionRow({ promo }: PromocionRowProps) {
     }
   };
 
-  const estado = getEstadoPromocion(promo.fechaInicio, promo.fechaFin);
+  const estado = getEstadoPromocion(promo.activo, promo.fechaInicio, promo.fechaFin);
 
   return (
     <tr className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">

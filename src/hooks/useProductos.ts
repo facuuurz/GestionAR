@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 // Asegúrate de que la ruta sea correcta
-import { obtenerProductosDB, cargarDatosDePrueba } from "@/actions/productos";
+import { obtenerProductosDB} from "@/actions/productos";
 
 // 1. Actualizamos el tipo para incluir la fecha
 export type Producto = {
@@ -66,7 +66,7 @@ export function useProductos() {
 
   async function generarDatosPrueba() {
     setLoading(true);
-    await cargarDatosDePrueba();
+    //await cargarDatosDePrueba();
     await recargar();
   }
 
