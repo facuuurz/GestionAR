@@ -188,12 +188,13 @@ export async function eliminarProducto(formData: FormData) {
   try {
     await prisma.producto.delete({ where: { id } });
     logger.info({ productoId: id }, "Producto eliminado exitosamente");
-    revalidatePath("/inventario");
-    redirect("/inventario");
   } catch (error) {
     logger.error({ err: error, productoId: id }, "Error al intentar eliminar un producto");
     throw new Error("No se pudo eliminar el producto.");
   }
+  
+  revalidatePath("/inventario");
+  redirect("/inventario");
 }
 
 // DEFINICIÓN DE LOS FILTROS

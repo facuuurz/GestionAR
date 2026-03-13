@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Logs del sistema
 sistema.log
+
+# Backups locales
+backups/

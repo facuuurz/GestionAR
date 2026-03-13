@@ -21,15 +21,15 @@ export default async function Panel() {
         <div className="flex flex-wrap justify-between items-end gap-3 px-4 pb-8">
           <div className="flex min-w-72 flex-col gap-2">
             <h1 className="text-primary dark:text-white text-4xl sm:text-5xl font-bold leading-tight tracking-[-0.033em]">
-              Bienvenido de nuevo, Admin
+              Bienvenido a GestionAR
             </h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-lg font-normal">
               Aquí está lo que sucede en tu negocio hoy.
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm font-medium text-neutral-500 dark:text-neutral-400 bg-white dark:bg-[#222] px-3 py-1.5 rounded-full border border-[#ededed] dark:border-[#333]">
-            <span className="material-symbols-outlined text-[18px] text-green-500">check_circle</span>
-            <span>Sistema Operativo</span>
+            
+            
           </div>
         </div>
 
