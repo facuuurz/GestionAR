@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import BackupRestoreModal from "./BackupRestoreModal";
 
 const Header = () => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   const navLinks = [
     { name: "Panel", href: "/" },
@@ -59,6 +61,14 @@ const Header = () => {
               </Link>
             );
           })}
+          
+          <button
+            onClick={() => setIsRestoreModalOpen(true)}
+            className="flex items-center gap-2 text-sm leading-normal font-medium text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-all duration-300 ease-in-out"
+          >
+            <span className="material-symbols-outlined text-[20px]">settings_backup_restore</span>
+            Recuperación
+          </button>
         </div>
 
         {/* MOBILE FULLSCREEN MENU */}
@@ -86,10 +96,27 @@ const Header = () => {
                   </Link>
                 );
               })}
+              
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsRestoreModalOpen(true);
+                }}
+                className={`flex items-center justify-center gap-3 text-2xl py-4 border-b border-black/10 dark:border-white/10 transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in font-medium text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white`}
+                style={{ animationDelay: `${navLinks.length * 100}ms`, animationFillMode: "both" }}
+              >
+                <span className="material-symbols-outlined text-3xl">settings_backup_restore</span>
+                Recuperación
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      <BackupRestoreModal 
+        isOpen={isRestoreModalOpen} 
+        onClose={() => setIsRestoreModalOpen(false)} 
+      />
     </header>
   );
 };
