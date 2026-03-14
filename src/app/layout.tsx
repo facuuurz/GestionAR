@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header/Header";
+import { getSession } from "@/lib/session";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -17,11 +18,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+
   return (
     <html lang="es">
       <head>
@@ -30,7 +33,7 @@ export default function RootLayout({
       <body className={`antialiased ${jakarta.variable}`}>
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
           
-          <Header />
+          <Header session={session} />
           
           {/* CAMBIO AQUI: Agregamos 'pt-20' para que el contenido no quede tapado por el header fijo */}
           <main className="flex-1 pt-16">

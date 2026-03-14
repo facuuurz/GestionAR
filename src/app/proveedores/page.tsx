@@ -5,10 +5,13 @@ import { obtenerProveedores } from "@/actions/proveedores";
 import EncabezadoProveedores from "@/components/Proveedores/EncabezadoProveedores";
 import BarraNavegacionProveedores from "@/components/Proveedores/BarraNavegacionProveedores";
 import TablaProveedores from "@/components/Proveedores/TablaProveedores";
+import { getSession } from "@/lib/session";
 
 export default async function ProveedoresPage(props: {
   searchParams?: Promise<{ query?: string; sort?: string; page?: string }>;
 }) {
+  const session = await getSession();
+  const isAdmin = session?.role === "ADMIN";
   // --- 1. LEER PARÁMETROS DE LA URL ---
   const searchParams = await props.searchParams;
   const query = searchParams?.query || "";
@@ -33,7 +36,7 @@ export default async function ProveedoresPage(props: {
       <main className="flex flex-1 flex-col items-center py-8 px-4 sm:px-10 md:px-20 lg:px-40 w-full max-w-[1440px] mx-auto overflow-hidden relative">
         <div className="w-full flex flex-col gap-6 h-full">
           
-          <EncabezadoProveedores />
+          <EncabezadoProveedores isAdmin={isAdmin} />
           
           <BarraNavegacionProveedores />
 
@@ -61,6 +64,7 @@ export default async function ProveedoresPage(props: {
               currentPage={currentPage}
               totalPages={totalPages}
               createPageUrl={createPageUrl}
+              isAdmin={isAdmin}
             />
           )}
 

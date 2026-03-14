@@ -24,6 +24,7 @@ interface TablaProductosProps {
   busqueda: string;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
+  isAdmin?: boolean;
 }
 
 export default function TablaProductos({ 
@@ -31,7 +32,8 @@ export default function TablaProductos({
   loading, 
   busqueda, 
   hasActiveFilters, 
-  onClearFilters 
+  onClearFilters,
+  isAdmin = true 
 }: TablaProductosProps) {
   
   return (
@@ -49,7 +51,9 @@ export default function TablaProductos({
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Precio Unit.</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Tipo</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">Cod. Prov.</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+              {isAdmin && (
+                <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+              )}
             </tr>
           </thead>
           
@@ -65,7 +69,7 @@ export default function TablaProductos({
               </tr>
             ) : productos.length > 0 ? (
               productos.map((prod) => (
-                <ProductRow key={prod.id} prod={prod} />
+                <ProductRow key={prod.id} prod={prod} isAdmin={isAdmin} />
               ))
             ) : (
               <tr>

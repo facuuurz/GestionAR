@@ -94,14 +94,17 @@ export async function buscarClienteVenta(query: string) {
 }
 
 // 3. OBTENER HISTORIAL
-export async function obtenerHistorialVentas() {
+export async function obtenerHistorialVentas(empleadoId?: number) {
   try {
-    const ventas = await prisma.venta.findMany({
+    const where = empleadoId ? { userId: empleadoId } : {};
+    const ventas = await (prisma.venta as any).findMany({
+      where,
       orderBy: { fecha: 'desc' },
       include: {
         cuenta: true,
+        user: true,
       },
-      take: 100 
+      take: 200 
     });
 
     return ventas.map((venta) => {
@@ -122,6 +125,7 @@ export async function obtenerHistorialVentas() {
         cuit: venta.cuenta?.cuit || "-", 
         clienteNombre: venta.cuenta?.nombre || "Consumidor Final",
         monto: montoFormateado,
+        vendedorNombre: (venta as any).user?.name || (venta as any).user?.username || "Sistema",
       };
     });
 

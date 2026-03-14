@@ -5,9 +5,10 @@ import BotonAccion from "@/components/Inventario/ui/BotonAccion";
 
 interface ProductRowProps {
   prod: any; 
+  isAdmin?: boolean;
 }
 
-export default function ProductRow({ prod }: ProductRowProps) {
+export default function ProductRow({ prod, isAdmin = true }: ProductRowProps) {
   let displayPrecio = `$${Number(prod.precio).toFixed(2)}`;
   
   if (prod.esPorPeso) {
@@ -76,19 +77,21 @@ export default function ProductRow({ prod }: ProductRowProps) {
       </td>
       
       {/* ACCIONES */}
-      <td className="px-4 py-3 text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#222] group-hover:bg-neutral-50 dark:group-hover:bg-[#333] transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
-        <Link 
-          href={`/inventario/editar/${prod.id}`}
-        >
-          <BotonAccion 
-            icon="edit" 
-            label="Actualizar" 
-            variant="solid" 
-            color="primary"
-            className="w-full h-8 px-3 text-[11px]" // Hacemos el botón un poco más chico para la tabla
-          />
-        </Link>
-      </td>
+      {isAdmin && (
+        <td className="px-4 py-3 text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#222] group-hover:bg-neutral-50 dark:group-hover:bg-[#333] transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
+          <Link 
+            href={`/inventario/editar/${prod.id}`}
+          >
+            <BotonAccion 
+              icon="edit" 
+              label="Actualizar" 
+              variant="solid" 
+              color="primary"
+              className="w-full h-8 px-3 text-[11px]" // Hacemos el botón un poco más chico para la tabla
+            />
+          </Link>
+        </td>
+      )}
     </tr>
   );
 }

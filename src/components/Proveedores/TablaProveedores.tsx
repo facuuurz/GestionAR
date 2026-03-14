@@ -7,6 +7,7 @@ interface TablaProveedoresProps {
   currentPage: number;
   totalPages: number;
   createPageUrl: (newPage: number) => string;
+  isAdmin?: boolean;
 }
 
 export default function TablaProveedores({ 
@@ -14,7 +15,8 @@ export default function TablaProveedores({
   totalProveedores,
   currentPage,
   totalPages,
-  createPageUrl
+  createPageUrl,
+  isAdmin = true
 }: TablaProveedoresProps) {
   
   const getAvatarColor = (id: number) => {
@@ -38,7 +40,9 @@ export default function TablaProveedores({
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Código</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Razón Social</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 z-20 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+              {isAdmin && (
+                <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 z-20 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#ededed] dark:divide-[#333] text-sm">
@@ -73,15 +77,17 @@ export default function TablaProveedores({
                     </td>
                     <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">{prov.contacto || "-"}</td>
                     
-                    <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-neutral-50 dark:bg-[#1e2736] dark:group-hover:bg-[#1a222e] z-10 transition-colors">
-                    <Link 
-                        href={`/proveedores/editar/${prov.id}`} 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-white text-xs font-bold rounded-lg hover:bg-black dark:bg-white dark:text-black dark:hover:bg-neutral-200 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm"
-                    >
-                        <span className="material-symbols-outlined text-[16px]">edit</span>
-                        Actualizar
-                    </Link>
-                    </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-neutral-50 dark:bg-[#1e2736] dark:group-hover:bg-[#1a222e] z-10 transition-colors">
+                        <Link 
+                            href={`/proveedores/editar/${prov.id}`} 
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-white text-xs font-bold rounded-lg hover:bg-black dark:bg-white dark:text-black dark:hover:bg-neutral-200 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm"
+                        >
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                            Actualizar
+                        </Link>
+                      </td>
+                    )}
                 </tr>
                 ))
             )}

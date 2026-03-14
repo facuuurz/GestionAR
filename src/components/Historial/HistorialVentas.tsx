@@ -10,13 +10,16 @@ interface VentaData {
   fecha: string;    // Ej: "24/05/2023"
   cuit: string;
   monto: string;
+  vendedorNombre?: string;
 }
 
 interface HistorialVentasProps {
   ventasIniciales: VentaData[];
+  isAdmin: boolean;
+  empleadoNombre?: string | null;
 }
 
-export default function HistorialVentas({ ventasIniciales }: HistorialVentasProps) {
+export default function HistorialVentas({ ventasIniciales, isAdmin, empleadoNombre }: HistorialVentasProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState({
@@ -68,7 +71,9 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
           <span className="text-slate-900 dark:text-slate-200 font-medium">Historial de Ventas</span>
         </nav>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <h2 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Historial de Ventas</h2>
+          <h2 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+            {empleadoNombre ? `Historial de venta de ${empleadoNombre}` : "Historial de Ventas"}
+          </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
             Mostrando {ventasFiltradas.length} registros
           </p>
@@ -111,6 +116,9 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fecha</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">ID Venta</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">CUIT/CUIL Cuenta</th>
+                {isAdmin && (
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Vendedor</th>
+                )}
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Monto Total</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Acción</th>
               </tr>
@@ -127,6 +135,11 @@ export default function HistorialVentas({ ventasIniciales }: HistorialVentasProp
                     <td className={`px-6 py-5 text-sm font-mono font-medium ${venta.cuit === '-' ? 'text-slate-400 dark:text-slate-600' : 'text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4 dark:text-slate-300'}`}>
                       {venta.cuit}
                     </td>
+                    {isAdmin && (
+                      <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
+                        {venta.vendedorNombre}
+                      </td>
+                    )}
                     <td className="px-6 py-5 text-sm font-bold text-slate-900 dark:text-white">{venta.monto}</td>
                     
                     <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-neutral-50 dark:group-hover:bg-slate-800 transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">

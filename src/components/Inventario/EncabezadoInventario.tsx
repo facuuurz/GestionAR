@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function EncabezadoInventario() {
+export default function EncabezadoInventario({ isAdmin = true }: { isAdmin?: boolean }) {
   return (
     <>
       {/* Breadcrumbs */}
@@ -22,13 +22,15 @@ export default function EncabezadoInventario() {
             Gestiona el inventario, precios y stock de tus productos.
           </p>
         </div>
-        <Link 
-          className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5" 
-          href="./inventario/nuevo-producto"
-        >
-          <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
-          <span className="text-sm font-bold truncate">Agregar Nuevo Producto</span>
-        </Link>
+        {isAdmin && (
+          <Link 
+            className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 bg-neutral-800 text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-lg hover:shadow-neutral-500/30 hover:-translate-y-0.5" 
+            href="./inventario/nuevo-producto"
+          >
+            <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-90">add</span>
+            <span className="text-sm font-bold truncate">Agregar Nuevo Producto</span>
+          </Link>
+        )}
       </div>
     </>
   );

@@ -4,11 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BackupRestoreModal from "./BackupRestoreModal";
+import { User, Bell, LogOut, Settings, Users, Shield } from "lucide-react";
+import { logout } from "@/lib/auth";
 
-const Header = () => {
+export default function Header({ session }: { session: any }) {
+  if (!session) return null;
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const navLinks = [
     { name: "Panel", href: "/" },
@@ -42,34 +48,97 @@ const Header = () => {
           </span>
         </button>
 
-        {/* DESKTOP MENU */}
-        <div className="hidden md:flex items-center gap-9">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+          <div className="hidden md:flex items-center gap-9">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
 
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm leading-normal transition-all duration-300 ease-in-out border-b-2 pb-0.5 ${
-                  isActive
-                    ? "font-bold border-black text-black dark:border-white dark:text-white" 
-                    : "font-medium text-neutral-500 dark:text-neutral-400 border-transparent hover:text-black dark:hover:text-white hover:border-gray-300 dark:hover:border-neutral-600"
-                }`}
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-sm leading-normal transition-all duration-300 ease-in-out border-b-2 pb-0.5 ${
+                    isActive
+                      ? "font-bold border-black text-black dark:border-white dark:text-white" 
+                      : "font-medium text-neutral-500 dark:text-neutral-400 border-transparent hover:text-black dark:hover:text-white hover:border-gray-300 dark:hover:border-neutral-600"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* AVATAR & DROPDOWN */}
+          <div className="relative flex items-center gap-4 ml-4">
+            
+            {/* CAMPANITA ADMIN */}
+            {session.role === "ADMIN" && (
+              <button 
+                className="relative p-2 text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               >
-                {link.name}
-              </Link>
-            );
-          })}
-          
-          <button
-            onClick={() => setIsRestoreModalOpen(true)}
-            className="flex items-center gap-2 text-sm leading-normal font-medium text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-all duration-300 ease-in-out"
-          >
-            <span className="material-symbols-outlined text-[20px]">settings_backup_restore</span>
-            Recuperación
-          </button>
-        </div>
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+            )}
+
+            {/* AVATAR BUTTON */}
+            <button 
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all"
+            >
+              {session.name?.charAt(0).toUpperCase() || session.username.charAt(0).toUpperCase()}
+            </button>
+
+            {/* DROPDOWN MENU */}
+            {isProfileOpen && (
+              <div className="absolute right-0 top-12 mt-2 w-64 bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-3 pb-4 border-b border-[#ededed] dark:border-[#333]">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{session.name || session.username}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{session.username}</p>
+                </div>
+                
+                <div className="px-4 py-2 mt-1 flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-[#ededed] dark:border-[#333] pb-3">
+                  <Shield className="w-3 h-3" />
+                  Rol: {session.role === "ADMIN" ? "Administrador" : "Empleado"}
+                </div>
+                
+                <div className="py-1">
+                  {session.role === "ADMIN" && (
+                    <>
+                      <Link href="/empleados" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors" onClick={() => setIsProfileOpen(false)}>
+                        <Users className="w-4 h-4" />
+                        Ver empleados
+                      </Link>
+                      <button onClick={() => { setIsRestoreModalOpen(true); setIsProfileOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors">
+                        <span className="material-symbols-outlined text-[16px]">settings_backup_restore</span>
+                        Recuperación (Backup)
+                      </button>
+                    </>
+                  )}
+
+                  <Link href="/cuenta" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors" onClick={() => setIsProfileOpen(false)}>
+                    <Settings className="w-4 h-4" />
+                    Cuenta
+                  </Link>
+                </div>
+                
+                <div className="border-t border-[#ededed] dark:border-[#333] my-1"></div>
+                
+                <button 
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await logout();
+                    window.location.href = "/login";
+                  }} 
+                  className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
 
         {/* MOBILE FULLSCREEN MENU */}
         {isMobileMenuOpen && (
@@ -120,5 +189,4 @@ const Header = () => {
     </header>
   );
 };
-
-export default Header;
+

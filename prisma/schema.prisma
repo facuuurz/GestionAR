@@ -8,13 +8,49 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Enum para Roles
+enum Role {
+  ADMIN
+  EMPLEADO
+}
+
 // Modelo de Usuario
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String?
+  username  String   @unique
+  passwordHash String
+  role      Role     @default(EMPLEADO)
+  
+  // Perfil Admin
+  phone      String?
+  address    String?
+  localName  String?
+
+  // Perfil Empleado
+  dni        String?
+  cuit       String?
+  lastActive DateTime?
+  seniorityDate DateTime? @default(now())
+
+  ventas    Venta[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Modelo Notificaciones para Admin
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  isRead    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("notifications")
 }
 
 // Modelo Producto
@@ -140,6 +176,10 @@ model Venta {
   // Relación opcional: Si es null, es Consumidor Final. Si tiene ID, es un cliente con Cuenta.
   cuentaCorrienteId Int?
   cuenta            Cuenta_corriente? @relation(fields: [cuentaCorrienteId], references: [id])
+
+  // Relación opcional con el Usuario (Vendedor)
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
 
   detalles DetalleVenta[]
 
