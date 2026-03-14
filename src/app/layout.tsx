@@ -36,15 +36,17 @@ export default async function RootLayout({
           <Header session={session} />
           
           {/* CAMBIO AQUI: Agregamos 'pt-20' para que el contenido no quede tapado por el header fijo */}
-          <main className="flex-1 pt-16">
+          <main className={`flex-1 ${session ? 'pt-16' : ''}`}>
             {children}
           </main>
 
-          <footer className="flex flex-col gap-6 px-5 py-10 text-center border-t border-[#ededed] dark:border-[#333]">
-            <p className="text-neutral-400 text-sm font-normal">
-              © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
-            </p>
-          </footer>
+          {session && (
+            <footer className="flex flex-col gap-6 px-5 py-10 text-center border-t border-[#ededed] dark:border-[#333]">
+              <p className="text-neutral-400 text-sm font-normal">
+                © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
+              </p>
+            </footer>
+          )}
         </div>
       </body>
     </html>

@@ -5,14 +5,24 @@
     width: 8px;
     height: 8px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 20px;
   }
+
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #444;
+  }
+
+  /* Ocultar el ojito nativo del navegador en inputs de contraseña */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear,
+  input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none !important;
   }
 }

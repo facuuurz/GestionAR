@@ -36,10 +36,24 @@ model User {
 
   ventas    Venta[]
 
+  passwordHistory PasswordHistory[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+// Historial de contraseñas (últimas 5) para evitar reutilización
+model PasswordHistory {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_history")
 }
 
 // Modelo Notificaciones para Admin
