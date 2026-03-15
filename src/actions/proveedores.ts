@@ -13,7 +13,10 @@ const proveedorSchema = z.object({
     .max(20, "El código no puede tener más de 20 caracteres")
     .trim(),
   razonSocial: z.string().min(1, "La Razón Social es obligatoria"),
-  contacto: z.string().optional(),
+  contacto: z.string()
+    .max(50, "El contacto no puede tener más de 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios")
+    .optional(),
   telefono: z.string()
     .trim()
     .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {

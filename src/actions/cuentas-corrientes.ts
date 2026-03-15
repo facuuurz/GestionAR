@@ -8,7 +8,11 @@ import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 
 // --- 1. ESQUEMA DE VALIDACIÓN ---
 const clienteSchema = z.object({
-  nombre: z.string().min(1, "El nombre del cliente es obligatorio").trim(),
+  nombre: z.string()
+    .min(1, "El nombre del cliente es obligatorio")
+    .max(50, "El nombre no puede tener más de 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El nombre solo puede contener letras y espacios")
+    .trim(),
   cuit: z.string()
     .trim()
     .min(1, "El CUIT/CUIL es obligatorio")
