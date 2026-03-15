@@ -12,21 +12,32 @@ import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 // ----------------------------------------------------------------------
 
 const productoSchema = z.object({
-  nombre: z.string().min(1, "El nombre es obligatorio"),
-  codigoBarra: z.string().min(1, "El código de barra es obligatorio"),
-  proveedor: z.string().min(1, "El código de proveedor es obligatorio"),
-  
-  tipo: z.string().min(1, "Seleccione un tipo válido"),
+  nombre: z.string()
+    .min(1, "El nombre es obligatorio")
+    .max(50, "El nombre no puede tener más de 50 caracteres"),
+
+  codigoBarra: z.string()
+    .min(1, "El código de barra es obligatorio")
+    .max(50, "El código de barra no puede tener más de 50 caracteres")
+    .regex(/^\d+$/, "El código de barra solo puede contener números"),
+
+  proveedor: z.string()
+    .min(1, "El código de proveedor es obligatorio")
+    .max(20, "El proveedor no puede tener más de 20 caracteres"),
+
+  tipo: z.string()
+    .min(1, "Seleccione un tipo válido")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El tipo solo puede contener letras y espacios"),
 
   stock: z.coerce
-    .number({ message: "El stock debe ser un número" }) 
+    .number({ message: "El stock debe ser un número" })
     .int("El stock debe ser un número entero")
     .min(0, "El stock no puede ser negativo"),
 
   precio: z.coerce
     .number({ message: "El precio debe ser un número válido" })
     .min(0.01, "El precio debe ser mayor a 0"),
-  
+
   descripcion: z.string().max(200, "Máximo 200 caracteres").optional(),
   fechaVencimiento: z.string().optional().nullable(),
   esPorPeso: z.coerce.boolean().optional(),
@@ -44,7 +55,7 @@ export type State = {
     fechaVencimiento?: string[];
   };
   message?: string | null;
-  payload?: any; 
+  payload?: any;
 };
 
 // ----------------------------------------------------------------------
@@ -61,7 +72,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
     codigoBarra: formData.get("codigoBarra"),
     proveedor: formData.get("proveedor"),
     tipo: formData.get("tipo"),
-    stock: formData.get("stock"), 
+    stock: formData.get("stock"),
     precio: formData.get("precio"),
     descripcion: formData.get("descripcion"),
     fechaVencimiento: formData.get("fechaVencimiento"),
@@ -147,7 +158,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
 
   try {
     const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
-    
+
     await prisma.producto.update({
       where: { id },
       data: {
@@ -192,7 +203,7 @@ export async function eliminarProducto(formData: FormData) {
     logger.error({ err: error, productoId: id }, "Error al intentar eliminar un producto");
     throw new Error("No se pudo eliminar el producto.");
   }
-  
+
   revalidatePath("/inventario");
   redirect("/inventario");
 }
@@ -208,7 +219,7 @@ interface ProductFilters {
   page?: number;
 }
 
-const ITEMS_POR_PAGINA = 15; 
+const ITEMS_POR_PAGINA = 15;
 
 export async function obtenerProductosDB(filters?: ProductFilters) {
   try {
@@ -274,14 +285,14 @@ export async function obtenerProductosDB(filters?: ProductFilters) {
     return {
       productos: productos.map((p) => ({
         ...p,
-        precio: Number(p.precio), 
+        precio: Number(p.precio),
       })),
       totalPages: Math.ceil(totalProductos / ITEMS_POR_PAGINA) || 1
     };
 
   } catch (error) {
     logger.error({ err: error, filters }, "Error en consulta obtenerProductosDB");
-    throw new Error("Error interno al conectarse con la base de datos."); 
+    throw new Error("Error interno al conectarse con la base de datos.");
   }
 }
 
@@ -310,8 +321,8 @@ export async function obtenerProductoPorId(id: number) {
       return null;
     }
     return {
-        ...prod,
-        precio: Number(prod.precio)
+      ...prod,
+      precio: Number(prod.precio)
     }
   } catch (error) {
     logger.error({ err: error, productoId: id }, "Error al obtener producto por ID");

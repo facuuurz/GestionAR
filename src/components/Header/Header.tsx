@@ -71,6 +71,17 @@ export default function Header({ session }: { session: any }) {
           {/* AVATAR & DROPDOWN */}
           <div className="relative flex items-center gap-4 ml-4">
             
+            {/* ESTADÍSTICAS ADMIN */}
+            {session.role === "ADMIN" && (
+              <Link 
+                href="/estadisticas"
+                className="relative p-2 text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
+                title="Estadísticas de Negocio"
+              >
+                <span className="material-symbols-outlined text-[24px]">query_stats</span>
+              </Link>
+            )}
+
             {/* CAMPANITA ADMIN */}
             {session.role === "ADMIN" && (
               <button 
