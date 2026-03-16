@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState, startTransition } from "react";
+import { useActionState, useState, useEffect, startTransition } from "react";
 import { actualizarProveedor, eliminarProveedor, State } from "@/actions/proveedores";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // Importamos el Modal
 import EliminarProveedorModal from "@/components/Proveedores/Modal/EliminarProveedorModal";
@@ -21,11 +22,22 @@ interface ProveedorData {
 }
 
 export default function EditarProveedorForm({ proveedor }: { proveedor: ProveedorData }) {
+  const router = useRouter();
+  const [mostrarExito, setMostrarExito] = useState(false);
   const initialState: State = { message: null, errors: {} };
   
   // Hooks de Acciones
   const [stateUpdate, formActionUpdate, isPendingUpdate] = useActionState(actualizarProveedor, initialState);
   const [stateDelete, formActionDelete, isPendingDelete] = useActionState(eliminarProveedor, initialState);
+
+  useEffect(() => {
+    if (stateUpdate.success) {
+      setMostrarExito(true);
+      setTimeout(() => {
+        router.push("/proveedores");
+      }, 2500);
+    }
+  }, [stateUpdate.success, router]);
 
   // Estado para controlar el Modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -206,6 +218,17 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
         nombreProveedor={proveedor.razonSocial}
       />
 
+      <div className={`fixed bottom-6 left-6 z-[100] transform transition-all duration-500 ease-in-out ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
+        <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
+          <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-xl">check</span>
+          </div>
+          <div>
+            <p className="font-bold text-sm">¡Éxito!</p>
+            <p className="text-xs text-green-100">{stateUpdate.message || "El proveedor se actualizó correctamente."}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

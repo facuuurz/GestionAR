@@ -63,13 +63,13 @@ async function DashboardContent() {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tráfico Pico</h2>
         </div>
         <div className="space-y-4">
-          <div className="bg-gray-50 dark:bg-[#333] p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Día más concurrido</p>
-            <p className="text-2xl font-black text-gray-900 dark:text-white mt-1">{stats.picos.dia}</p>
+          <div className="bg-gray-50 dark:bg-[#333] p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+            {/* Gráfico de Barras CSS Flexbox de Lunes a Domingo */}
+            <TrafficBarChart data={stats.picos.traficoPorDia} />
           </div>
-          <div className="bg-gray-50 dark:bg-[#333] p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+          <div className="bg-gray-50 dark:bg-[#333] p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Franja horaria pico</p>
-            <p className="text-2xl font-black text-gray-900 dark:text-white mt-1">{stats.picos.hora}</p>
+            <p className="text-lg font-black text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 px-3 py-1 rounded-full">{stats.picos.hora}</p>
           </div>
         </div>
       </Card>
@@ -159,6 +159,51 @@ function Card({ children, className = "" }: { children: React.ReactNode, classNa
   return (
     <div className={`bg-white dark:bg-[#222] p-6 rounded-2xl shadow-sm border border-[#ededed] dark:border-[#333] flex flex-col ${className}`}>
       {children}
+    </div>
+  );
+}
+
+function TrafficBarChart({ data }: { data: { dia: string, fullDia: string, ventas: number }[] }) {
+  // Encontrar el valor máximo de ventas para calcular la altura relativa (100%)
+  const maxVentas = Math.max(...data.map(d => d.ventas), 1); // Evitar división por cero
+
+  return (
+    <div className="flex flex-col w-full h-full">
+      <div className="flex justify-between items-end h-[120px] mb-3 relative max-w-[300px] mx-auto w-full px-2">
+        {data.map((item, index) => {
+          const heightPercentage = Math.round((item.ventas / maxVentas) * 100);
+          const isPeak = item.ventas === maxVentas && maxVentas > 0;
+          
+          return (
+            <div key={index} className="flex flex-col items-center justify-end h-full w-[10%] group relative">
+              {/* Tooltip Hover */}
+              <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-black text-white text-[10px] font-bold py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
+                {item.fullDia}: {item.ventas}
+                {/* Triangulito del Tooltip */}
+                <div className="absolute left-1/2 -ml-1 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-black"></div>
+              </div>
+              
+              {/* Barra */}
+              <div 
+                className={`w-full rounded-t-sm transition-all duration-500 ${isPeak ? 'bg-blue-600 dark:bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-blue-200 dark:bg-blue-900/60'}`}
+                style={{ height: `${Math.max(heightPercentage, 2)}%` }} // Altura mínima de 2% para ver los días sin ventas
+              ></div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Eje X (Días) */}
+      <div className="flex justify-between items-center text-xs font-bold text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-2 px-2 max-w-[300px] mx-auto w-full">
+        {data.map((item, index) => (
+          <span 
+             key={index} 
+             className={`w-[10%] text-center ${item.ventas === maxVentas && maxVentas > 0 ? 'text-blue-600 dark:text-blue-400' : ''}`}
+          >
+            {item.dia}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

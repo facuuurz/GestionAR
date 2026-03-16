@@ -1,5 +1,6 @@
 import Link from "next/link";
-import Paginador from "@/components/Proveedores/ui/Paginador"; // <-- IMPORTAMOS EL ÁTOMO
+import Paginador from "@/components/Proveedores/ui/Paginador";
+import ProveedorRow from "@/components/Proveedores/ProveedorRow";
 
 interface TablaProveedoresProps {
   proveedores: any[]; 
@@ -8,6 +9,7 @@ interface TablaProveedoresProps {
   totalPages: number;
   createPageUrl: (newPage: number) => string;
   isAdmin?: boolean;
+  onDeleteSuccess?: () => void;
 }
 
 export default function TablaProveedores({ 
@@ -16,7 +18,8 @@ export default function TablaProveedores({
   currentPage,
   totalPages,
   createPageUrl,
-  isAdmin = true
+  isAdmin = true,
+  onDeleteSuccess
 }: TablaProveedoresProps) {
   
   const getAvatarColor = (id: number) => {
@@ -58,37 +61,12 @@ export default function TablaProveedores({
                 </tr>
             ) : (
                 proveedores.map((prov) => (
-                <tr key={prov.id} className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
-                    <td className="px-4 py-3 font-medium text-blue-600 dark:text-blue-400 font-mono">
-                    {prov.codigo}
-                    </td>
-                    <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${getAvatarColor(prov.id)}`}>
-                        {prov.razonSocial.substring(0, 2).toUpperCase()}
-                        </div>
-                        <Link 
-                        href={`/proveedores/${prov.id}`}
-                        className="font-medium text-neutral-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors"
-                        >
-                        {prov.razonSocial}
-                        </Link>
-                    </div>
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">{prov.contacto || "-"}</td>
-                    
-                    {isAdmin && (
-                      <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-neutral-50 dark:bg-[#1e2736] dark:group-hover:bg-[#1a222e] z-10 transition-colors">
-                        <Link 
-                            href={`/proveedores/editar/${prov.id}`} 
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-white text-xs font-bold rounded-lg hover:bg-black dark:bg-white dark:text-black dark:hover:bg-neutral-200 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm"
-                        >
-                            <span className="material-symbols-outlined text-[16px]">edit</span>
-                            Actualizar
-                        </Link>
-                      </td>
-                    )}
-                </tr>
+                    <ProveedorRow 
+                        key={prov.id} 
+                        prov={prov} 
+                        isAdmin={isAdmin} 
+                        onDeleteSuccess={onDeleteSuccess} 
+                    />
                 ))
             )}
           </tbody>

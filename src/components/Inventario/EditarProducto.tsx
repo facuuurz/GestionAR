@@ -2,6 +2,7 @@
 
 import { useState, useActionState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { actualizarProducto, State } from "@/actions/productos";
 import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTipoModal"; 
 import InputConIcono from "@/components/Inventario/ui/InputConIcono";
@@ -39,6 +40,8 @@ const formatDateForInput = (date?: Date | string | null) => {
 };
 
 export default function EditProductForm({ producto, categorias: categoriasIniciales }: ProductFormProps) {
+  const router = useRouter();
+  const [mostrarExito, setMostrarExito] = useState(false);
   const initialState: State = { message: null, errors: {} };
   const [state, dispatch, isPending] = useActionState<State, FormData>(actualizarProducto, initialState);
 
@@ -68,6 +71,15 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
   useEffect(() => {
     adjustHeight();
   }, []);
+
+  useEffect(() => {
+    if (state.success) {
+      setMostrarExito(true);
+      setTimeout(() => {
+        router.push("/inventario");
+      }, 2500);
+    }
+  }, [state.success, router]);
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDescLength(e.target.value.length);
@@ -339,6 +351,18 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
       </form>
       
       <AgregarTipoModal isOpen={isModalOpen} onClose={handleCloseModal} />
+      
+      <div className={`fixed bottom-6 left-6 z-50 transform transition-all duration-500 ease-in-out ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
+        <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
+          <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-xl">check</span>
+          </div>
+          <div>
+            <p className="font-bold text-sm">¡Éxito!</p>
+            <p className="text-xs text-green-100">{state.message || "El producto se actualizó correctamente."}</p>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

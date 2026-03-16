@@ -1,11 +1,20 @@
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
+import { eliminarPromocion } from "@/actions/promociones";
+import EliminarPromocionModal from "@/components/promociones/Modal/EliminarPromocionModal";
 
 interface PromocionRowProps {
   promo: any;
+  onDeleteSuccess?: () => void;
 }
 
-export default function PromocionRow({ promo }: PromocionRowProps) {
-  
+export default function PromocionRow({ promo, onDeleteSuccess }: PromocionRowProps) {
+  const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -70,6 +79,30 @@ export default function PromocionRow({ promo }: PromocionRowProps) {
 
   const estado = getEstadoPromocion(promo.activo, promo.fechaInicio, promo.fechaFin);
 
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+        await eliminarPromocion(promo.id);
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        toast.success("Promoción eliminada correctamente");
+        if (onDeleteSuccess) onDeleteSuccess();
+        router.refresh(); 
+    } catch (error: any) {
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        
+        if (error.message === "NEXT_REDIRECT") {
+            toast.success("Promoción eliminada correctamente");
+            if (onDeleteSuccess) onDeleteSuccess();
+            router.refresh(); 
+            throw error;
+        }
+        console.error(error);
+        toast.error("Error al eliminar la promoción");
+    }
+  };
+
   return (
     <tr className="hover:bg-neutral-50 dark:hover:bg-[#333]/50 transition-colors group">
       
@@ -113,15 +146,32 @@ export default function PromocionRow({ promo }: PromocionRowProps) {
 
       {/* ACCIONES */}
       <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-neutral-50 dark:bg-[#151a25] dark:group-hover:bg-[#1a222e] transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
-        <Link 
-          href={`/promociones/editar/${promo.id}`}
-          className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm w-28 ${estado.btnColor}`}
-        >
-          <span className="material-symbols-outlined text-[16px]">
-            {estado.btnIcon}
-          </span>
-          {estado.btnText}
-        </Link>
+        <div className="flex items-center justify-center gap-2">
+          <Link 
+            href={`/promociones/editar/${promo.id}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm max-w-[110px] ${estado.btnColor}`}
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              {estado.btnIcon}
+            </span>
+            {estado.btnText}
+          </Link>
+          <button 
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="bg-red-600 hover:bg-red-700 text-white rounded-lg p-1.5 transition-all shadow-sm flex items-center justify-center hover:scale-105 active:scale-95"
+            title="Eliminar"
+          >
+             <span className="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+        <EliminarPromocionModal 
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeleting}
+          nombrePromocion={promo.nombre}
+        />
       </td>
     </tr>
   );

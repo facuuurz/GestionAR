@@ -1,16 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import Link from "next/link";
 import SaldarModal from "../SaldarModal";
-import { actualizarSaldoCliente } from "@/actions/cuentas-corrientes";
+import { actualizarSaldoCliente, eliminarCliente } from "@/actions/cuentas-corrientes";
+import EliminarClienteModal from "@/components/Cuentas-corrientes/Modal/EliminarClienteModal";
 
 interface ClienteRowProps {
   cliente: any; 
+  onDeleteSuccess?: () => void;
 }
 
-export default function FilaCliente({ cliente }: ClienteRowProps) {
+export default function FilaCliente({ cliente, onDeleteSuccess }: ClienteRowProps) {
+  const router = useRouter();
   const [showSaldarModal, setShowSaldarModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // --- ESTADOS PARA ACTUALIZACIÓN EN TIEMPO REAL ---
   const [saldoVisual, setSaldoVisual] = useState(Number(cliente.saldo));
@@ -63,6 +70,30 @@ export default function FilaCliente({ cliente }: ClienteRowProps) {
         setSaldoVisual(Number(cliente.saldo));
         setEstadoVisual(cliente.estado);
         alert("Hubo un error al guardar el saldo. Se han revertido los cambios.");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+        await eliminarCliente(cliente.id);
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        toast.success("Cliente eliminado correctamente");
+        if (onDeleteSuccess) onDeleteSuccess();
+        router.refresh(); 
+    } catch (error: any) {
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        
+        if (error.message === "NEXT_REDIRECT") {
+            toast.success("Cliente eliminado correctamente");
+            if (onDeleteSuccess) onDeleteSuccess();
+            router.refresh(); 
+            throw error;
+        }
+        console.error(error);
+        toast.error("Error al eliminar el cliente");
     }
   };
 
@@ -129,15 +160,32 @@ export default function FilaCliente({ cliente }: ClienteRowProps) {
                 <span>Actualizar</span>
                 </Link>
 
+                <button 
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded p-1.5 transition-all shadow-sm flex items-center justify-center hover:scale-105 active:scale-95"
+                  title="Eliminar Cliente"
+                >
+                   <span className="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+
             </div>
 
-            {/* ✅ MODAL MOVIDO AQUÍ DENTRO DEL TD */}
+            {/* ✅ MODALES MOVIDOS AQUÍ DENTRO DEL TD */}
             <SaldarModal 
                 isOpen={showSaldarModal}
                 onClose={() => setShowSaldarModal(false)}
                 onConfirm={handleConfirmarSaldo}
                 clienteNombre={cliente.nombre}
                 saldoActual={saldoVisual}
+            />
+
+            <EliminarClienteModal 
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleConfirmDelete}
+                isDeleting={isDeleting}
+                nombreCliente={cliente.nombre}
             />
         </td>
     </tr>
