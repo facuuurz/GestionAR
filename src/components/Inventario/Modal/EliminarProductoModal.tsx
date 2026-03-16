@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 interface EliminarProductoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,10 +18,16 @@ export default function EliminarProductoModal({
   nombreProducto,
 }: EliminarProductoModalProps) {
   
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#1e2736] w-full max-w-md rounded-2xl shadow-2xl border border-neutral-200 dark:border-[#333] overflow-hidden transform transition-all scale-100">
         
         {/* Cabecera */}
@@ -73,4 +81,6 @@ export default function EliminarProductoModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

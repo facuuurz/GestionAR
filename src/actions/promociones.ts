@@ -29,6 +29,7 @@ export type State = {
   };
   message?: string | null;
   payload?: any;
+  success?: boolean;
 };
 
 // --- BUSCAR PRODUCTOS PARA EL FORMULARIO ---
@@ -215,7 +216,7 @@ export async function crearPromocion(prevState: State, formData: FormData) {
   }
 
   revalidatePath("/promociones");
-  redirect("/promociones");
+  return { success: true };
 }
 
 // --- ACTUALIZAR PROMOCIÓN ---
@@ -295,7 +296,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
   }
 
   revalidatePath("/promociones");
-  redirect("/promociones");
+  return { success: true };
 }
 
 // --- ELIMINAR PROMOCIÓN ---

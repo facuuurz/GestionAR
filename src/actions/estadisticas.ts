@@ -143,6 +143,17 @@ export async function getEstadisticas() {
     }
     const txtHoraPico = horaPico !== -1 ? `${horaPico}:00 - ${horaPico + 1}:00` : 'N/A';
 
+    // Generar arreglo de Trafico por Dia
+    const traficoPorDia = [
+      { dia: 'L', fullDia: 'Lunes', ventas: conteoDias['Lunes'] || 0 },
+      { dia: 'M', fullDia: 'Martes', ventas: conteoDias['Martes'] || 0 },
+      { dia: 'X', fullDia: 'Miércoles', ventas: conteoDias['Miércoles'] || 0 },
+      { dia: 'J', fullDia: 'Jueves', ventas: conteoDias['Jueves'] || 0 },
+      { dia: 'V', fullDia: 'Viernes', ventas: conteoDias['Viernes'] || 0 },
+      { dia: 'S', fullDia: 'Sábado', ventas: conteoDias['Sábado'] || 0 },
+      { dia: 'D', fullDia: 'Domingo', ventas: conteoDias['Domingo'] || 0 },
+    ];
+
     // La información de los tops ya incluye los nombres debido al .then() en el Promise.all
 
     // Procesar Huesos (Sin ventas en los últimos 30 días)
@@ -173,7 +184,8 @@ export async function getEstadisticas() {
       },
       picos: {
         dia: diaPico,
-        hora: txtHoraPico
+        hora: txtHoraPico,
+        traficoPorDia: traficoPorDia
       },
       topVolumen,
       topFacturacion,

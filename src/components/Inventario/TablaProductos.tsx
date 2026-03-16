@@ -25,6 +25,7 @@ interface TablaProductosProps {
   hasActiveFilters: boolean;
   onClearFilters: () => void;
   isAdmin?: boolean;
+  onDeleteSuccess?: () => void;
 }
 
 export default function TablaProductos({ 
@@ -33,7 +34,8 @@ export default function TablaProductos({
   busqueda, 
   hasActiveFilters, 
   onClearFilters,
-  isAdmin = true 
+  isAdmin = true,
+  onDeleteSuccess
 }: TablaProductosProps) {
   
   return (
@@ -69,7 +71,7 @@ export default function TablaProductos({
               </tr>
             ) : productos.length > 0 ? (
               productos.map((prod) => (
-                <ProductRow key={prod.id} prod={prod} isAdmin={isAdmin} />
+                <ProductRow key={prod.id} prod={prod} isAdmin={isAdmin} onDeleteSuccess={onDeleteSuccess} />
               ))
             ) : (
               <tr>

@@ -56,6 +56,7 @@ export type State = {
   };
   message?: string | null;
   payload?: any;
+  success?: boolean;
 };
 
 // ----------------------------------------------------------------------
@@ -119,7 +120,7 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
   }
 
   revalidatePath("/inventario");
-  redirect("/inventario");
+  return { success: true, message: "Producto creado correctamente" };
 }
 
 // ----------------------------------------------------------------------
@@ -185,9 +186,7 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
   }
 
   revalidatePath("/inventario");
-  redirect("/inventario");
-
-  return { message: "Actualizado" };
+  return { success: true, message: "Producto actualizado correctamente" };
 }
 
 // ----------------------------------------------------------------------

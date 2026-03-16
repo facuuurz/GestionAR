@@ -12,10 +12,11 @@ interface TablaCuentasProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (newPage: number) => void;
+  onDeleteSuccess?: () => void;
 }
 
 export default function TablaCuentas({ 
-  clientes, loading, busqueda, hasActiveFilters, onClearAll, currentPage, totalPages, onPageChange 
+  clientes, loading, busqueda, hasActiveFilters, onClearAll, currentPage, totalPages, onPageChange, onDeleteSuccess 
 }: TablaCuentasProps) {
 
   return (
@@ -45,7 +46,7 @@ export default function TablaCuentas({
             ) : clientes.length > 0 ? (
                 // Mapeamos directamente 'clientes', ya vienen filtrados del backend
                 clientes.map((cliente) => (
-                  <FilaCliente key={cliente.id} cliente={cliente} />
+                  <FilaCliente key={cliente.id} cliente={cliente} onDeleteSuccess={onDeleteSuccess} />
                 ))
             ) : (
                 <tr>

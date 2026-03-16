@@ -110,6 +110,12 @@ function PromocionesContent() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
+            onDeleteSuccess={() => {
+              recargar({
+                query: debouncedBusqueda,
+                page: currentPage
+              });
+            }}
           />
         )}
       </div>

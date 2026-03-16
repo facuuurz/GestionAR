@@ -37,6 +37,7 @@ export type State = {
   };
   message?: string | null;
   payload?: any;
+  success?: boolean;
 };
 
 // --- ACCIONES ---
@@ -99,7 +100,7 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
   }
 
   revalidatePath("/proveedores");
-  redirect("/proveedores");
+  return { success: true };
 }
 
 const ITEMS_POR_PAGINA = 15; 
@@ -189,8 +190,7 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
   }
 
   revalidatePath("/proveedores");
-  redirect("/proveedores");
-  return { message: null };
+  return { success: true };
 }
 
 /**

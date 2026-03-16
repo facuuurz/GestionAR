@@ -173,6 +173,16 @@ function CuentasCorrientesContent() {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+              onDeleteSuccess={() => {
+                recargar({
+                  query: debouncedBusqueda,
+                  estado: currentEstado,
+                  minSaldo: currentMinSaldo,
+                  maxSaldo: currentMaxSaldo,
+                  sort: currentSort,
+                  page: currentPage
+                });
+              }}
           />
         )}
 

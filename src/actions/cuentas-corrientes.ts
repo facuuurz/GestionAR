@@ -47,6 +47,7 @@ export type State = {
   };
   message?: string | null;
   payload?: any;
+  success?: boolean;
 };
 
 // --- 3. OBTENER TODOS LOS CLIENTES (PAGINADOS Y FILTRADOS) ---
@@ -184,7 +185,7 @@ export async function crearCliente(prevState: State, formData: FormData) {
   }
 
   revalidatePath("/cuentas-corrientes");
-  redirect("/cuentas-corrientes");
+  return { success: true };
 }
 
 // --- 5. ACTUALIZAR CLIENTE ---
@@ -265,7 +266,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
 
   revalidatePath("/cuentas-corrientes");
   revalidatePath(`/cuentas-corrientes/${id}`);
-  redirect("/cuentas-corrientes");
+  return { success: true };
 }
 
 // --- 6. OBTENER CLIENTE INDIVIDUAL ---

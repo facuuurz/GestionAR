@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import EstadoStockBadge from "@/components/Inventario/ui/EstadoStockBadge";
 import VencimientoBadge from "@/components/Inventario/ui/VencimientoBadge";
@@ -9,9 +10,11 @@ import { toast } from "react-hot-toast";
 interface ProductRowProps {
   prod: any; 
   isAdmin?: boolean;
+  onDeleteSuccess?: () => void;
 }
 
-export default function ProductRow({ prod, isAdmin = true }: ProductRowProps) {
+export default function ProductRow({ prod, isAdmin = true, onDeleteSuccess }: ProductRowProps) {
+  const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -33,14 +36,22 @@ export default function ProductRow({ prod, isAdmin = true }: ProductRowProps) {
 
     try {
         await eliminarProducto(formData);
-        // Si hay redirect, el componente se desmonta aquí.
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        toast.success("Producto eliminado correctamente");
+        if (onDeleteSuccess) onDeleteSuccess();
+        router.refresh(); 
     } catch (error: any) {
+        setIsDeleting(false);
+        setShowDeleteModal(false);
+        
         if (error.message === "NEXT_REDIRECT") {
+            toast.success("Producto eliminado correctamente");
+            if (onDeleteSuccess) onDeleteSuccess();
+            router.refresh(); 
             throw error;
         }
         console.error(error);
-        setIsDeleting(false);
-        setShowDeleteModal(false);
         toast.error("Error al eliminar el producto");
     }
   };
@@ -120,19 +131,16 @@ export default function ProductRow({ prod, isAdmin = true }: ProductRowProps) {
                  Borrar
               </button>
             </div>
+            <EliminarProductoModal 
+              isOpen={showDeleteModal}
+              onClose={() => setShowDeleteModal(false)}
+              onConfirm={handleConfirmDelete}
+              isDeleting={isDeleting}
+              nombreProducto={prod.nombre}
+            />
           </td>
         )}
       </tr>
-
-      {isAdmin && (
-        <EliminarProductoModal 
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleConfirmDelete}
-          isDeleting={isDeleting}
-          nombreProducto={prod.nombre}
-        />
-      )}
     </>
   );
 }

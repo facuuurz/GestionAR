@@ -11,6 +11,7 @@ interface TablaPromocionesProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (newPage: number) => void;
+  onDeleteSuccess?: () => void;
 }
 
 export default function TablaPromociones({ 
@@ -20,7 +21,8 @@ export default function TablaPromociones({
   onClearBusqueda,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  onDeleteSuccess
 }: TablaPromocionesProps) {
   
   return (
@@ -50,7 +52,7 @@ export default function TablaPromociones({
                 </tr>
             ) : promociones.length > 0 ? (
                 promociones.map((promo) => (
-                  <PromocionRow key={promo.id} promo={promo} />
+                  <PromocionRow key={promo.id} promo={promo} onDeleteSuccess={onDeleteSuccess} />
                 ))
             ) : (
                 <tr>

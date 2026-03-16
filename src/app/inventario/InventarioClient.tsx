@@ -179,6 +179,17 @@ function InventarioContent({ isAdmin = true }: { isAdmin?: boolean }) {
             hasActiveFilters={isAnythingActive}
             onClearFilters={handleClearFilters}
             isAdmin={isAdmin}
+            onDeleteSuccess={() => {
+              recargar({
+                query: debouncedBusqueda,
+                category: currentCategory,
+                stockStatus: currentStock,
+                priceMin: currentMinPrice,
+                priceMax: currentMaxPrice,
+                sort: currentSort,
+                page: currentPage
+              });
+            }}
           />
         )}
 
