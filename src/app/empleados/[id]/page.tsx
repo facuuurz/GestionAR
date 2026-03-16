@@ -15,7 +15,7 @@ const prisma = new PrismaClient();
 export default async function EmpleadoDetallePage({ params }: PageProps) {
   const session = await getSession();
 
-  if (!session || session.role !== "ADMIN") {
+  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
     redirect("/");
   }
 

@@ -11,7 +11,7 @@ export default async function ProveedoresPage(props: {
   searchParams?: Promise<{ query?: string; sort?: string; page?: string }>;
 }) {
   const session = await getSession();
-  const isAdmin = session?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN" || session?.role === "SUPERADMIN";
   // --- 1. LEER PARÁMETROS DE LA URL ---
   const searchParams = await props.searchParams;
   const query = searchParams?.query || "";

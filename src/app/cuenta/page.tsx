@@ -1,7 +1,9 @@
 import { getSession } from "@/lib/session";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { Shield, User, Building, Phone, MapPin, Mail, Calendar, Key } from "lucide-react";
+import { Shield, User, Building, Phone, MapPin, Mail, Calendar, Key, UserCheck, CreditCard, Hash } from "lucide-react";
+import ProfilePicture from "./ProfilePicture";
+import ChangePasswordForm from "./ChangePasswordForm";
 
 const prisma = new PrismaClient();
 
@@ -16,16 +18,21 @@ export default async function CuentaPage() {
     redirect("/login");
   }
 
-  // Fetch complete user data
+  // Fetch complete user data including their creator (encargado)
   const user = await (prisma.user as any).findUnique({
-    where: { id: session.userId }
+    where: { id: session.userId },
+    include: {
+      createdBy: {
+        select: { id: true, name: true, username: true, role: true }
+      }
+    }
   });
 
   if (!user) {
     redirect("/login");
   }
 
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
 
   return (
     <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-8">
@@ -46,15 +53,17 @@ export default async function CuentaPage() {
           
           {/* Tarjeta de Perfil Principal */}
           <div className="md:col-span-1 bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center text-4xl font-bold shadow-lg mb-4">
-              {user.name?.charAt(0).toUpperCase() || user.username.charAt(0).toUpperCase()}
-            </div>
+            <ProfilePicture 
+              userId={user.id}
+              initials={user.name?.charAt(0).toUpperCase() || user.username.charAt(0).toUpperCase()}
+              currentPicture={user.profilePicture}
+            />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">{user.name || "Sin nombre"}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">@{user.username}</p>
             
             <div className="mt-4 px-4 py-1.5 rounded-full bg-gray-100 dark:bg-[#333] border border-gray-200 dark:border-gray-700 flex items-center gap-2 text-sm font-medium">
-              <Shield className={`w-4 h-4 ${isAdmin ? "text-blue-500" : "text-green-500"}`} />
-              {isAdmin ? "Administrador" : "Empleado"}
+              <Shield className={`w-4 h-4 ${user.role === "SUPERADMIN" ? "text-purple-500" : isAdmin ? "text-blue-500" : "text-green-500"}`} />
+              {user.role === "SUPERADMIN" ? "Super Admin" : isAdmin ? "Administrador" : "Empleado"}
             </div>
             
             <div className="mt-8 border-t border-gray-200 dark:border-gray-800 w-full pt-4">
@@ -95,27 +104,54 @@ export default async function CuentaPage() {
                   </div>
                 </div>
 
-                {!isAdmin && (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
-                        <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">DNI</p>
-                        <p className="text-base text-gray-900 dark:text-white">{user.dni || "No especificado"}</p>
-                      </div>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
+                    <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre de Usuario</p>
+                    <p className="text-base text-gray-900 dark:text-white">@{user.username}</p>
+                  </div>
+                </div>
+
+                {/* DNI - visible para todos */}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
+                    <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">DNI</p>
+                    <p className="text-base text-gray-900 dark:text-white">{user.dni || "No especificado"}</p>
+                  </div>
+                </div>
+
+                {/* CUIT - visible para todos */}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
+                    <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">CUIT / CUIL</p>
+                    <p className="text-base text-gray-900 dark:text-white">{user.cuit || "No especificado"}</p>
+                  </div>
+                </div>
+
+                {/* Encargado - solo si no es SUPERADMIN y tiene un creador */}
+                {user.role !== "SUPERADMIN" && user.createdBy && (
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-50 dark:bg-purple-500/10 rounded-lg shrink-0">
+                      <UserCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
-                        <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">CUIT / CUIL</p>
-                        <p className="text-base text-gray-900 dark:text-white">{user.cuit || "No especificado"}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Encargado</p>
+                      <p className="text-base text-gray-900 dark:text-white">
+                        {user.createdBy.name || user.createdBy.username}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {user.createdBy.role === "SUPERADMIN" ? "Super Admin" : user.createdBy.role === "ADMIN" ? "Administrador" : "Empleado"}
+                      </p>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -161,21 +197,9 @@ export default async function CuentaPage() {
 
             {/* Credenciales */}
             <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
-               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Credenciales</h3>
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0">
-                      <Key className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Contraseña</p>
-                      <p className="text-base text-gray-900 dark:text-white">••••••••</p>
-                    </div>
-                  </div>
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                    Cambiar
-                  </button>
-               </div>
+               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Credenciales</h3>
+               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-balance">Administra tu contraseña de acceso.</p>
+               <ChangePasswordForm userId={user.id} />
             </div>
 
           </div>

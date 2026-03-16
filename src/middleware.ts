@@ -26,8 +26,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.nextUrl));
   }
 
-  // Si trata de acceder a una ruta de admin y no es admin, redirige al inicio
-  if (session && isAdminRoute && session.role !== "ADMIN") {
+  // Si trata de acceder a una ruta de admin y no es admin ni superadmin, redirige al inicio
+  if (session && isAdminRoute && session.role !== "ADMIN" && session.role !== "SUPERADMIN") {
     return NextResponse.redirect(new URL("/", request.nextUrl));
   }
 

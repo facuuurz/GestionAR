@@ -2,9 +2,8 @@
 
 import { useState, useActionState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { actualizarProducto, eliminarProducto, State } from "@/actions/productos";
+import { actualizarProducto, State } from "@/actions/productos";
 import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTipoModal"; 
-import EliminarProductoModal from "@/components/Inventario/Modal/EliminarProductoModal";
 import InputConIcono from "@/components/Inventario/ui/InputConIcono";
 import TextareaConContador from "@/components/Inventario/ui/TextareaConContador";
 import ToggleSwitch from "@/components/Inventario/ui/ToggleSwitch";
@@ -59,10 +58,6 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
   const [stockActual, setStockActual] = useState<number | string>(state.payload?.stock ?? producto.stock);
   const [descLength, setDescLength] = useState(producto.descripcion?.length || 0);
 
-  // 2. ESTADOS PARA EL MODAL DE ELIMINAR
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -114,28 +109,6 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
       setSelectedTipo(nuevoNombre);
       setSearchTerm(nuevoNombre);
       setIsDropdownOpen(false);
-    }
-  };
-
-  // 3. FUNCIÓN PARA CONFIRMAR ELIMINACIÓN
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    // Creamos el FormData manualmente porque no es un submit nativo
-    const formData = new FormData();
-    formData.append("id", producto.id.toString());
-
-    try {
-        await eliminarProducto(formData);
-        // Si hay redirect, el componente se desmonta aquí.
-    } catch (error: any) {
-        // Ignoramos el error de redirección de Next.js
-        if (error.message === "NEXT_REDIRECT") {
-            throw error;
-        }
-        console.error(error);
-        setIsDeleting(false);
-        setShowDeleteModal(false);
-        alert("Error al eliminar el producto");
     }
   };
   
@@ -352,23 +325,12 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
             {state.message && (
                <div className="text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md text-sm w-full text-center">{state.message}</div>
             )}
-            <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-4 w-full">
-              
-              {/* 4. BOTÓN ELIMINAR MODIFICADO */}
-              <button 
-                type="button" // Cambiado a type="button"
-                onClick={() => setShowDeleteModal(true)} // Abre el modal
-                disabled={isPending || isDeleting}
-                className="w-full md:w-auto h-10 px-4 rounded-lg bg-red-600 text-white font-bold text-sm shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-[18px]">delete</span>
-                Eliminar Producto
-              </button>
+            <div className="flex flex-col-reverse md:flex-row items-center justify-end gap-4 w-full">
 
               <div className="flex flex-col-reverse md:flex-row gap-4 w-full md:w-auto">
                 <Link href="/inventario" className="w-full md:w-auto h-10 px-4 rounded-lg text-sm font-semibold text-neutral-700 border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md dark:text-neutral-300 dark:border-neutral-700 dark:hover:bg-neutral-800">Cancelar</Link>
                 
-                <button type="submit" disabled={isPending || isDeleting} className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${isPending || isDeleting ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'}`}>
+                <button type="submit" disabled={isPending} className={`hover:cursor-pointer w-full md:w-auto h-10 px-4 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${isPending ? 'bg-neutral-500 cursor-not-allowed' : 'bg-neutral-800 hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200'}`}>
                   {isPending ? (<><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>Guardando...</>) : (<><span className="material-symbols-outlined text-[18px]">save</span>Guardar Cambios</>)}
                 </button>
               </div>
@@ -377,15 +339,6 @@ export default function EditProductForm({ producto, categorias: categoriasInicia
       </form>
       
       <AgregarTipoModal isOpen={isModalOpen} onClose={handleCloseModal} />
-      
-      {/* 5. RENDERIZAR EL MODAL */}
-      <EliminarProductoModal 
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleConfirmDelete}
-        isDeleting={isDeleting}
-        nombreProducto={producto.nombre}
-      />
     </>
   );
 }

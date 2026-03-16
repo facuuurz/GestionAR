@@ -8,7 +8,7 @@ const encodedKey = new TextEncoder().encode(secretKey);
 // Definimos el tipo del payload
 export type SessionPayload = {
   userId: number;
-  role: "ADMIN" | "EMPLEADO";
+  role: "ADMIN" | "EMPLEADO" | "SUPERADMIN";
   username: string;
   name: string | null;
   expiresAt: Date;
@@ -33,7 +33,7 @@ export async function decrypt(session: string | undefined = "") {
   }
 }
 
-export async function createSession(userId: number, role: "ADMIN" | "EMPLEADO", username: string, name: string | null) {
+export async function createSession(userId: number, role: "ADMIN" | "EMPLEADO" | "SUPERADMIN", username: string, name: string | null) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
   
   const payload: SessionPayload = { userId, role, username, name, expiresAt };

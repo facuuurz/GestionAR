@@ -26,10 +26,6 @@ export default function Header({ session }: { session: any }) {
     <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-[#ededed] dark:border-[#333] bg-[#f6f6f8] dark:bg-[#191919] px-10 py-3 shadow-sm transition-colors duration-200">
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-4 text-primary dark:text-white">
-          {/* CAMBIO AQUÍ: 
-             - Light: bg-black text-white (Fondo negro, ícono blanco)
-             - Dark:  dark:bg-white dark:text-black (Fondo blanco, ícono negro)
-          */}
           <Link className="size-8 flex items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-black transition-colors" href="/">
             <span className="material-symbols-outlined text-[20px]">sunny</span>
           </Link>
@@ -72,7 +68,7 @@ export default function Header({ session }: { session: any }) {
           <div className="relative flex items-center gap-4 ml-4">
             
             {/* ESTADÍSTICAS ADMIN */}
-            {session.role === "ADMIN" && (
+            {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (
               <Link 
                 href="/estadisticas"
                 className="relative p-2 text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
@@ -83,22 +79,78 @@ export default function Header({ session }: { session: any }) {
             )}
 
             {/* CAMPANITA ADMIN */}
-            {session.role === "ADMIN" && (
-              <button 
-                className="relative p-2 text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-            )}
+            {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (() => {
+              // TODO: Fetch real unread notifications count from backend in the future
+              const unreadNotifications = 0;
+              
+              return (
+                <div className="relative">
+                  <button 
+                    className={`p-2 rounded-full transition-colors ${isNotificationsOpen ? 'bg-black/5 dark:bg-white/10 text-black dark:text-white' : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'}`}
+                    onClick={() => {
+                      setIsNotificationsOpen(!isNotificationsOpen);
+                      setIsProfileOpen(false); // Cierra el otro menú
+                    }}
+                    title="Notificaciones"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadNotifications > 0 && (
+                      <span className="absolute top-1.5 right-2.5 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#f6f6f8] dark:border-[#191919]"></span>
+                    )}
+                  </button>
+
+                  {/* DROPDOWN NOTIFICACIONES */}
+                  {isNotificationsOpen && (
+                    <div className="absolute right-0 top-12 mt-2 w-72 bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-gray-50/50 dark:bg-black/20">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notificaciones</h3>
+                        {unreadNotifications > 0 && (
+                          <button className="text-xs text-blue-600 hover:text-blue-500 font-medium">Marcar leídas</button>
+                        )}
+                      </div>
+                      
+                      <div className="max-h-64 overflow-y-auto overflow-x-hidden">
+                        {unreadNotifications === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 shrink-0">
+                              <Bell className="w-6 h-6 text-gray-400" />
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium whitespace-normal">No hay notificaciones nuevas</p>
+                            <p className="text-xs text-gray-400 mt-1 whitespace-normal text-balance">Aquí verás alertas importantes del sistema en el futuro.</p>
+                          </div>
+                        ) : (
+                          <div className="py-4 px-4 text-center text-sm text-gray-500 whitespace-normal text-balance">
+                            {/* Placeholder para cuando haya notificaciones reales */}
+                            Tienes {unreadNotifications} notificaciones sin leer.
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t border-[#ededed] dark:border-[#333] p-2 bg-gray-50/50 dark:bg-black/20">
+                        <Link 
+                          href="/configuraciones" 
+                          className="w-full text-center block py-1.5 text-xs font-medium text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
+                          onClick={() => setIsNotificationsOpen(false)}
+                        >
+                          Configurar notificaciones
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* AVATAR BUTTON */}
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all overflow-hidden"
             >
-              {session.name?.charAt(0).toUpperCase() || session.username.charAt(0).toUpperCase()}
+              {session.profilePicture ? (
+                <img src={session.profilePicture} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                session.name?.charAt(0).toUpperCase() || session.username.charAt(0).toUpperCase()
+              )}
             </button>
 
             {/* DROPDOWN MENU */}
@@ -111,26 +163,31 @@ export default function Header({ session }: { session: any }) {
                 
                 <div className="px-4 py-2 mt-1 flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-[#ededed] dark:border-[#333] pb-3">
                   <Shield className="w-3 h-3" />
-                  Rol: {session.role === "ADMIN" ? "Administrador" : "Empleado"}
+                  Rol: {session.role === "SUPERADMIN" ? "Super Admin" : session.role === "ADMIN" ? "Administrador" : "Empleado"}
                 </div>
                 
                 <div className="py-1">
-                  {session.role === "ADMIN" && (
+                  <Link href="/cuenta" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer" onClick={() => setIsProfileOpen(false)}>
+                    <User className="w-4 h-4" />
+                    Cuenta
+                  </Link>
+
+                  {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (
                     <>
-                      <Link href="/empleados" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors" onClick={() => setIsProfileOpen(false)}>
+                      <Link href="/empleados" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer" onClick={() => setIsProfileOpen(false)}>
                         <Users className="w-4 h-4" />
                         Ver empleados
                       </Link>
-                      <button onClick={() => { setIsRestoreModalOpen(true); setIsProfileOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors">
+                      <button onClick={() => { setIsRestoreModalOpen(true); setIsProfileOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer">
                         <span className="material-symbols-outlined text-[16px]">settings_backup_restore</span>
                         Recuperación (Backup)
                       </button>
                     </>
                   )}
 
-                  <Link href="/cuenta" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors" onClick={() => setIsProfileOpen(false)}>
+                  <Link href="/configuraciones" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer" onClick={() => setIsProfileOpen(false)}>
                     <Settings className="w-4 h-4" />
-                    Cuenta
+                    Configuraciones
                   </Link>
                 </div>
                 
@@ -142,7 +199,7 @@ export default function Header({ session }: { session: any }) {
                     await logout();
                     window.location.href = "/login";
                   }} 
-                  className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Cerrar sesión

@@ -1,3 +1,4 @@
+import React from "react";
 import LoginForm from "@/app/login/LoginForm";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -28,7 +29,9 @@ export default async function LoginPage() {
             </div>
             <p className="text-sm text-gray-500 text-center">¡La mejor gestión de tu negocio está aquí!</p>
           </div>
-          <LoginForm />
+          <React.Suspense fallback={<div className="h-64 flex items-center justify-center"><div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div></div>}>
+            <LoginForm />
+          </React.Suspense>
         </section>
         <p className="text-center text-xs text-gray-500 mt-6">
           © 2026 GestionAR Inc. Todos los derechos reservados.

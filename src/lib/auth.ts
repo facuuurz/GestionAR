@@ -8,16 +8,21 @@ import { redirect } from "next/navigation";
 const prisma = new PrismaClient();
 
 export async function login(prevState: any, formData: FormData) {
-  const username = formData.get("username") as string;
+  const identifier = formData.get("username") as string;
   const password = formData.get("password") as string;
 
-  if (!username || !password) {
+  if (!identifier || !password) {
     return { error: "Por favor, ingresa usuario y contraseña." };
   }
 
-  // Buscar usuario
-  const user = await (prisma.user as any).findUnique({
-    where: { username },
+  // Buscar por username o email
+  const user = await (prisma.user as any).findFirst({
+    where: {
+      OR: [
+        { username: identifier },
+        { email: identifier },
+      ],
+    },
   });
 
   if (!user) {

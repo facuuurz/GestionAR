@@ -10,6 +10,7 @@ datasource db {
 
 // Enum para Roles
 enum Role {
+  SUPERADMIN
   ADMIN
   EMPLEADO
 }
@@ -21,6 +22,7 @@ model User {
   name      String?
   username  String   @unique
   passwordHash String
+  profilePicture String? @db.Text
   role      Role     @default(EMPLEADO)
   
   // Perfil Admin
@@ -37,6 +39,11 @@ model User {
   ventas    Venta[]
 
   passwordHistory PasswordHistory[]
+
+  // Self-relation: Un Admin/SuperAdmin puede crear a otros usuarios
+  createdById Int?
+  createdBy   User?  @relation("UserCreator", fields: [createdById], references: [id])
+  createdUsers User[] @relation("UserCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

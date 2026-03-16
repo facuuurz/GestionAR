@@ -2,19 +2,29 @@
 
 import { useActionState, useState } from "react";
 import { login } from "@/lib/auth";
+import { useSearchParams } from "next/navigation";
 import ForgotPasswordModal from "@/app/login/ForgotPasswordModal";
 import { Loader2, Lock, User } from "lucide-react";
 
 export default function LoginForm() {
   const [state, action, isPending] = useActionState(login, null as { error?: string } | null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const urlMessage = searchParams.get("message");
 
   return (
     <>
       <form action={action} className="space-y-6">
+        
+        {urlMessage && (
+          <div className="bg-green-50 text-green-700 p-3 rounded-lg border border-green-200 text-sm font-medium text-center shadow-sm">
+            {urlMessage}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2 ml-1" htmlFor="username">
-            Usuario
+            Usuario o Email
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -26,7 +36,7 @@ export default function LoginForm() {
               name="username"
               required
               className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all duration-200"
-              placeholder="admin123"
+              placeholder="admin ó tu@email.com"
             />
           </div>
         </div>

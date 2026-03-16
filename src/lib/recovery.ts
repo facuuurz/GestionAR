@@ -38,7 +38,7 @@ export async function submitRecovery(email: string, role: string) {
     };
   }
 
-  if (role === "ADMIN") {
+  if (role === "ADMIN" || role === "SUPERADMIN") {
     try {
       const transporter = createTransporter();
 

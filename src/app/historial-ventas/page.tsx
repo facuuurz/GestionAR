@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export default async function HistorialPage({ searchParams }: { searchParams: { empleado?: string } }) {
   const session = await getSession();
-  const isAdmin = session?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN" || session?.role === "SUPERADMIN";
   
   const empleadoId = searchParams.empleado ? parseInt(searchParams.empleado, 10) : undefined;
   const ventas = await obtenerHistorialVentas(empleadoId);

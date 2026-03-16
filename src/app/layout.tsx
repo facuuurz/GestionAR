@@ -3,6 +3,10 @@ import "./globals.css";
 import Header from "@/components/Header/Header";
 import { getSession } from "@/lib/session";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { PrismaClient } from "@prisma/client";
+import { ThemeProvider } from "@/components/ThemeProvider";
+
+const prisma = new PrismaClient();
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],       
@@ -24,30 +28,47 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
+  let userProfile = null;
+  
+  if (session) {
+    userProfile = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { profilePicture: true }
+    });
+  }
+
+  const enrichedSession = session ? { ...session, profilePicture: userProfile?.profilePicture } : null;
 
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
       <body className={`antialiased ${jakarta.variable}`}>
-        <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
-          
-          <Header session={session} />
-          
-          {/* CAMBIO AQUI: Agregamos 'pt-20' para que el contenido no quede tapado por el header fijo */}
-          <main className={`flex-1 ${session ? 'pt-16' : ''}`}>
-            {children}
-          </main>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+          <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
+            
+            <Header session={enrichedSession} />
+            
+            {/* CAMBIO AQUI: Agregamos 'pt-20' para que el contenido no quede tapado por el header fijo */}
+            <main className={`flex-1 ${session ? 'pt-16' : ''}`}>
+              {children}
+            </main>
 
-          {session && (
-            <footer className="flex flex-col gap-6 px-5 py-10 text-center border-t border-[#ededed] dark:border-[#333]">
-              <p className="text-neutral-400 text-sm font-normal">
-                © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
-              </p>
-            </footer>
-          )}
-        </div>
+            {session && (
+              <footer className="flex flex-col gap-6 px-5 py-10 text-center border-t border-[#ededed] dark:border-[#333]">
+                <p className="text-neutral-400 text-sm font-normal">
+                  © {new Date().getFullYear()} GestionAR Inc. Todos los derechos reservados.
+                </p>
+              </footer>
+            )}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
