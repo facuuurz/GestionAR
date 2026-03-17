@@ -1,9 +1,41 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Cargando datos de prueba...\n');
+
+  // ========== USUARIOS ==========
+  const superadminHash = await bcrypt.hash('Gestionar2026$', 10);
+  const empleadoHash = await bcrypt.hash('Empleado2026$', 10);
+
+  const superadmin = await prisma.user.upsert({
+    where: { username: 'superadmin' },
+    update: {},
+    create: {
+      username: 'superadmin',
+      email: 'superadmin@gestionar.com',
+      name: 'Super Administrador',
+      passwordHash: superadminHash,
+      role: 'SUPERADMIN',
+    },
+  });
+
+  const empleado = await prisma.user.upsert({
+    where: { username: 'empleado1' },
+    update: {},
+    create: {
+      username: 'empleado1',
+      email: 'empleado1@gestionar.com',
+      name: 'Juan Empleado',
+      passwordHash: empleadoHash,
+      role: 'EMPLEADO',
+    },
+  });
+
+  console.log(`✅ Usuario SUPERADMIN creado (id: ${superadmin.id}, user: superadmin)`);
+  console.log(`✅ Usuario EMPLEADO creado (id: ${empleado.id}, user: empleado1)`);
 
   // ========== 5 PROVEEDORES ==========
   const proveedores = await Promise.all([
@@ -189,6 +221,7 @@ async function main() {
   console.log(`✅ ${promocionesData.length} promociones creadas`);
 
   console.log('\n🎉 ¡Datos de prueba cargados exitosamente!');
+  console.log('   - 1 superadmin + 1 empleado');
   console.log('   - 5 proveedores');
   console.log('   - 25 productos');
   console.log('   - 10 cuentas corrientes');
