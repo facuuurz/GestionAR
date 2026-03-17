@@ -42,8 +42,8 @@ export default async function EmpleadosPage() {
             </p>
           </div>
           
-          <Link href="/empleados/nuevo" className="flex items-center gap-2 bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 text-white px-5 py-2.5 rounded-[12px] font-semibold transition-colors shadow-lg">
-            <Plus className="w-5 h-5" />
+          <Link href="/empleados/nuevo" className="group flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-5 w-fit bg-black text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 dark:bg-white dark:text-black font-semibold shrink-0">
+            <Plus className="w-5 h-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             <span className="hidden sm:inline">Nuevo Usuario</span>
           </Link>
         </div>

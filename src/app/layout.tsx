@@ -5,12 +5,13 @@ import { getSession } from "@/lib/session";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { PrismaClient } from "@prisma/client";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "react-hot-toast";
 
 const prisma = new PrismaClient();
 
 const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],       
-  variable: "--font-jakarta", 
+  subsets: ["latin"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
@@ -29,7 +30,7 @@ export default async function RootLayout({
 }>) {
   const session = await getSession();
   let userProfile = null;
-  
+
   if (session) {
     userProfile = await prisma.user.findUnique({
       where: { id: session.userId },
@@ -46,15 +47,15 @@ export default async function RootLayout({
       </head>
       <body className={`antialiased ${jakarta.variable}`}>
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
           <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
-            
+
             <Header session={enrichedSession} />
-            
+
             {/* CAMBIO AQUI: Agregamos 'pt-20' para que el contenido no quede tapado por el header fijo */}
             <main className={`flex-1 ${session ? 'pt-16' : ''}`}>
               {children}
@@ -67,6 +68,8 @@ export default async function RootLayout({
                 </p>
               </footer>
             )}
+            
+            <Toaster position="bottom-left" />
           </div>
         </ThemeProvider>
       </body>

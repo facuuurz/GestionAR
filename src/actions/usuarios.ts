@@ -95,7 +95,7 @@ export async function deleteUser(userId: number) {
     // Un ADMIN solo puede eliminar a los usuarios que  él mismo creó.
     // Un SUPERADMIN puede eliminar a cualquiera.
     if (session.role === "ADMIN" && userToDelete.createdById !== session.userId) {
-       return { success: false, error: "Solo puedes eliminar usuarios creados por ti" };
+      return { success: false, error: "Solo puedes eliminar usuarios creados por ti" };
     }
 
     await prisma.user.delete({
@@ -116,7 +116,10 @@ export async function updateUser(
   email: string,
   role: string,
   dni?: string,
-  cuit?: string
+  cuit?: string,
+  profilePicture?: string,
+  username?: string,
+  password?: string
 ) {
   try {
     const session = await getSession();
@@ -136,12 +139,12 @@ export async function updateUser(
 
     // Only SUPERADMIN can edit another SUPERADMIN
     if (userToEdit.role === "SUPERADMIN" && session.role !== "SUPERADMIN") {
-       return { success: false, error: "Solo un SUPERADMIN puede editar a otro" };
+      return { success: false, error: "Solo un SUPERADMIN puede editar a otro" };
     }
 
     // Admins can only edit the users they created or themselves
     if (session.role === "ADMIN" && userToEdit.createdById !== session.userId && userToEdit.id !== session.userId) {
-       return { success: false, error: "Solo puedes editar usuarios creados por ti" };
+      return { success: false, error: "Solo puedes editar usuarios creados por ti" };
     }
 
     // Validation for duplicate emails
@@ -156,21 +159,45 @@ export async function updateUser(
       return { success: false, error: "El correo electrónico ya está en uso por otro usuario" };
     }
 
+    // Validation for duplicate usernames
+    if (username) {
+      const existingUsername = await prisma.user.findFirst({
+        where: {
+          username,
+          NOT: { id: userId }
+        }
+      });
+      if (existingUsername) {
+        return { success: false, error: "El nombre de usuario ya está en uso por otro usuario" };
+      }
+    }
+
+    let passwordHash = undefined;
+    if (password) {
+      passwordHash = await bcrypt.hash(password, 10);
+    }
+
+    const updateData: any = {
+      name,
+      email,
+      role: role as any,
+      dni: dni || null,
+      cuit: cuit || null,
+    };
+
+    if (username) updateData.username = username;
+    if (passwordHash) updateData.passwordHash = passwordHash;
+    if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+
     await prisma.user.update({
       where: { id: userId },
-      data: {
-        name,
-        email,
-        role: role as any,
-        dni: dni || null,
-        cuit: cuit || null,
-      }
+      data: updateData
     });
 
     revalidatePath("/empleados");
     revalidatePath(`/empleados/editar/${userId}`);
     return { success: true };
-    
+
   } catch (error) {
     console.error("Error updating user:", error);
     return { success: false, error: "Error al actualizar los datos del usuario" };

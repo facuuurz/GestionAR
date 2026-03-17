@@ -9,6 +9,7 @@ import AgregarTipoModal from "@/components/Inventario/AgregarTipoModal/AgregarTi
 import InputConIcono from "@/components/Inventario/ui/InputConIcono";
 import TextareaConContador from "@/components/Inventario/ui/TextareaConContador";
 import ToggleSwitch from "@/components/Inventario/ui/ToggleSwitch";
+import { toast } from "react-hot-toast";
 
 type Categoria = {
   id: number;
@@ -21,7 +22,6 @@ const CATEGORIAS_BASICAS = ["bebidas", "alimentos", "limpieza", "otros"];
 
 export default function FormularioNuevoProducto() {
   const router = useRouter();
-  const [mostrarExito, setMostrarExito] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
 
@@ -86,10 +86,13 @@ export default function FormularioNuevoProducto() {
     }
     
     if ((state as any).success) {
-      setMostrarExito(true);
+      toast.success((state as any).message || "El producto se creó correctamente.", {
+        style: { background: "#10B981", color: "#fff", padding: "16px" }, // Green
+        iconTheme: { primary: "#fff", secondary: "#10B981" }
+      });
       setTimeout(() => {
         router.push("/inventario");
-      }, 2500);
+      }, 1000);
     }
   }, [state, router]);
 
@@ -343,18 +346,6 @@ export default function FormularioNuevoProducto() {
       </form>
 
       <AgregarTipoModal isOpen={isModalOpen} onClose={handleCloseModal} />
-
-      <div className={`fixed bottom-6 left-6 z-50 transform transition-all duration-500 ease-in-out ${mostrarExito ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
-        <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-green-500">
-          <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="material-symbols-outlined text-xl">check</span>
-          </div>
-          <div>
-            <p className="font-bold text-sm">¡Éxito!</p>
-            <p className="text-xs text-green-100">{(state as any).message || "El producto se creó correctamente."}</p>
-          </div>
-        </div>
-      </div>
     </>
   );
 }

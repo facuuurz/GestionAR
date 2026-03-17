@@ -5,21 +5,22 @@ import Link from "next/link";
 import { ArrowLeft, User, Key, ShoppingCart, Calendar, Mail, Building, Clock } from "lucide-react";
 
 // For Next.js 14 params are synchronous but in recent versions it can be a Promise
-// So we use standard Next.js 14 Page props
+// So we use standard Next.js 14 Page props or modern ones
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 const prisma = new PrismaClient();
 
 export default async function EmpleadoDetallePage({ params }: PageProps) {
   const session = await getSession();
+  const awaitedParams = await params;
 
   if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
     redirect("/");
   }
 
-  const employeeId = parseInt(params.id, 10);
+  const employeeId = parseInt(awaitedParams.id, 10);
 
   if (isNaN(employeeId)) {
     redirect("/empleados");

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Users, Search, Pencil, Trash2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { deleteUser } from "@/actions/usuarios";
+import { toast } from "react-hot-toast";
 
 export default function EmployeeListClient({ empleados, currentUserRole }: { empleados: any[], currentUserRole: string }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,14 +25,20 @@ export default function EmployeeListClient({ empleados, currentUserRole }: { emp
     try {
       const res = await deleteUser(employeeToDelete.id);
       if (!res.success) {
+        toast.error(res.error || "No se pudo eliminar al usuario.");
         setErrorMsg(res.error || "No se pudo eliminar al usuario.");
         setIsDeleting(false);
         return;
       }
       
+      toast.success("Usuario eliminado correctamente", {
+        style: { background: "#EF4444", color: "#fff", padding: "16px" }, // Red
+        iconTheme: { primary: "#fff", secondary: "#EF4444" }
+      });
       setEmployeeToDelete(null);
       window.location.reload();
     } catch (err) {
+      toast.error("Ocurrió un error inesperado al eliminar.");
       setErrorMsg("Ocurrió un error inesperado.");
       setIsDeleting(false);
     }
@@ -76,8 +83,12 @@ export default function EmployeeListClient({ empleados, currentUserRole }: { emp
                   <tr key={emp.id} className="hover:bg-gray-50 dark:hover:bg-[#222] transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-black dark:from-gray-500 dark:to-gray-300 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                          {emp.name?.charAt(0).toUpperCase() || emp.username.charAt(0).toUpperCase()}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-black dark:from-gray-500 dark:to-gray-300 flex items-center justify-center text-white text-xs font-bold shadow-sm overflow-hidden shrink-0">
+                          {emp.profilePicture ? (
+                            <img src={emp.profilePicture} alt={emp.name || emp.username} className="w-full h-full object-cover" />
+                          ) : (
+                            emp.name?.charAt(0).toUpperCase() || emp.username.charAt(0).toUpperCase()
+                          )}
                         </div>
                         <span className="font-medium text-gray-900 dark:text-white">
                           {emp.name || "Sin nombre"}

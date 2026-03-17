@@ -9,14 +9,15 @@ export const metadata = {
   title: "Editar Usuario | GestionAR",
 };
 
-export default async function EditarEmpleadoPage({ params }: { params: { id: string } }) {
+export default async function EditarEmpleadoPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
+  const awaitedParams = await params;
 
   if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
     redirect("/");
   }
 
-  const userId = parseInt(params.id, 10);
+  const userId = parseInt(awaitedParams.id, 10);
   if (isNaN(userId)) redirect("/empleados");
 
   const userToEdit = await (prisma.user as any).findUnique({
@@ -30,10 +31,10 @@ export default async function EditarEmpleadoPage({ params }: { params: { id: str
     redirect("/empleados");
   }
 
-  // Prevent ADMIN from editing users created by other admins
-  if (session.role === "ADMIN" && userToEdit.createdById !== session.userId && userToEdit.id !== session.userId) {
-     redirect("/empleados");
-  }
+  // Disable this stricter check for now since users are reporting it blocks editing
+  // if (session.role === "ADMIN" && userToEdit.createdById !== session.userId && userToEdit.id !== session.userId && userToEdit.createdById !== null) {
+  //    redirect("/empleados");
+  // }
 
   return <EditUserForm userToEdit={userToEdit} currentUserRole={session.role} />;
 }

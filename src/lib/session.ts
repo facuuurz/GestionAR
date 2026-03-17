@@ -2,7 +2,7 @@ import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const secretKey = process.env.JWT_SECRET_KEY || "gestionar-super-secret-key";
+const secretKey = process.env.JWT_SECRET_KEY || process.env.RUNTIME_JWT_SECRET || "gestionar-super-secret-key";
 const encodedKey = new TextEncoder().encode(secretKey);
 
 // Definimos el tipo del payload

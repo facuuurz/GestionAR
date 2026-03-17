@@ -38,7 +38,10 @@ export default function ProductRow({ prod, isAdmin = true, onDeleteSuccess }: Pr
         await eliminarProducto(formData);
         setIsDeleting(false);
         setShowDeleteModal(false);
-        toast.success("Producto eliminado correctamente");
+        toast.success("Producto eliminado correctamente", {
+            style: { background: "#EF4444", color: "#fff", padding: "16px" }, // Red
+            iconTheme: { primary: "#fff", secondary: "#EF4444" }
+        });
         if (onDeleteSuccess) onDeleteSuccess();
         router.refresh(); 
     } catch (error: any) {
@@ -46,7 +49,10 @@ export default function ProductRow({ prod, isAdmin = true, onDeleteSuccess }: Pr
         setShowDeleteModal(false);
         
         if (error.message === "NEXT_REDIRECT") {
-            toast.success("Producto eliminado correctamente");
+            toast.success("Producto eliminado correctamente", {
+                style: { background: "#EF4444", color: "#fff", padding: "16px" }, // Red
+                iconTheme: { primary: "#fff", secondary: "#EF4444" }
+            });
             if (onDeleteSuccess) onDeleteSuccess();
             router.refresh(); 
             throw error;

@@ -11,7 +11,10 @@ export async function registerUser(
   rawPass: string, 
   email: string, 
   name: string, 
-  role: string
+  role: string,
+  dni?: string,
+  cuit?: string,
+  profilePicture?: string
 ) {
   try {
     const session = await getSession();
@@ -52,7 +55,10 @@ export async function registerUser(
         name,
         passwordHash,
         role: role as any,
-        createdById: session.userId // Asignamos el ID del administrador que lo creó
+        createdById: session.userId, // Asignamos el ID del administrador que lo creó
+        dni: dni || null,
+        cuit: cuit || null,
+        profilePicture: profilePicture || null,
       }
     });
 
