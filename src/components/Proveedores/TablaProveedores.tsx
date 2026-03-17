@@ -43,6 +43,7 @@ export default function TablaProveedores({
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Código</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Razón Social</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
+              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Teléfono</th>
               {isAdmin && (
                 <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 z-20 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
               )}
@@ -52,7 +53,7 @@ export default function TablaProveedores({
             
             {proveedores.length === 0 ? (
                 <tr>
-                    <td colSpan={4} className="text-center py-12 text-neutral-500 text-sm">
+                    <td colSpan={5} className="text-center py-12 text-neutral-500 text-sm">
                         <div className="flex flex-col items-center gap-2">
                             <span className="material-symbols-outlined text-4xl text-neutral-300">search_off</span>
                             <p>No se encontraron proveedores.</p>

@@ -79,6 +79,16 @@ export default function ProveedorRow({ prov, isAdmin, onDeleteSuccess }: Proveed
             </div>
         </td>
         <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">{prov.contacto || "-"}</td>
+        <td className="px-4 py-3 text-neutral-500 dark:text-gray-400 hidden md:table-cell">
+            {prov.telefono ? (
+                <a href={`tel:${prov.telefono}`} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
+                    <span className="material-symbols-outlined text-[15px]">call</span>
+                    {prov.telefono}
+                </a>
+            ) : (
+                <span>-</span>
+            )}
+        </td>
         
         {isAdmin && (
             <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-neutral-50 dark:bg-[#1e2736] dark:group-hover:bg-[#1a222e] z-10 transition-colors shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">

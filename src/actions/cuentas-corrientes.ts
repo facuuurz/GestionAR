@@ -50,6 +50,22 @@ export type State = {
   success?: boolean;
 };
 
+// --- HELPERS DE ESTADO ---
+// Devuelve la fecha en que el saldo pasó a negativo (para guardar en DB)
+function calcularFechaNegativo(saldo: number, fechaActual: Date | null): Date | null {
+  if (saldo >= 0) return null;           // saldo OK => limpiar
+  if (fechaActual != null) return fechaActual; // ya había fecha => conservarla
+  return new Date();                     // recién se volvió negativo
+}
+
+// Calcula el estado visible usando el período de gracia de 4 días
+function calcularEstado(saldo: number, saldoNegativoDesde: Date | null): string {
+  if (saldo >= 0) return "Al Día";
+  if (!saldoNegativoDesde) return "Al Día"; // acaba de ponerse negativo
+  const diasNegativo = (Date.now() - saldoNegativoDesde.getTime()) / (1000 * 60 * 60 * 24);
+  return diasNegativo > 4 ? "Deudor" : "Al Día";
+}
+
 // --- 3. OBTENER TODOS LOS CLIENTES (PAGINADOS Y FILTRADOS) ---
 const ITEMS_POR_PAGINA = 15;
 
@@ -107,7 +123,9 @@ export async function obtenerClientes(filtros?: {
 
     const clientes = clientesRaw.map((cliente) => ({
       ...cliente,
-      saldo: cliente.saldo.toNumber(), 
+      saldo: cliente.saldo.toNumber(),
+      // Re-calcular estado en tiempo de lectura para reflejar el período de gracia
+      estado: calcularEstado(cliente.saldo.toNumber(), cliente.saldoNegativoDesde),
     }));
 
     return {
@@ -159,7 +177,8 @@ export async function crearCliente(prevState: State, formData: FormData) {
     }
 
     const saldoInicial = validatedFields.data.saldo ?? 0;
-    const estadoInicial = saldoInicial < 0 ? "Deudor" : "Al Día";
+    const fechaNegativo = calcularFechaNegativo(saldoInicial, null);
+    const estadoInicial = calcularEstado(saldoInicial, fechaNegativo);
 
     const nuevoCliente = await prisma.cuenta_corriente.create({
       data: {
@@ -170,7 +189,8 @@ export async function crearCliente(prevState: State, formData: FormData) {
         direccion: validatedFields.data.direccion || null,
         ciudad: validatedFields.data.ciudad || null,
         saldo: saldoInicial,
-        estado: estadoInicial
+        estado: estadoInicial,
+        saldoNegativoDesde: fechaNegativo,
       },
     });
 
@@ -238,7 +258,8 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
     }
 
     const nuevoSaldo = validatedFields.data.saldo ?? cuentaActual.saldo.toNumber();
-    const nuevoEstado = nuevoSaldo < 0 ? "Deudor" : "Al Día";
+    const nuevaFechaNegativo = calcularFechaNegativo(nuevoSaldo, cuentaActual.saldoNegativoDesde);
+    const nuevoEstado = calcularEstado(nuevoSaldo, nuevaFechaNegativo);
 
     await prisma.cuenta_corriente.update({
       where: { id },
@@ -251,6 +272,7 @@ export async function actualizarCliente(id: number, prevState: State, formData: 
         ciudad: validatedFields.data.ciudad || null,
         saldo: nuevoSaldo,
         estado: nuevoEstado,
+        saldoNegativoDesde: nuevaFechaNegativo,
       },
     });
 
@@ -284,6 +306,8 @@ export async function obtenerClientePorId(id: number) {
     return {
       ...cuenta,
       saldo: cuenta.saldo.toNumber(),
+      // Re-calcular estado en tiempo de lectura para reflejar el período de gracia
+      estado: calcularEstado(cuenta.saldo.toNumber(), cuenta.saldoNegativoDesde),
     };
 
   } catch (error) {
@@ -334,13 +358,13 @@ export async function actualizarSaldoCliente(id: number, monto: number) {
 
       const cuenta = await tx.cuenta_corriente.findUnique({ where: { id } });
       if (cuenta) {
-        const nuevoEstado = cuenta.saldo.toNumber() < 0 ? "Deudor" : "Al Día";
-        if (cuenta.estado !== nuevoEstado) {
-          await tx.cuenta_corriente.update({
-            where: { id },
-            data: { estado: nuevoEstado }
-          });
-        }
+        const saldoActualizado = cuenta.saldo.toNumber();
+        const nuevaFechaNegativo = calcularFechaNegativo(saldoActualizado, cuenta.saldoNegativoDesde);
+        const nuevoEstado = calcularEstado(saldoActualizado, nuevaFechaNegativo);
+        await tx.cuenta_corriente.update({
+          where: { id },
+          data: { estado: nuevoEstado, saldoNegativoDesde: nuevaFechaNegativo }
+        });
       }
     });
 
