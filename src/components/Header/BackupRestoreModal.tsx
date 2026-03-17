@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getLocalBackups, restoreLocalBackup, restoreFromBackup } from "@/actions/restore";
+import { generarBackupLocal } from "@/actions/backup";
 
 interface BackupRestoreModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export default function BackupRestoreModal({ isOpen, onClose }: BackupRestoreMod
   const [loading, setLoading] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState<string>("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [creatingBackup, setCreatingBackup] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,11 +77,30 @@ export default function BackupRestoreModal({ isOpen, onClose }: BackupRestoreMod
     }
   };
 
+  const handleCreateBackup = async () => {
+    setCreatingBackup(true);
+    setMessage(null);
+    try {
+      const res = await generarBackupLocal();
+      if (res.success) {
+        setMessage({ text: res.message, type: "success" });
+        // Recargar la lista de backups para que aparezca el nuevo
+        await loadBackups();
+      } else {
+        setMessage({ text: res.message, type: "error" });
+      }
+    } catch {
+      setMessage({ text: "Error al crear el backup.", type: "error" });
+    } finally {
+      setCreatingBackup(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 animate-in fade-in">
-      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl shadow-xl p-6 w-full max-w-lg flex flex-col gap-6 relative">
+      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl shadow-xl p-6 w-full max-w-2xl flex flex-col gap-6 relative">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"
@@ -105,6 +126,27 @@ export default function BackupRestoreModal({ isOpen, onClose }: BackupRestoreMod
         )}
 
         <div className="flex flex-col gap-4">
+          {/* Sección: Crear Backup */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Generar nuevo backup
+            </label>
+            <button
+              onClick={handleCreateBackup}
+              disabled={creatingBackup || loading}
+              className="flex items-center justify-center gap-2 w-full bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>backup</span>
+              {creatingBackup ? "Creando backup..." : "Crear Backup"}
+            </button>
+          </div>
+
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+            <span className="shrink-0 px-4 text-sm text-gray-400">Restaurar</span>
+            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+          </div>
+
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Cargar el último backup (Automático)
