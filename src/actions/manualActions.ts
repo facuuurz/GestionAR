@@ -248,26 +248,32 @@ const manualData: ManualSection[] = [
     description: "Protege o restaura tus datos en el sistema.",
     content: `
       ### Copias de Seguridad y Restauración
-      ¡Bienvenido a la sección de Recuperación de GestionAR! Esta herramienta avanzada te permite restaurar copias de seguridad de toda tu información. Es vital para recuperar tus datos en caso de algún error crítico o si necesitas volver a un estado anterior del sistema.
+      ¡Bienvenido a la sección de Seguridad de GestionAR! Esta herramienta avanzada te permite resguardar toda la información de tu negocio (inventario, ventas, clientes) y restaurarla en caso de ser necesario. Es tu salvavidas digital.
       
-      **1. Cómo acceder a la herramienta**
-      1. Dirígete a la esquina superior derecha de tu pantalla y haz clic en tu Avatar de Usuario (el círculo de color con tu inicial).
-      2. Se desplegará tu menú de perfil. Allí, haz clic en la opción **Recuperación (Backup)** identificada con el ícono de un reloj con una flecha.
+      **1. ¿Cómo acceder a la herramienta?**
+      Dirígete a la esquina superior derecha de tu pantalla y haz clic en tu Avatar de Usuario (el círculo de color con tu inicial).
       
+      Se desplegará tu menú de perfil. Allí, haz clic en la opción **Recuperación (Backup)** identificada con el ícono de un reloj con una flecha.
       
-      **2. Restaurar un Backup Automático**
-      GestionAR guarda copias de tu información de forma automática. Para volver a uno de estos puntos de guardado:
-      1. Al abrirse la ventana de Recuperación de Backup, céntrate en la primera sección: "Cargar el último backup (Automático)".
-      2. Haz clic en el menú desplegable. Allí verás una lista de los archivos guardados, con la fecha y hora exacta en su nombre (Ej. GestionAR_Backup_13-03-2026_15-22.json).
-      3. Selecciona la fecha a la cual deseas que el sistema regrese.
+      **2. Generar un Nuevo Backup (Crear Copia)**
+      Si estás por hacer un cambio grande en el inventario o simplemente quieres resguardar tus datos al final del día, puedes forzar la creación de un respaldo manual:
+      1. Al abrir la ventana de Recuperación de Backup, ubícate en la primera sección superior llamada "Generar nuevo backup".
+      2. Haz clic en el botón verde **Crear Backup** (ícono de nube).
+      3. El sistema recopilará toda tu información actual y generará un archivo seguro con toda la informacion.
+      
+      **3. Restaurar un Backup del Historial**
+      GestionAR guarda copias de tu información (tanto las automáticas como las que creas manualmente). Para volver a uno de estos puntos de guardado:
+      1. En la misma ventana, dirígete a la sección central: "Cargar el último backup (Automático)".
+      2. Haz clic en el menú desplegable. Allí verás una lista de los archivos guardados, con la fecha y hora exacta de su creación (Ej. GestionAR_Backup_17-03-2026_18-20.json).
+      3. Selecciona la fecha y hora a la cual deseas que el sistema regrese.
       4. Haz clic en el botón negro **Restaurar** para aplicar los datos de esa copia de seguridad.
       
-      **3. Cargar un Archivo Manual (Subir archivo JSON)**
-      Si acostumbras a descargar tus copias de seguridad y guardarlas en tu propia computadora, un disco duro externo o un pendrive, puedes subirlas manualmente:
-      1. En la misma ventana de Recuperación, dirígete a la sección inferior llamada "Subir archivo JSON".
+      **4. Cargar un Archivo Manual (Subir archivo JSON)**
+      Si acostumbras a descargar tus copias de seguridad y guardarlas en tu propia computadora o en un pendrive, puedes subirlas manualmente:
+      1. Dirígete a la sección inferior de la ventana, llamada "Subir archivo JSON".
       2. Haz clic en el botón gris **Seleccionar archivo**.
-      3. Se abrirá el explorador de archivos de tu computadora. Busca el archivo de tu backup, selecciónalo y ábrelo.
-      4. El sistema leerá el archivo y comenzará el proceso de restauración.
+      3. Se abrirá el explorador de archivos de tu computadora. Busca tu archivo de backup, selecciónalo y ábrelo.
+      4. El sistema leerá el archivo y comenzará el proceso de restauración inmediatamente.
     `
   },
   {
