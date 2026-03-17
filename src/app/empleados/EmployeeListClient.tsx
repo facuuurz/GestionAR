@@ -118,10 +118,10 @@ export default function EmployeeListClient({ empleados, currentUserRole }: { emp
                       {diasAntiguedad} días
                     </td>
                     <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-center gap-3 transition-opacity">
                             <Link 
                                 href={`/empleados/editar/${emp.id}`}
-                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 rounded-lg transition-colors"
                                 title="Modificar Empleado"
                             >
                                 <Pencil className="w-4 h-4" />
@@ -129,7 +129,7 @@ export default function EmployeeListClient({ empleados, currentUserRole }: { emp
 
                             <button 
                                 onClick={() => setEmployeeToDelete(emp)}
-                                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                className="p-2 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors"
                                 title="Eliminar Empleado"
                             >
                                 <Trash2 className="w-4 h-4" />

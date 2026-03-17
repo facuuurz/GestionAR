@@ -339,7 +339,15 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-[#ededed] dark:border-[#333]">
+          <div className="flex justify-end pt-4 border-t border-[#ededed] dark:border-[#333] gap-4">
+            <button
+              type="button"
+              onClick={() => router.push('/empleados')}
+              className="px-6 py-3 border border-gray-300 dark:border-[#555] text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-[#333] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm"
+            >
+              Cancelar
+            </button>
+
             <button 
               type="submit" 
               disabled={loading}
