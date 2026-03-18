@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BackupRestoreModal from "./BackupRestoreModal";
@@ -18,6 +18,23 @@ export default function Header({ session }: { session: any }) {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar dropdowns al clickear fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch initial notifications
   useEffect(() => {
@@ -102,7 +119,7 @@ export default function Header({ session }: { session: any }) {
 
             {/* CAMPANITA ADMIN */}
             {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (
-                <div className="relative">
+                <div className="relative" ref={notificationsRef}>
                   <button 
                     className={`p-2 rounded-full transition-colors ${isNotificationsOpen ? 'bg-black/5 dark:bg-white/10 text-black dark:text-white' : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'}`}
                     onClick={() => {
@@ -244,7 +261,8 @@ export default function Header({ session }: { session: any }) {
                  </div>
              )}
 
-            {/* AVATAR BUTTON */}
+            {/* AVATAR + DROPDOWN envuelto en ref para click-outside */}
+            <div className="relative" ref={profileRef}>
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all overflow-hidden"
@@ -304,6 +322,7 @@ export default function Header({ session }: { session: any }) {
                 </button>
               </div>
             )}
+            </div> {/* cierra profileRef wrapper */}
           </div>
 
         {/* MOBILE FULLSCREEN MENU */}
