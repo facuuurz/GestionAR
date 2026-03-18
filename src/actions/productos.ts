@@ -93,6 +93,19 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
 
   const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento, esPorPeso } = validatedFields.data;
 
+  // VERIFICAR PROVEEDOR
+  const proveedorExiste = await prisma.proveedor.findUnique({
+    where: { codigo: proveedor }
+  });
+
+  if (!proveedorExiste) {
+    return {
+      errors: { proveedor: ["El proveedor ingresado no existe en el sistema."] },
+      message: "El proveedor ingresado no existe. Por favor, regístrelo primero o verifique el código.",
+      payload: Object.fromEntries(formData.entries()),
+    };
+  }
+
   try {
     const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
 
@@ -164,6 +177,19 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
   }
 
   const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento, esPorPeso } = validatedFields.data;
+
+  // VERIFICAR PROVEEDOR
+  const proveedorExiste = await prisma.proveedor.findUnique({
+    where: { codigo: proveedor }
+  });
+
+  if (!proveedorExiste) {
+    return {
+      errors: { proveedor: ["El proveedor ingresado no existe en el sistema."] },
+      message: "El proveedor ingresado no existe. Por favor, regístrelo primero o verifique el código.",
+      payload: Object.fromEntries(formData.entries()),
+    };
+  }
 
   try {
     const prevProduct = await prisma.producto.findUnique({ where: { id } });

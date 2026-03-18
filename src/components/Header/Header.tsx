@@ -19,22 +19,7 @@ export default function Header({ session }: { session: any }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const notificationsRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
-
-  // Cerrar dropdowns al clickear fuera
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
-        setIsNotificationsOpen(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setIsProfileOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Ya no usamos useEffect global, usamos un overlay transparente (z-40)
 
   // Fetch initial notifications
   useEffect(() => {
@@ -119,9 +104,12 @@ export default function Header({ session }: { session: any }) {
 
             {/* CAMPANITA ADMIN */}
             {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (
-                <div className="relative" ref={notificationsRef}>
+                <div className="relative">
+                  {isNotificationsOpen && (
+                    <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)}></div>
+                  )}
                   <button 
-                    className={`p-2 rounded-full transition-colors ${isNotificationsOpen ? 'bg-black/5 dark:bg-white/10 text-black dark:text-white' : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'}`}
+                    className={`relative z-50 p-2 rounded-full transition-colors ${isNotificationsOpen ? 'bg-black/5 dark:bg-white/10 text-black dark:text-white' : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'}`}
                     onClick={() => {
                       setIsNotificationsOpen(!isNotificationsOpen);
                       setIsProfileOpen(false); // Cierra el otro menú
@@ -261,11 +249,17 @@ export default function Header({ session }: { session: any }) {
                  </div>
              )}
 
-            {/* AVATAR + DROPDOWN envuelto en ref para click-outside */}
-            <div className="relative" ref={profileRef}>
+            {/* AVATAR + DROPDOWN */}
+            <div className="relative">
+            {isProfileOpen && (
+              <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)}></div>
+            )}
             <button 
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all overflow-hidden"
+              onClick={() => {
+                setIsProfileOpen(!isProfileOpen);
+                setIsNotificationsOpen(false);
+              }}
+              className="relative z-50 flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all overflow-hidden"
             >
               {session.profilePicture ? (
                 <img src={session.profilePicture} alt="Perfil" className="w-full h-full object-cover" />
@@ -322,7 +316,7 @@ export default function Header({ session }: { session: any }) {
                 </button>
               </div>
             )}
-            </div> {/* cierra profileRef wrapper */}
+            </div>
           </div>
 
         {/* MOBILE FULLSCREEN MENU */}
