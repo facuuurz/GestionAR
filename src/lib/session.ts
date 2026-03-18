@@ -43,7 +43,7 @@ export async function createSession(userId: number, role: "ADMIN" | "EMPLEADO" |
   cookieStore.set("session", session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
+    // No 'expires' -> esto genera una "Session Cookie" pura que muere al cerrar el navegador
     sameSite: "lax",
     path: "/",
   });
@@ -77,7 +77,7 @@ export async function updateSession() {
   cookieStoreUpdate.set("session", session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
+    // No 'expires' para mantener su naturaleza de Session Cookie
     sameSite: "lax",
     path: "/",
   });

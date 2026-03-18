@@ -2,7 +2,7 @@ import { getSession } from "@/lib/session";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Key, ShoppingCart, Calendar, Mail, Building, Clock } from "lucide-react";
+import { ArrowLeft, User, Key, ShoppingCart, Calendar, Mail, Building, Clock, ShieldCheck } from "lucide-react";
 
 // For Next.js 14 params are synchronous but in recent versions it can be a Promise
 // So we use standard Next.js 14 Page props or modern ones
@@ -27,7 +27,7 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
   }
 
   const empleado = await (prisma.user as any).findUnique({
-    where: { id: employeeId, role: "EMPLEADO" }
+    where: { id: employeeId }
   });
 
   if (!empleado) {
@@ -51,8 +51,12 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
           
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                {empleado.name?.charAt(0).toUpperCase() || empleado.username.charAt(0).toUpperCase()}
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden shrink-0">
+                {empleado.profilePicture ? (
+                  <img src={empleado.profilePicture} alt={empleado.name || empleado.username} className="w-full h-full object-cover" />
+                ) : (
+                  empleado.name?.charAt(0).toUpperCase() || empleado.username.charAt(0).toUpperCase()
+                )}
               </div>
               <div>
                 <h1 className="text-primary dark:text-white text-2xl sm:text-3xl font-bold leading-tight flex items-center gap-3">
@@ -63,11 +67,6 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-            
-            <button className="flex items-center gap-2 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-500 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm">
-              <Key className="w-5 h-5 text-indigo-500" />
-              Cambiar contraseña
-            </button>
           </div>
         </div>
 
@@ -85,6 +84,19 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
                 <div>
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre Completo</p>
                   <p className="text-base font-medium text-gray-900 dark:text-white mt-0.5">{empleado.name || "—"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rol en el Sistema</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-white mt-0.5">
+                    {empleado.role === "SUPERADMIN" ? "Super Administrador" : 
+                     empleado.role === "ADMIN" ? "Administrador" : "Empleado"}
+                  </p>
                 </div>
               </div>
 

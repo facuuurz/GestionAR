@@ -5,7 +5,6 @@ import { submitRecovery } from "@/lib/recovery";
 import { X, Loader2, Info } from "lucide-react";
 
 export default function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const [role, setRole] = useState<"ADMIN" | "EMPLEADO" | null>(null);
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [response, setResponse] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
@@ -14,13 +13,13 @@ export default function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boole
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!role || !email) return;
+    if (!email) return;
 
     setIsSubmitting(true);
     setResponse(null);
 
     try {
-      const res = await submitRecovery(email, role);
+      const res = await submitRecovery(email);
       setResponse(res);
     } catch (error) {
       setResponse({ error: "Ocurrió un error inesperado al procesar la solicitud." });
@@ -30,7 +29,6 @@ export default function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boole
   };
 
   const handleClose = () => {
-    setRole(null);
     setEmail("");
     setResponse(null);
     onClose();
@@ -71,52 +69,20 @@ export default function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boole
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  ¿Qué tipo de usuario eres?
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Correo asociado a tu cuenta
                 </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setRole("ADMIN")}
-                    className={`py-3 px-4 rounded-xl border transition-all text-sm font-medium ${
-                      role === "ADMIN" 
-                        ? "bg-black border-black text-white" 
-                        : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
-                    }`}
-                  >
-                    Administrador
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole("EMPLEADO")}
-                    className={`py-3 px-4 rounded-xl border transition-all text-sm font-medium ${
-                      role === "EMPLEADO" 
-                        ? "bg-black border-black text-white" 
-                        : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
-                    }`}
-                  >
-                    Empleado
-                  </button>
-                </div>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all text-sm"
+                  placeholder="ejemplo@correo.com"
+                />
               </div>
-
-              {role && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Correo asociado ({role.toLowerCase()})
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all text-sm"
-                    placeholder="ejemplo@correo.com"
-                  />
-                </div>
-              )}
 
               {response?.error && (
                 <p className="text-red-500 text-sm bg-red-50 border border-red-200 py-2 px-3 rounded-lg">{response.error}</p>
@@ -124,7 +90,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boole
 
               <button
                 type="submit"
-                disabled={!role || !email || isSubmitting}
+                disabled={!email || isSubmitting}
                 className="w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Enviar solicitud"}

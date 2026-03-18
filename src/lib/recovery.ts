@@ -16,7 +16,7 @@ function createTransporter() {
   });
 }
 
-export async function submitRecovery(email: string, role: string) {
+export async function submitRecovery(email: string) {
   const user = await (prisma.user as any).findUnique({
     where: { email },
   });
@@ -25,22 +25,8 @@ export async function submitRecovery(email: string, role: string) {
     return { error: "No se encontró un usuario con este correo." };
   }
 
-  if (role === "EMPLEADO") {
-    await (prisma as any).notification.create({
-      data: {
-        message: `El empleado ${user.name || user.username} (${user.email}) ha solicitado restablecer su contraseña.`,
-      },
-    });
-
-    return {
-      success: true,
-      message: "Su caso llegará al buzón de un administrador, favor de esperar, esto puede tardar un poco...",
-    };
-  }
-
-  if (role === "ADMIN" || role === "SUPERADMIN") {
-    try {
-      const transporter = createTransporter();
+  try {
+    const transporter = createTransporter();
 
       const subject = `Restablecer contraseña - ${user.dni ?? "Sin DNI"}`;
 
@@ -83,11 +69,8 @@ export async function submitRecovery(email: string, role: string) {
         success: true,
         message: "Se envió su petición a soporte gestionarsoportear@gmail.com. Pronto se pondrán en contacto con usted, ¡Gracias por esperar!",
       };
-    } catch (error) {
-      console.error("[RECOVERY EMAIL ERROR]", error);
-      return { error: "Hubo un error al enviar el correo de soporte. Intente nuevamente." };
-    }
+  } catch (error) {
+    console.error("[RECOVERY EMAIL ERROR]", error);
+    return { error: "Hubo un error al enviar el correo de soporte. Intente nuevamente." };
   }
-
-  return { error: "Rol no válido." };
 }

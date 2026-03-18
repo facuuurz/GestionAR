@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
+import { createNotification } from "@/lib/notifications";
 
 // --- TIPOS ---
 type Filters = {
@@ -142,6 +143,8 @@ export async function procesarVenta(
   clienteId?: number | null
 ) {
   try {
+    const stockNotificationsToEmit: { type: "STOCK_LOW" | "STOCK_NONE"; message: string; productId: number }[] = [];
+
     await prisma.$transaction(async (tx) => {
       
       const nuevaVenta = await tx.venta.create({
@@ -159,10 +162,25 @@ export async function procesarVenta(
           throw new Error(`Stock insuficiente para el producto ID: ${item.id}`);
         }
 
-        await tx.producto.update({
+        const updatedProducto = await tx.producto.update({
           where: { id: item.id },
           data: { stock: { decrement: item.cantidad } }
         });
+
+        // Revisar umbrales de stock
+        if (updatedProducto.stock === 0) {
+          stockNotificationsToEmit.push({
+            type: "STOCK_NONE",
+            message: `El producto "${producto.nombre}" se quedó sin stock.`,
+            productId: producto.id
+          });
+        } else if (updatedProducto.stock <= 20 && producto.stock > 20) {
+          stockNotificationsToEmit.push({
+            type: "STOCK_LOW",
+            message: `Queda poco stock (${updatedProducto.stock}) del producto "${producto.nombre}".`,
+            productId: producto.id
+          });
+        }
 
         await tx.detalleVenta.create({
           data: {
@@ -199,6 +217,16 @@ export async function procesarVenta(
         cantidadItems: items.length 
       }, "Venta procesada y registrada exitosamente");
     });
+
+    // Emitir notificaciones de stock fuera de la transacción para evitar problemas de conexión anidada
+    for (const notif of stockNotificationsToEmit) {
+      await createNotification(
+        ["SUPERADMIN", "ADMIN"],
+        notif.type,
+        notif.message,
+        `/inventario/detalles-producto/${notif.productId}` /* Link to product specs */
+      );
+    }
 
     revalidatePath("/historial-ventas"); 
     revalidatePath("/inventario");

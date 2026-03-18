@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { deleteSession, getSession } from "@/lib/session";
 import { validatePasswordStrength } from "@/lib/passwordUtils";
+import { createNotification } from "@/lib/notifications";
 
 const prisma = new PrismaClient();
 
@@ -101,6 +102,13 @@ export async function deleteUser(userId: number) {
     await prisma.user.delete({
       where: { id: userId }
     });
+
+    await createNotification(
+      ["SUPERADMIN"],
+      "USER_DELETED",
+      `El usuario "${userToDelete.username}" ha sido eliminado.`,
+      `/empleados/eliminado?nombre=${encodeURIComponent(userToDelete.name || userToDelete.username)}&email=${encodeURIComponent(userToDelete.email)}&role=${userToDelete.role}`
+    );
 
     revalidatePath("/empleados");
     return { success: true };

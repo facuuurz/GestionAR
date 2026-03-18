@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
+import { createNotification } from "@/lib/notifications";
 
 // 1. Esquema de Validación
 const promocionSchema = z.object({
@@ -207,6 +208,15 @@ export async function crearPromocion(prevState: State, formData: FormData) {
 
     logger.info({ promocionId: nuevaPromocion.id, nombre: nuevaPromocion.nombre }, "Promoción creada exitosamente");
 
+    if (nuevaPromocion.activo) {
+      await createNotification(
+        ["SUPERADMIN", "ADMIN"],
+        "PROMO_ACTIVED",
+        `Se ha activado una nueva promoción: "${nuevaPromocion.nombre}".`,
+        `/promociones`
+      );
+    }
+
   } catch (error) {
     logger.error({ err: error, payload: rawData }, "Error de base de datos al intentar crear la promoción");
     return {
@@ -258,6 +268,8 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     return { message: "Debe haber al menos un producto.", payload: rawData };
   }
 
+  const prevPromo = await prisma.promocion.findUnique({ where: { id } });
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.promocion.update({
@@ -286,6 +298,12 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     });
 
     logger.info({ promocionId: id, nombre: validatedFields.data.nombre }, "Promoción y sus productos actualizados exitosamente");
+
+    if (prevPromo && !prevPromo.activo && validatedFields.data.activo) {
+      await createNotification(["SUPERADMIN", "ADMIN"], "PROMO_ACTIVED", `Se ha activado la promoción "${validatedFields.data.nombre}".`, `/promociones`);
+    } else if (prevPromo && prevPromo.activo && !validatedFields.data.activo) {
+      await createNotification(["SUPERADMIN", "ADMIN"], "PROMO_ENDED", `Se ha finalizado la promoción "${validatedFields.data.nombre}".`, `/promociones`);
+    }
 
   } catch (error) {
     logger.error({ err: error, promocionId: id, payload: rawData }, "Fallo transaccional al actualizar la promoción");

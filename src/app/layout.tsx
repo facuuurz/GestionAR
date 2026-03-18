@@ -38,7 +38,7 @@ export default async function RootLayout({
     });
   }
 
-  const enrichedSession = session ? { ...session, profilePicture: userProfile?.profilePicture } : null;
+  const enrichedSession = session ? JSON.parse(JSON.stringify({ ...session, profilePicture: userProfile?.profilePicture })) : null;
 
   return (
     <html lang="es" suppressHydrationWarning>

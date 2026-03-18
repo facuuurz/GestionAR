@@ -5,11 +5,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export default async function HistorialPage({ searchParams }: { searchParams: { empleado?: string } }) {
+export default async function HistorialPage({ searchParams }: { searchParams: Promise<{ empleado?: string }> }) {
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN" || session?.role === "SUPERADMIN";
   
-  const empleadoId = searchParams.empleado ? parseInt(searchParams.empleado, 10) : undefined;
+  const awaitedSearchParams = await searchParams;
+  const empleadoId = awaitedSearchParams.empleado ? parseInt(awaitedSearchParams.empleado, 10) : undefined;
   const ventas = await obtenerHistorialVentas(empleadoId);
 
   let empleadoNombre = null;

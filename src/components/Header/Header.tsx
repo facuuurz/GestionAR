@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BackupRestoreModal from "./BackupRestoreModal";
-import { User, Bell, LogOut, Settings, Users, Shield } from "lucide-react";
+import { User, Bell, LogOut, Settings, Users, Shield, Package, ArrowUpRight, CheckCheck } from "lucide-react";
 import { logout } from "@/lib/auth";
+import { getRecentNotificationsAction, markNotificationsAsReadAction } from "@/actions/notificaciones";
 
 export default function Header({ session }: { session: any }) {
   if (!session) return null;
@@ -15,6 +16,28 @@ export default function Header({ session }: { session: any }) {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch initial notifications
+  useEffect(() => {
+    if (session.role === "ADMIN" || session.role === "SUPERADMIN") {
+      getRecentNotificationsAction(session.userId).then(notifs => {
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => !n.isRead).length);
+      });
+    }
+  }, [session]);
+
+  const handleMarkAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    
+    await markNotificationsAsReadAction(session.userId, unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+  };
 
   const navLinks = [
     { name: "Panel", href: "/" },
@@ -79,11 +102,7 @@ export default function Header({ session }: { session: any }) {
             )}
 
             {/* CAMPANITA ADMIN */}
-            {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (() => {
-              // TODO: Fetch real unread notifications count from backend in the future
-              const unreadNotifications = 0;
-              
-              return (
+            {(session.role === "ADMIN" || session.role === "SUPERADMIN") && (
                 <div className="relative">
                   <button 
                     className={`p-2 rounded-full transition-colors ${isNotificationsOpen ? 'bg-black/5 dark:bg-white/10 text-black dark:text-white' : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'}`}
@@ -94,39 +113,130 @@ export default function Header({ session }: { session: any }) {
                     title="Notificaciones"
                   >
                     <Bell className="w-5 h-5" />
-                    {unreadNotifications > 0 && (
-                      <span className="absolute top-1.5 right-2.5 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#f6f6f8] dark:border-[#191919]"></span>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#f6f6f8] dark:border-[#191919]"></span>
                     )}
                   </button>
 
                   {/* DROPDOWN NOTIFICACIONES */}
                   {isNotificationsOpen && (
-                    <div className="absolute right-0 top-12 mt-2 w-72 bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-gray-50/50 dark:bg-black/20">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notificaciones</h3>
-                        {unreadNotifications > 0 && (
-                          <button className="text-xs text-blue-600 hover:text-blue-500 font-medium">Marcar leídas</button>
+                    <div className="absolute right-0 top-12 mt-2 w-96 bg-white dark:bg-[#1f1f1f] border border-[#ededed] dark:border-[#333] rounded-2xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
+                      <div className="px-5 py-4 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-gray-50/80 dark:bg-black/40 backdrop-blur-sm z-10 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Notificaciones</h3>
+                          {unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                          )}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button onClick={handleMarkAllAsRead} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 rounded-lg cursor-pointer">
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            Marcar leídas
+                          </button>
                         )}
                       </div>
                       
-                      <div className="max-h-64 overflow-y-auto overflow-x-hidden">
-                        {unreadNotifications === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 shrink-0">
+                      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-[100px]">
+                        {notifications.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                            <div className="w-14 h-14 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 shrink-0 ring-4 ring-gray-50 dark:ring-[#222]">
                               <Bell className="w-6 h-6 text-gray-400" />
                             </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium whitespace-normal">No hay notificaciones nuevas</p>
-                            <p className="text-xs text-gray-400 mt-1 whitespace-normal text-balance">Aquí verás alertas importantes del sistema en el futuro.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">No hay notificaciones</p>
+                            <p className="text-xs text-gray-400 mt-1">Aquí verás alertas importantes del sistema.</p>
                           </div>
                         ) : (
-                          <div className="py-4 px-4 text-center text-sm text-gray-500 whitespace-normal text-balance">
-                            {/* Placeholder para cuando haya notificaciones reales */}
-                            Tienes {unreadNotifications} notificaciones sin leer.
+                          <div className="flex flex-col">
+                             {notifications.map(notif => {
+                               const isUnread = !notif.isRead;
+                               // Traducir tipo a español
+                               const typeLabels: Record<string, string> = {
+                                 USER_CREATED: 'Usuario Creado',
+                                 USER_DELETED: 'Usuario Eliminado',
+                                 STOCK_LOW: 'Stock Bajo',
+                                 STOCK_NONE: 'Sin Stock',
+                                 PROMO_ACTIVED: 'Promoción Activada',
+                                 PROMO_ENDED: 'Promoción Finalizada',
+                                 PRODUCT_DELETED: 'Producto Eliminado',
+                               };
+                               const typeName = typeLabels[notif.type] || notif.type;
+
+                               // Configurar el color base de ícono según tipo de notificación
+                               let iconColorClass = "text-gray-500 dark:text-gray-400";
+                               let bgIconClass = "bg-gray-100 dark:bg-gray-800";
+                               let titleColorClass = "text-gray-900 dark:text-white";
+
+                               if (notif.type.includes("USER")) {
+                                 iconColorClass = isUnread ? "text-indigo-600 dark:text-indigo-400" : "text-indigo-400 dark:text-indigo-400/50";
+                                 bgIconClass = isUnread ? "bg-indigo-50 dark:bg-indigo-500/10" : "bg-gray-50 dark:bg-gray-800";
+                                 titleColorClass = isUnread ? "text-indigo-950 dark:text-indigo-100" : "text-gray-700 dark:text-gray-300";
+                               } else if (notif.type.includes("STOCK_LOW")) {
+                                 iconColorClass = isUnread ? "text-amber-600 dark:text-amber-400" : "text-amber-500 dark:text-amber-400/50";
+                                 bgIconClass = isUnread ? "bg-amber-50 dark:bg-amber-500/10" : "bg-gray-50 dark:bg-gray-800";
+                                 titleColorClass = isUnread ? "text-amber-950 dark:text-amber-50" : "text-gray-700 dark:text-gray-300";
+                               } else if (notif.type.includes("STOCK_NONE") || notif.type.includes("DELETED")) {
+                                 iconColorClass = isUnread ? "text-red-600 dark:text-red-400" : "text-red-400 dark:text-red-400/50";
+                                 bgIconClass = isUnread ? "bg-red-50 dark:bg-red-500/10" : "bg-gray-50 dark:bg-gray-800";
+                                 titleColorClass = isUnread ? "text-red-950 dark:text-red-100" : "text-gray-700 dark:text-gray-300";
+                               } else if (notif.type.includes("PROMO")) {
+                                 iconColorClass = isUnread ? "text-emerald-600 dark:text-emerald-400" : "text-emerald-400 dark:text-emerald-400/50";
+                                 bgIconClass = isUnread ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-gray-50 dark:bg-gray-800";
+                                 titleColorClass = isUnread ? "text-emerald-950 dark:text-emerald-50" : "text-gray-700 dark:text-gray-300";
+                               }
+
+                               return (
+                               <Link 
+                                 href={notif.linkUrl || "#"} 
+                                 key={notif.id}
+                                 onClick={() => {
+                                   if (isUnread) {
+                                     markNotificationsAsReadAction(session.userId, [notif.id]);
+                                     setNotifications(prev => prev.map(n => n.id === notif.id ? {...n, isRead: true} : n));
+                                     setUnreadCount(prev => Math.max(0, prev - 1));
+                                   }
+                                   setIsNotificationsOpen(false);
+                                 }}
+                                 className={`px-5 py-4 transition-all flex gap-4 items-start border-b border-[#ededed]/50 dark:border-[#333]/50 last:border-0 relative
+                                   ${isUnread 
+                                     ? 'bg-blue-50/40 hover:bg-blue-50 dark:bg-[#252528] dark:hover:bg-[#2a2a2d]' 
+                                     : 'bg-white hover:bg-gray-50 dark:bg-[#1f1f1f] dark:hover:bg-[#252525] opacity-75 hover:opacity-100'
+                                   }
+                                 `}
+                               >
+                                 {isUnread && (
+                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 dark:bg-blue-400"></div>
+                                 )}
+                                 <div className={`p-2.5 rounded-full shrink-0 ${bgIconClass}`}>
+                                   <Bell className={`w-4 h-4 ${iconColorClass}`} />
+                                 </div>
+                                 <div className="flex flex-col flex-1 min-w-0">
+                                    <span className={`text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${titleColorClass}`}>
+                                      {typeName}
+                                      {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>}
+                                    </span>
+                                    <span className={`text-[13px] leading-snug break-words whitespace-normal overflow-hidden ${isUnread ? 'text-gray-800 dark:text-gray-200 font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
+                                      {notif.message}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 font-medium">
+                                      {(() => {
+                                        const d = new Date(notif.createdAt);
+                                        const dd = String(d.getDate()).padStart(2, '0');
+                                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                        const aa = String(d.getFullYear()).slice(2);
+                                        const hh = String(d.getHours()).padStart(2, '0');
+                                        const min = String(d.getMinutes()).padStart(2, '0');
+                                        return `${dd}/${mm}/${aa} ${hh}:${min}`;
+                                      })()}
+                                    </span>
+                                 </div>
+                               </Link>
+                               );
+                             })}
                           </div>
                         )}
                       </div>
 
-                      <div className="border-t border-[#ededed] dark:border-[#333] p-2 bg-gray-50/50 dark:bg-black/20">
+                      <div className="border-t border-[#ededed] dark:border-[#333] p-1.5 bg-gray-50/80 dark:bg-black/40 backdrop-blur-sm shrink-0">
                         <Link 
                           href="/configuraciones" 
                           className="w-full text-center block py-1.5 text-xs font-medium text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
@@ -138,8 +248,7 @@ export default function Header({ session }: { session: any }) {
                     </div>
                   )}
                 </div>
-              );
-            })()}
+            )}
 
             {/* AVATAR BUTTON */}
             <button 

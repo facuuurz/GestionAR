@@ -3,6 +3,7 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { getSession } from "@/lib/session";
+import { createNotification } from "@/lib/notifications";
 
 const prisma = new PrismaClient();
 
@@ -61,6 +62,13 @@ export async function registerUser(
         profilePicture: profilePicture || null,
       }
     });
+
+    await createNotification(
+      ["SUPERADMIN"],
+      "USER_CREATED",
+      `Se ha creado un nuevo usuario: ${username}`,
+      `/empleados/${newUser.id}`
+    );
 
     return { success: true, user: newUser };
 

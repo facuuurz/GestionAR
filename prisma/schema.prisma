@@ -39,6 +39,7 @@ model User {
   ventas    Venta[]
 
   passwordHistory PasswordHistory[]
+  notifications   Notification[]
 
   // Self-relation: Un Admin/SuperAdmin puede crear a otros usuarios
   createdById Int?
@@ -63,13 +64,18 @@ model PasswordHistory {
   @@map("password_history")
 }
 
-// Modelo Notificaciones para Admin
+// Modelo Notificaciones
 model Notification {
   id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // 'USER_CREATED', 'USER_DELETED', 'STOCK_LOW', 'STOCK_NONE', 'PROMO_ACTIVED', 'PROMO_ENDED'
   message   String
+  linkUrl   String?
   isRead    Boolean  @default(false)
   
   createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("notifications")
 }

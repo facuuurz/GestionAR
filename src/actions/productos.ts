@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
+import { createNotification } from "@/lib/notifications";
 
 // ----------------------------------------------------------------------
 // 1. ESQUEMA DE VALIDACIÓN Y TIPOS
@@ -158,9 +159,10 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
   const { nombre, codigoBarra, proveedor, tipo, stock, precio, descripcion, fechaVencimiento, esPorPeso } = validatedFields.data;
 
   try {
+    const prevProduct = await prisma.producto.findUnique({ where: { id } });
     const fechaFinal = fechaVencimiento ? new Date(fechaVencimiento) : null;
 
-    await prisma.producto.update({
+    const updatedProducto = await prisma.producto.update({
       where: { id },
       data: {
         nombre,
@@ -174,6 +176,17 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
         esPorPeso: esPorPeso || false,
       },
     });
+
+    if (prevProduct) {
+      const isKG = updatedProducto.esPorPeso;
+      const amountStr = isKG ? `${updatedProducto.stock} kg` : `${updatedProducto.stock} unidades`;
+
+      if (updatedProducto.stock === 0 && prevProduct.stock > 0) {
+        createNotification(["SUPERADMIN", "ADMIN"], "STOCK_NONE", `El producto "${nombre}" ha sido editado y declarado sin stock.`, `/inventario/detalles-producto/${id}`).catch(console.error);
+      } else if (updatedProducto.stock <= 20 && prevProduct.stock > 20) {
+        createNotification(["SUPERADMIN", "ADMIN"], "STOCK_LOW", `El stock del producto "${nombre}" ha sido reducido manualmente y queda poco (${amountStr}).`, `/inventario/detalles-producto/${id}`).catch(console.error);
+      }
+    }
 
     logger.info({ productoId: id, nombre, codigoBarra }, "Producto actualizado exitosamente");
 
@@ -196,7 +209,19 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
 export async function eliminarProducto(formData: FormData) {
   const id = parseInt(formData.get("id") as string);
   try {
+    const prod = await prisma.producto.findUnique({ where: { id } });
+
     await prisma.producto.delete({ where: { id } });
+
+    if (prod) {
+      createNotification(
+        ["SUPERADMIN", "ADMIN"], 
+        "PRODUCT_DELETED", 
+        `El producto "${prod.nombre}" ha sido eliminado del inventario por completo.`, 
+        `/inventario`
+      ).catch(console.error);
+    }
+
     logger.info({ productoId: id }, "Producto eliminado exitosamente");
   } catch (error) {
     logger.error({ err: error, productoId: id }, "Error al intentar eliminar un producto");
