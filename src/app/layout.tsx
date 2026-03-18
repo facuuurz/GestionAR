@@ -54,7 +54,7 @@ export default async function RootLayout({
         >
           <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f7f7f7] dark:bg-[#191919] overflow-x-hidden">
 
-            <Header session={enrichedSession} />
+            {enrichedSession && <Header session={enrichedSession} />}
 
             {/* CAMBIO AQUI: Agregamos 'pt-20' para que el contenido no quede tapado por el header fijo */}
             <main className={`flex-1 ${session ? 'pt-16' : ''}`}>

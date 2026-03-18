@@ -112,6 +112,13 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
 
     logger.info({ productoId: nuevoProducto.id, nombre, codigoBarra }, "Producto creado exitosamente");
 
+    createNotification(
+      ["SUPERADMIN", "ADMIN"],
+      "PRODUCT_CREATED",
+      `Se agregó el nuevo producto "${nombre}" al inventario.`,
+      `/inventario/detalles-producto/${nuevoProducto.id}`
+    ).catch(console.error);
+
   } catch (error) {
     logger.error({ err: error, payload: rawData }, "Error crítico de base de datos al intentar crear un producto");
     return {
@@ -214,11 +221,20 @@ export async function eliminarProducto(formData: FormData) {
     await prisma.producto.delete({ where: { id } });
 
     if (prod) {
+      const params = new URLSearchParams({
+        nombre: prod.nombre,
+        codigo: prod.codigoBarra,
+        tipo: prod.tipo,
+        precio: String(Number(prod.precio).toFixed(2)),
+        proveedor: prod.proveedor,
+        descripcion: prod.descripcion || "",
+        esPorPeso: prod.esPorPeso ? "1" : "0",
+      });
       createNotification(
         ["SUPERADMIN", "ADMIN"], 
         "PRODUCT_DELETED", 
-        `El producto "${prod.nombre}" ha sido eliminado del inventario por completo.`, 
-        `/inventario`
+        `El producto "${prod.nombre}" fue eliminado del inventario.`, 
+        `/inventario/eliminado?${params.toString()}`
       ).catch(console.error);
     }
 

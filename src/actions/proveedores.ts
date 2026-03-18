@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
+import { logger } from "@/lib/logger";
+import { createNotification } from "@/lib/notifications";
 
 // --- SCHEMA DE VALIDACIÓN ---
 const proveedorSchema = z.object({
@@ -77,7 +78,7 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
         };
     }
 
-    await prisma.proveedor.create({
+    const nuevoProveedor = await prisma.proveedor.create({
       data: {
         codigo: validatedFields.data.codigo,
         razonSocial: validatedFields.data.razonSocial,
@@ -87,8 +88,14 @@ export async function crearProveedor(prevState: State, formData: FormData): Prom
       },
     });
     
-    // Log informativo opcional (bueno para auditoría)
     logger.info({ codigo: validatedFields.data.codigo, razonSocial: validatedFields.data.razonSocial }, "Proveedor creado exitosamente");
+
+    createNotification(
+      ["SUPERADMIN", "ADMIN"],
+      "SUPPLIER_CREATED",
+      `Se registró el nuevo proveedor "${nuevoProveedor.razonSocial}" (Cód: ${nuevoProveedor.codigo}).`,
+      `/proveedores`
+    ).catch(console.error);
 
   } catch (error) {
     // <-- 2. APLICAMOS EL LOGGER CON CONTEXTO
@@ -204,7 +211,6 @@ export async function eliminarProveedor(prevState: State, formData: FormData): P
   try {
     const proveedor = await prisma.proveedor.findUnique({
       where: { id },
-      select: { codigo: true } 
     });
 
     if (!proveedor) {
@@ -222,8 +228,22 @@ export async function eliminarProveedor(prevState: State, formData: FormData): P
 
     logger.info({ proveedorId: id, codigoAfectado: proveedor.codigo }, "Proveedor y productos asociados eliminados correctamente");
 
+    const params = new URLSearchParams({
+      razonSocial: proveedor.razonSocial,
+      codigo: proveedor.codigo,
+      contacto: proveedor.contacto || "",
+      telefono: proveedor.telefono || "",
+      email: proveedor.email || "",
+    });
+
+    createNotification(
+      ["SUPERADMIN", "ADMIN"],
+      "SUPPLIER_DELETED",
+      `El proveedor "${proveedor.razonSocial}" (Cód: ${proveedor.codigo}) fue eliminado del sistema junto con sus productos.`,
+      `/proveedores/eliminado?${params.toString()}`
+    ).catch(console.error);
+
   } catch (error) {
-    // <-- 5. APLICAMOS EL LOGGER A LA TRANSACCIÓN
     logger.error({ err: error, proveedorId: id }, "Fallo transaccional al intentar eliminar el proveedor y sus productos");
     return { 
       message: "Ocurrió un error al intentar eliminar el proveedor y sus productos." 

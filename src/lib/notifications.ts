@@ -7,7 +7,12 @@ export type NotificationType =
   | "STOCK_NONE" 
   | "PROMO_ACTIVED" 
   | "PROMO_ENDED"
-  | "PRODUCT_DELETED";
+  | "PROMO_CREATED"
+  | "PROMO_DELETED"
+  | "PRODUCT_CREATED"
+  | "PRODUCT_DELETED"
+  | "SUPPLIER_CREATED"
+  | "SUPPLIER_DELETED";
 
 export async function createNotification(
   targetRoles: ("SUPERADMIN" | "ADMIN" | "EMPLEADO")[],

@@ -4,12 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BackupRestoreModal from "./BackupRestoreModal";
-import { User, Bell, LogOut, Settings, Users, Shield, Package, ArrowUpRight, CheckCheck } from "lucide-react";
+import { User, Bell, LogOut, Users, Shield, CheckCheck } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { getRecentNotificationsAction, markNotificationsAsReadAction } from "@/actions/notificaciones";
 
 export default function Header({ session }: { session: any }) {
-  if (!session) return null;
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
@@ -157,7 +156,12 @@ export default function Header({ session }: { session: any }) {
                                  STOCK_NONE: 'Sin Stock',
                                  PROMO_ACTIVED: 'Promoción Activada',
                                  PROMO_ENDED: 'Promoción Finalizada',
+                                 PROMO_CREATED: 'Nueva Promoción',
+                                 PROMO_DELETED: 'Promoción Eliminada',
+                                 PRODUCT_CREATED: 'Producto Agregado',
                                  PRODUCT_DELETED: 'Producto Eliminado',
+                                 SUPPLIER_CREATED: 'Proveedor Registrado',
+                                 SUPPLIER_DELETED: 'Proveedor Eliminado',
                                };
                                const typeName = typeLabels[notif.type] || notif.type;
 
@@ -166,11 +170,11 @@ export default function Header({ session }: { session: any }) {
                                let bgIconClass = "bg-gray-100 dark:bg-gray-800";
                                let titleColorClass = "text-gray-900 dark:text-white";
 
-                               if (notif.type.includes("USER")) {
+                               if (notif.type.includes("USER") || notif.type === "SUPPLIER_CREATED") {
                                  iconColorClass = isUnread ? "text-indigo-600 dark:text-indigo-400" : "text-indigo-400 dark:text-indigo-400/50";
                                  bgIconClass = isUnread ? "bg-indigo-50 dark:bg-indigo-500/10" : "bg-gray-50 dark:bg-gray-800";
                                  titleColorClass = isUnread ? "text-indigo-950 dark:text-indigo-100" : "text-gray-700 dark:text-gray-300";
-                               } else if (notif.type.includes("STOCK_LOW")) {
+                               } else if (notif.type.includes("STOCK_LOW") || notif.type === "PRODUCT_CREATED") {
                                  iconColorClass = isUnread ? "text-amber-600 dark:text-amber-400" : "text-amber-500 dark:text-amber-400/50";
                                  bgIconClass = isUnread ? "bg-amber-50 dark:bg-amber-500/10" : "bg-gray-50 dark:bg-gray-800";
                                  titleColorClass = isUnread ? "text-amber-950 dark:text-amber-50" : "text-gray-700 dark:text-gray-300";
@@ -235,20 +239,10 @@ export default function Header({ session }: { session: any }) {
                           </div>
                         )}
                       </div>
-
-                      <div className="border-t border-[#ededed] dark:border-[#333] p-1.5 bg-gray-50/80 dark:bg-black/40 backdrop-blur-sm shrink-0">
-                        <Link 
-                          href="/configuraciones" 
-                          className="w-full text-center block py-1.5 text-xs font-medium text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
-                          onClick={() => setIsNotificationsOpen(false)}
-                        >
-                          Configurar notificaciones
-                        </Link>
-                      </div>
                     </div>
-                  )}
-                </div>
-            )}
+                   )}
+                 </div>
+             )}
 
             {/* AVATAR BUTTON */}
             <button 
@@ -293,11 +287,6 @@ export default function Header({ session }: { session: any }) {
                       </button>
                     </>
                   )}
-
-                  <Link href="/configuraciones" className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer" onClick={() => setIsProfileOpen(false)}>
-                    <Settings className="w-4 h-4" />
-                    Configuraciones
-                  </Link>
                 </div>
                 
                 <div className="border-t border-[#ededed] dark:border-[#333] my-1"></div>

@@ -208,12 +208,21 @@ export async function crearPromocion(prevState: State, formData: FormData) {
 
     logger.info({ promocionId: nuevaPromocion.id, nombre: nuevaPromocion.nombre }, "Promoción creada exitosamente");
 
+    // Notificación siempre al crear una nueva promoción
+    await createNotification(
+      ["SUPERADMIN", "ADMIN"],
+      "PROMO_CREATED",
+      `Se creó la promoción "${nuevaPromocion.nombre}".`,
+      `/promociones/${nuevaPromocion.id}`
+    );
+
+    // Notificación adicional si además se activó al crear
     if (nuevaPromocion.activo) {
       await createNotification(
         ["SUPERADMIN", "ADMIN"],
         "PROMO_ACTIVED",
-        `Se ha activado una nueva promoción: "${nuevaPromocion.nombre}".`,
-        `/promociones`
+        `Se ha activado la nueva promoción: "${nuevaPromocion.nombre}".`,
+        `/promociones/${nuevaPromocion.id}`
       );
     }
 
@@ -300,9 +309,9 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     logger.info({ promocionId: id, nombre: validatedFields.data.nombre }, "Promoción y sus productos actualizados exitosamente");
 
     if (prevPromo && !prevPromo.activo && validatedFields.data.activo) {
-      await createNotification(["SUPERADMIN", "ADMIN"], "PROMO_ACTIVED", `Se ha activado la promoción "${validatedFields.data.nombre}".`, `/promociones`);
+      await createNotification(["SUPERADMIN", "ADMIN"], "PROMO_ACTIVED", `Se ha activado la promoción "${validatedFields.data.nombre}".`, `/promociones/${id}`);
     } else if (prevPromo && prevPromo.activo && !validatedFields.data.activo) {
-      await createNotification(["SUPERADMIN", "ADMIN"], "PROMO_ENDED", `Se ha finalizado la promoción "${validatedFields.data.nombre}".`, `/promociones`);
+      await createNotification(["SUPERADMIN", "ADMIN"], "PROMO_ENDED", `Se ha finalizado la promoción "${validatedFields.data.nombre}".`, `/promociones/${id}`);
     }
 
   } catch (error) {
@@ -320,9 +329,28 @@ export async function actualizarPromocion(id: number, prevState: State, formData
 // --- ELIMINAR PROMOCIÓN ---
 export async function eliminarPromocion(id: number) {
   try {
+    const promo = await prisma.promocion.findUnique({ where: { id } });
+
     await prisma.promocion.delete({ where: { id } });
     
     logger.info({ promocionId: id }, "Promoción eliminada exitosamente");
+
+    if (promo) {
+      const params = new URLSearchParams({
+        nombre: promo.nombre,
+        descripcion: promo.descripcion || "",
+        precio: String(Number(promo.precio).toFixed(2)),
+        fechaInicio: promo.fechaInicio ? promo.fechaInicio.toISOString().split('T')[0] : "",
+        fechaFin: promo.fechaFin ? promo.fechaFin.toISOString().split('T')[0] : "",
+      });
+      createNotification(
+        ["SUPERADMIN", "ADMIN"],
+        "PROMO_DELETED",
+        `La promoción "${promo.nombre}" fue eliminada del sistema.`,
+        `/promociones/eliminado?${params.toString()}`
+      ).catch(console.error);
+    }
+
     revalidatePath("/promociones");
   } catch (error) {
     logger.error({ err: error, promocionId: id }, "Error crítico al intentar eliminar la promoción");
