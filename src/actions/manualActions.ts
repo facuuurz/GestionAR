@@ -11,6 +11,48 @@ export interface ManualSection {
 // Simulamos una base de datos de secciones del manual
 const manualData: ManualSection[] = [
   {
+    id: "usuarios",
+    title: "Usuarios",
+    icon: "manage_accounts",
+    description: "Conocé los roles, permisos y cómo gestionar las cuentas del personal.",
+    content: `
+      ### Módulo de Usuarios
+      ¡Bienvenido al módulo de Usuarios de GestionAR! Para garantizar la seguridad de tu información comercial, el sistema utiliza un esquema de roles. Esto significa que cada persona que ingresa al sistema verá y podrá hacer únicamente lo que su nivel de acceso le permita.
+      
+      **1. Tipos de Roles y sus Capacidades**
+      GestionAR divide a los usuarios en tres niveles jerárquicos:
+      
+      - **Empleado (Normal):** Es el nivel operativo básico para el trabajo diario (como cajeros o repositores).
+        - Tienen acceso a las herramientas de venta y gestión diaria.
+        - No están autorizados para realizar ni cargar copias de seguridad (Backups) del sistema.
+      
+      - **Administrador (Admin):** Es un nivel intermedio.
+        - Pueden acceder al panel de estadísticas para analizar el rendimiento.
+        - Tienen permisos para generar y restaurar backups del sistema.
+        - Pueden ver la lista de empleados, pero de forma restringida: solo pueden visualizar a los empleados que están bajo su cargo directo.
+      
+      - **Super Administrador (Super Admin):** Es el nivel de máximo control.
+        - Poseen todas las capacidades de un Administrador.
+        - Son los únicos que pueden crear usuarios nuevos y eliminar cuentas del sistema.
+        - Tienen acceso global para ver a todos los empleados registrados, sin restricciones.
+      
+      **2. Panel de Gestión de Usuarios**
+      Si tienes los permisos necesarios (Admin o Super Admin), podrás administrar al personal de tu empresa:
+      1. Haz clic en tu **Avatar** en la esquina superior derecha y selecciona la opción **Ver empleados**.
+      2. Ingresarás a la pantalla **Gestión de Usuarios**, donde verás un listado completo de tu personal.
+      3. **Para agregar a alguien:** Haz clic en el botón negro **+ Nuevo Usuario** en la esquina superior derecha para crearle su cuenta.
+      4. **Para buscar y filtrar:** Puedes usar la barra de búsqueda o los botones rápidos para filtrar la tabla y ver solo a los Empleados, Admins o SuperAdmins.
+      5. **Control individual:** En la tabla verás el nombre, usuario, rol, DNI y antigüedad de cada persona. En la última columna (Acciones), tendrás botones específicos para ver el detalle (ícono verde), editar su información (lápiz azul) o eliminar su cuenta (tacho rojo).
+      
+      **3. Mi Cuenta (Perfil Personal)**
+      Cada usuario puede consultar su información personal y los detalles de sus credenciales:
+      1. Abre el menú de tu **Avatar** y selecciona **Cuenta**.
+      2. En la pantalla **Mi Cuenta**, verás un resumen de tu perfil, incluyendo un recuadro a la izquierda que te confirma qué nivel de acceso tienes (Ej. "Escudo de Super Admin") y tu fecha de ingreso.
+      3. Encontrarás la sección **Información Personal**, donde figuran tus datos de registro como Nombre completo, Correo Electrónico, Nombre de Usuario, DNI y CUIT/CUIL.
+      4. Más abajo, verás la **Información del Negocio** asociado a tu cuenta, como el Nombre del Local, la Dirección y el Teléfono.
+    `
+  },
+  {
     id: "ventas",
     title: "Ventas",
     icon: "shopping_cart",
