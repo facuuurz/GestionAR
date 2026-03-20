@@ -47,3 +47,16 @@ export async function markNotificationsAsReadAction(userId: number, notification
     console.error("Error marking notifications as read:", error);
   }
 }
+
+export async function deleteNotificationsAction(userId: number, notificationIds: number[]) {
+  try {
+    await prisma.notification.deleteMany({
+      where: {
+        userId,
+        id: { in: notificationIds }
+      }
+    });
+  } catch (error) {
+    console.error("Error deleting notifications:", error);
+  }
+}

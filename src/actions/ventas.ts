@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 import { createNotification } from "@/lib/notifications";
+import { getSession } from "@/lib/session";
 
 // --- TIPOS ---
 type Filters = {
@@ -143,6 +144,7 @@ export async function procesarVenta(
   clienteId?: number | null
 ) {
   try {
+    const session = await getSession();
     const stockNotificationsToEmit: { type: "STOCK_LOW" | "STOCK_NONE"; message: string; productId: number }[] = [];
 
     await prisma.$transaction(async (tx) => {
@@ -152,6 +154,7 @@ export async function procesarVenta(
           total: total,
           cuentaCorrienteId: clienteId || null,
           fecha: new Date(),
+          userId: session?.userId || null, // <- Aquí agregamos autor de venta
         }
       });
 

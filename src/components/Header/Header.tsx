@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BackupRestoreModal from "./BackupRestoreModal";
-import { User, Bell, LogOut, Users, Shield, CheckCheck } from "lucide-react";
+import { User, Bell, LogOut, Users, Shield, CheckCheck, Trash2 } from "lucide-react";
 import { logout } from "@/lib/auth";
-import { getRecentNotificationsAction, markNotificationsAsReadAction } from "@/actions/notificaciones";
+import { getRecentNotificationsAction, markNotificationsAsReadAction, deleteNotificationsAction } from "@/actions/notificaciones";
 
 export default function Header({ session }: { session: any }) {
   const pathname = usePathname();
@@ -18,6 +18,7 @@ export default function Header({ session }: { session: any }) {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedNotifications, setSelectedNotifications] = useState<number[]>([]);
 
   // Ya no usamos useEffect global, usamos un overlay transparente (z-40)
 
@@ -38,6 +39,32 @@ export default function Header({ session }: { session: any }) {
     await markNotificationsAsReadAction(session.userId, unreadIds);
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     setUnreadCount(0);
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedNotifications(notifications.map(n => n.id));
+    } else {
+      setSelectedNotifications([]);
+    }
+  };
+
+  const handleMarkSelectedAsRead = async () => {
+    if (selectedNotifications.length === 0) return;
+    await markNotificationsAsReadAction(session.userId, selectedNotifications);
+    const updatedNotifications = notifications.map(n => selectedNotifications.includes(n.id) ? { ...n, isRead: true } : n);
+    setNotifications(updatedNotifications);
+    setUnreadCount(updatedNotifications.filter(n => !n.isRead).length);
+    setSelectedNotifications([]);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedNotifications.length === 0) return;
+    await deleteNotificationsAction(session.userId, selectedNotifications);
+    const updatedNotifications = notifications.filter(n => !selectedNotifications.includes(n.id));
+    setNotifications(updatedNotifications);
+    setUnreadCount(updatedNotifications.filter(n => !n.isRead).length);
+    setSelectedNotifications([]);
   };
 
   const navLinks = [
@@ -125,18 +152,47 @@ export default function Header({ session }: { session: any }) {
                   {/* DROPDOWN NOTIFICACIONES */}
                   {isNotificationsOpen && (
                     <div className="absolute right-0 top-12 mt-2 w-96 bg-white dark:bg-[#1f1f1f] border border-[#ededed] dark:border-[#333] rounded-2xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col max-h-[85vh]">
-                      <div className="px-5 py-4 border-b border-[#ededed] dark:border-[#333] flex justify-between items-center bg-gray-50/80 dark:bg-black/40 backdrop-blur-sm z-10 shrink-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Notificaciones</h3>
-                          {unreadCount > 0 && (
-                            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                      <div className="px-5 py-4 border-b border-[#ededed] dark:border-[#333] flex flex-col gap-3 bg-gray-50/80 dark:bg-black/40 backdrop-blur-sm z-10 shrink-0">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Notificaciones</h3>
+                            {unreadCount > 0 && (
+                              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                            )}
+                          </div>
+                          {unreadCount > 0 && selectedNotifications.length === 0 && (
+                            <button onClick={handleMarkAllAsRead} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 rounded-lg cursor-pointer">
+                              <CheckCheck className="w-3.5 h-3.5" />
+                              Marcar leídas
+                            </button>
                           )}
                         </div>
-                        {unreadCount > 0 && (
-                          <button onClick={handleMarkAllAsRead} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 rounded-lg cursor-pointer">
-                            <CheckCheck className="w-3.5 h-3.5" />
-                            Marcar leídas
-                          </button>
+                        
+                        {notifications.length > 0 && (
+                          <div className="flex items-center justify-between pt-1 border-t border-[#ededed]/50 dark:border-[#333]/50">
+                            <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-gray-200">
+                              <input 
+                                type="checkbox" 
+                                className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                checked={notifications.length > 0 && selectedNotifications.length === notifications.length}
+                                onChange={handleSelectAll}
+                              />
+                              Seleccionar todas
+                            </label>
+                            
+                            {selectedNotifications.length > 0 && (
+                              <div className="flex items-center gap-2 animate-in fade-in zoom-in slide-in-from-right-2 duration-200">
+                                <button onClick={handleMarkSelectedAsRead} className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg">
+                                  <CheckCheck className="w-3 h-3" />
+                                  Leídas
+                                </button>
+                                <button onClick={handleDeleteSelected} className="flex items-center gap-1 text-[11px] text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-lg">
+                                  <Trash2 className="w-3 h-3" />
+                                  Eliminar
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                       
@@ -167,6 +223,8 @@ export default function Header({ session }: { session: any }) {
                                  PRODUCT_DELETED: 'Producto Eliminado',
                                  SUPPLIER_CREATED: 'Proveedor Registrado',
                                  SUPPLIER_DELETED: 'Proveedor Eliminado',
+                                 PRODUCT_EXPIRED: 'Producto Vencido',
+                                 PRODUCT_EXPIRING: 'Producto por Vencer',
                                };
                                const typeName = typeLabels[notif.type] || notif.type;
 
@@ -179,11 +237,11 @@ export default function Header({ session }: { session: any }) {
                                  iconColorClass = isUnread ? "text-indigo-600 dark:text-indigo-400" : "text-indigo-400 dark:text-indigo-400/50";
                                  bgIconClass = isUnread ? "bg-indigo-50 dark:bg-indigo-500/10" : "bg-gray-50 dark:bg-gray-800";
                                  titleColorClass = isUnread ? "text-indigo-950 dark:text-indigo-100" : "text-gray-700 dark:text-gray-300";
-                               } else if (notif.type.includes("STOCK_LOW") || notif.type === "PRODUCT_CREATED") {
+                               } else if (notif.type.includes("STOCK_LOW") || notif.type === "PRODUCT_CREATED" || notif.type === "PRODUCT_EXPIRING") {
                                  iconColorClass = isUnread ? "text-amber-600 dark:text-amber-400" : "text-amber-500 dark:text-amber-400/50";
                                  bgIconClass = isUnread ? "bg-amber-50 dark:bg-amber-500/10" : "bg-gray-50 dark:bg-gray-800";
                                  titleColorClass = isUnread ? "text-amber-950 dark:text-amber-50" : "text-gray-700 dark:text-gray-300";
-                               } else if (notif.type.includes("STOCK_NONE") || notif.type.includes("DELETED")) {
+                               } else if (notif.type.includes("STOCK_NONE") || notif.type.includes("DELETED") || notif.type === "PRODUCT_EXPIRED") {
                                  iconColorClass = isUnread ? "text-red-600 dark:text-red-400" : "text-red-400 dark:text-red-400/50";
                                  bgIconClass = isUnread ? "bg-red-50 dark:bg-red-500/10" : "bg-gray-50 dark:bg-gray-800";
                                  titleColorClass = isUnread ? "text-red-950 dark:text-red-100" : "text-gray-700 dark:text-gray-300";
@@ -194,18 +252,9 @@ export default function Header({ session }: { session: any }) {
                                }
 
                                return (
-                               <Link 
-                                 href={notif.linkUrl || "#"} 
+                               <div 
                                  key={notif.id}
-                                 onClick={() => {
-                                   if (isUnread) {
-                                     markNotificationsAsReadAction(session.userId, [notif.id]);
-                                     setNotifications(prev => prev.map(n => n.id === notif.id ? {...n, isRead: true} : n));
-                                     setUnreadCount(prev => Math.max(0, prev - 1));
-                                   }
-                                   setIsNotificationsOpen(false);
-                                 }}
-                                 className={`px-5 py-4 transition-all flex gap-4 items-start border-b border-[#ededed]/50 dark:border-[#333]/50 last:border-0 relative
+                                 className={`transition-all flex items-stretch border-b border-[#ededed]/50 dark:border-[#333]/50 last:border-0 relative
                                    ${isUnread 
                                      ? 'bg-blue-50/40 hover:bg-blue-50 dark:bg-[#252528] dark:hover:bg-[#2a2a2d]' 
                                      : 'bg-white hover:bg-gray-50 dark:bg-[#1f1f1f] dark:hover:bg-[#252525] opacity-75 hover:opacity-100'
@@ -213,32 +262,61 @@ export default function Header({ session }: { session: any }) {
                                  `}
                                >
                                  {isUnread && (
-                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 dark:bg-blue-400"></div>
+                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 dark:bg-blue-400 z-10"></div>
                                  )}
-                                 <div className={`p-2.5 rounded-full shrink-0 ${bgIconClass}`}>
-                                   <Bell className={`w-4 h-4 ${iconColorClass}`} />
+                                 
+                                 <div className="pl-4 py-4 flex items-start pt-6 h-full z-10">
+                                    <input 
+                                      type="checkbox"
+                                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                      checked={selectedNotifications.includes(notif.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedNotifications(prev => [...prev, notif.id]);
+                                        } else {
+                                          setSelectedNotifications(prev => prev.filter(id => id !== notif.id));
+                                        }
+                                      }}
+                                    />
                                  </div>
-                                 <div className="flex flex-col flex-1 min-w-0">
-                                    <span className={`text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${titleColorClass}`}>
-                                      {typeName}
-                                      {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>}
-                                    </span>
-                                    <span className={`text-[13px] leading-snug break-words whitespace-normal overflow-hidden ${isUnread ? 'text-gray-800 dark:text-gray-200 font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
-                                      {notif.message}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 font-medium">
-                                      {(() => {
-                                        const d = new Date(notif.createdAt);
-                                        const dd = String(d.getDate()).padStart(2, '0');
-                                        const mm = String(d.getMonth() + 1).padStart(2, '0');
-                                        const aa = String(d.getFullYear()).slice(2);
-                                        const hh = String(d.getHours()).padStart(2, '0');
-                                        const min = String(d.getMinutes()).padStart(2, '0');
-                                        return `${dd}/${mm}/${aa} ${hh}:${min}`;
-                                      })()}
-                                    </span>
-                                 </div>
-                               </Link>
+
+                                 <Link 
+                                   href={notif.linkUrl || "#"} 
+                                   onClick={() => {
+                                     if (isUnread) {
+                                       markNotificationsAsReadAction(session.userId, [notif.id]);
+                                       setNotifications(prev => prev.map(n => n.id === notif.id ? {...n, isRead: true} : n));
+                                       setUnreadCount(prev => Math.max(0, prev - 1));
+                                     }
+                                     setIsNotificationsOpen(false);
+                                   }}
+                                   className="flex gap-4 items-start flex-1 min-w-0 pr-5 pl-3 py-4"
+                                 >
+                                   <div className={`p-2.5 rounded-full shrink-0 ${bgIconClass}`}>
+                                     <Bell className={`w-4 h-4 ${iconColorClass}`} />
+                                   </div>
+                                   <div className="flex flex-col flex-1 min-w-0">
+                                      <span className={`text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${titleColorClass}`}>
+                                        {typeName}
+                                        {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>}
+                                      </span>
+                                      <span className={`text-[13px] leading-snug break-words whitespace-normal overflow-hidden ${isUnread ? 'text-gray-800 dark:text-gray-200 font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
+                                        {notif.message}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 font-medium">
+                                        {(() => {
+                                          const d = new Date(notif.createdAt);
+                                          const dd = String(d.getDate()).padStart(2, '0');
+                                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                          const aa = String(d.getFullYear()).slice(2);
+                                          const hh = String(d.getHours()).padStart(2, '0');
+                                          const min = String(d.getMinutes()).padStart(2, '0');
+                                          return `${dd}/${mm}/${aa} ${hh}:${min}`;
+                                        })()}
+                                      </span>
+                                   </div>
+                                 </Link>
+                               </div>
                                );
                              })}
                           </div>

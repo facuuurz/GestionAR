@@ -12,7 +12,9 @@ export type NotificationType =
   | "PRODUCT_CREATED"
   | "PRODUCT_DELETED"
   | "SUPPLIER_CREATED"
-  | "SUPPLIER_DELETED";
+  | "SUPPLIER_DELETED"
+  | "PRODUCT_EXPIRED"
+  | "PRODUCT_EXPIRING";
 
 export async function createNotification(
   targetRoles: ("SUPERADMIN" | "ADMIN" | "EMPLEADO")[],
