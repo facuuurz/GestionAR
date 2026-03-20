@@ -32,7 +32,7 @@ type ItemCarrito = {
   esPorPeso?: boolean; 
 
   // Solo si es promo, guardamos qué tiene adentro para descontar luego
-  contenido?: { productoId: number; cantidad: number }[];
+  contenido?: { productoId: number; cantidad: number; precioPromocional: number }[];
 };
 
 type Cliente = {
@@ -48,6 +48,7 @@ type PromocionBackend = {
     precio: number; // Asegúrate de que tu backend mande esto
     items: {
         cantidad: number;
+        precioPromocional?: number;
         producto: Producto;
     }[];
 };
@@ -259,7 +260,8 @@ useEffect(() => {
               stockMaximo: stockPosible,
               contenido: promo.items.map(pi => ({
                   productoId: pi.producto.id,
-                  cantidad: pi.cantidad
+                  cantidad: pi.cantidad,
+                  precioPromocional: pi.precioPromocional ?? pi.producto.precio
               }))
           }];
       });
@@ -316,29 +318,27 @@ useEffect(() => {
     // El servidor espera una lista de Productos para descontar stock.
     // Debemos convertir las promos en sus componentes sumados.
     
-    const mapaProductos = new Map<number, number>();
+    const itemsParaDescontar: { id: number; cantidad: number; precioUnitario: number }[] = [];
 
     carrito.forEach(item => {
         if (item.tipo === "PRODUCTO") {
-            const actual = mapaProductos.get(item.id) || 0;
-            mapaProductos.set(item.id, actual + item.cantidad);
+            itemsParaDescontar.push({
+                id: item.id,
+                cantidad: item.cantidad,
+                precioUnitario: item.precio
+            });
         } 
         else if (item.tipo === "PROMOCION" && item.contenido) {
-            // Si es promo, multiplicamos sus ingredientes por la cantidad de promos
+            // Si es promo, empujamos sus ingredientes multiplicados por la cantidad de promos
             item.contenido.forEach(componente => {
-                const idProd = componente.productoId;
-                const cantTotal = componente.cantidad * item.cantidad;
-                const actual = mapaProductos.get(idProd) || 0;
-                mapaProductos.set(idProd, actual + cantTotal);
+                itemsParaDescontar.push({
+                    id: componente.productoId,
+                    cantidad: componente.cantidad * item.cantidad,
+                    precioUnitario: componente.precioPromocional
+                });
             });
         }
     });
-
-    // Convertimos el mapa al formato que espera la acción
-    const itemsParaDescontar = Array.from(mapaProductos.entries()).map(([id, cantidad]) => ({
-        id,
-        cantidad
-    }));
 
     // Enviamos el TOTAL calculado en el frontend (que respeta el precio promo)
     // y los ITEMS calculados (que respetan el stock real)
@@ -351,12 +351,13 @@ useEffect(() => {
     if (resultado.success) {
         setListaProductos((prevProductos) => 
             prevProductos.map((producto) => {
-                const itemVendido = itemsParaDescontar.find(item => item.id === producto.id);
+                const ventasDelProducto = itemsParaDescontar.filter(item => item.id === producto.id);
+                const cantidadGastada = ventasDelProducto.reduce((sum, current) => sum + current.cantidad, 0);
                 
-                if (itemVendido) {
+                if (cantidadGastada > 0) {
                     return {
                         ...producto,
-                        stock: producto.stock - itemVendido.cantidad
+                        stock: producto.stock - cantidadGastada
                     };
                 }
                 return producto;

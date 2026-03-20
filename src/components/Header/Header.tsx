@@ -371,12 +371,13 @@ export default function Header({ session }: { session: any }) {
                         <Users className="w-4 h-4" />
                         Ver empleados
                       </Link>
-                      <button onClick={() => { setIsRestoreModalOpen(true); setIsProfileOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer">
-                        <span className="material-symbols-outlined text-[16px]">settings_backup_restore</span>
-                        Recuperación (Backup)
-                      </button>
                     </>
                   )}
+
+                  <button onClick={() => { setIsRestoreModalOpen(true); setIsProfileOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors cursor-pointer">
+                    <span className="material-symbols-outlined text-[16px]">settings_backup_restore</span>
+                    Recuperación (Backup)
+                  </button>
                 </div>
                 
                 <div className="border-t border-[#ededed] dark:border-[#333] my-1"></div>
@@ -442,6 +443,7 @@ export default function Header({ session }: { session: any }) {
       <BackupRestoreModal 
         isOpen={isRestoreModalOpen} 
         onClose={() => setIsRestoreModalOpen(false)} 
+        role={session.role}
       />
     </header>
   );

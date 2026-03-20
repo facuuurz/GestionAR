@@ -139,7 +139,7 @@ export async function obtenerHistorialVentas(empleadoId?: number) {
 
 // 4. PROCESAR VENTA (CRÍTICO)
 export async function procesarVenta(
-  items: { id: number; cantidad: number }[], 
+  items: { id: number; cantidad: number; precioUnitario: number }[], 
   total: number, 
   clienteId?: number | null
 ) {
@@ -190,8 +190,8 @@ export async function procesarVenta(
             ventaId: nuevaVenta.id,
             productoId: item.id,
             cantidad: item.cantidad,
-            precioUnit: producto.precio, 
-            subtotal: Number(producto.precio) * item.cantidad
+            precioUnit: item.precioUnitario, 
+            subtotal: item.precioUnitario * item.cantidad
           }
         });
       }

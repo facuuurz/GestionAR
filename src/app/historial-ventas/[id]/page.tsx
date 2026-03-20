@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { obtenerDetalleVenta } from '@/actions/ventas';
+import BotonExportarVenta from '@/components/Historial/BotonExportarVenta';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -117,6 +118,7 @@ export default async function DetalleVentaPage({ params }: PageProps) {
               <span className="material-symbols-outlined text-lg">arrow_back</span>
               Volver
             </Link>
+            <BotonExportarVenta venta={venta} />
           </div>
 
           <div className="w-full md:w-80 flex flex-col gap-3">
