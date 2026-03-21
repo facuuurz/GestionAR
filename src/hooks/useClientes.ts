@@ -15,6 +15,7 @@ export function useClientes() {
   const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Usamos useCallback para que el orquestador pueda llamarlo en sus useEffects sin crear loops infinitos
@@ -32,6 +33,7 @@ export function useClientes() {
 
       setClientes(data.clientes || []);
       setTotalPages(data.totalPages || 1);
+      if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
       
     } catch (err) {
       console.error("Error cargando clientes:", err);
@@ -47,6 +49,7 @@ export function useClientes() {
     clientes,
     loading,
     totalPages,
+    isAdmin,
     error,
     recargar,
   };

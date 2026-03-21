@@ -127,11 +127,25 @@ export async function updateUser(
   cuit?: string,
   profilePicture?: string,
   username?: string,
-  password?: string
+  password?: string,
+  currentPassword?: string
 ) {
   try {
     const session = await getSession();
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
+    if (!session) {
+      return { success: false, error: "No autorizado" };
+    }
+
+    const isEmpleado = session.role === "EMPLEADO";
+    const isAdminOrSuperAdmin = session.role === "ADMIN" || session.role === "SUPERADMIN";
+
+    // EMPLEADO can only edit their own account
+    if (isEmpleado && userId !== session.userId) {
+      return { success: false, error: "No autorizado" };
+    }
+
+    // Must be at least EMPLEADO editing self, or ADMIN/SUPERADMIN
+    if (!isEmpleado && !isAdminOrSuperAdmin) {
       return { success: false, error: "No autorizado" };
     }
 
@@ -180,20 +194,47 @@ export async function updateUser(
       }
     }
 
+    // Validation for duplicate DNI and CUIT (run in parallel)
+    const [existingDni, existingCuit] = await Promise.all([
+      (dni && dni.trim()) ? prisma.user.findFirst({ where: { dni, NOT: { id: userId } } }) : null,
+      (cuit && cuit.trim()) ? prisma.user.findFirst({ where: { cuit, NOT: { id: userId } } }) : null,
+    ]);
+
+    const fieldErrors: Record<string, string> = {};
+    if (existingDni) fieldErrors.dni = "Ya existe un usuario con ese DNI.";
+    if (existingCuit) fieldErrors.cuit = "Ya existe un usuario con ese CUIT / CUIL.";
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return { success: false, error: "FIELD_ERRORS", fieldErrors };
+    }
+
     let passwordHash = undefined;
+    let requireRelogin = false;
+    
     if (password) {
+      if (userToEdit.id === session.userId) {
+        if (!currentPassword) {
+          return { success: false, error: "Debes ingresar tu contraseña actual para poder cambiarla." };
+        }
+        const isMatch = await bcrypt.compare(currentPassword, userToEdit.passwordHash);
+        if (!isMatch) {
+          return { success: false, error: "La contraseña actual es incorrecta." };
+        }
+        requireRelogin = true;
+      }
       passwordHash = await bcrypt.hash(password, 10);
     }
 
     const updateData: any = {
       name,
       email,
-      role: role as any,
+      // EMPLEADO cannot change their own role or username - enforce server-side
+      role: (isEmpleado && userId === session.userId) ? userToEdit.role : (role as any),
       dni: dni || null,
       cuit: cuit || null,
     };
 
-    if (username) updateData.username = username;
+    if (username && !(isEmpleado && userId === session.userId)) updateData.username = username;
     if (passwordHash) updateData.passwordHash = passwordHash;
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
 
@@ -201,6 +242,11 @@ export async function updateUser(
       where: { id: userId },
       data: updateData
     });
+
+    if (requireRelogin) {
+      await deleteSession();
+      return { success: true, requireRelogin: true };
+    }
 
     revalidatePath("/empleados");
     revalidatePath(`/empleados/editar/${userId}`);

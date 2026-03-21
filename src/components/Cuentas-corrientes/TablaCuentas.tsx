@@ -13,10 +13,11 @@ interface TablaCuentasProps {
   totalPages: number;
   onPageChange: (newPage: number) => void;
   onDeleteSuccess?: () => void;
+  isAdmin: boolean;
 }
 
 export default function TablaCuentas({ 
-  clientes, loading, busqueda, hasActiveFilters, onClearAll, currentPage, totalPages, onPageChange, onDeleteSuccess 
+  clientes, loading, busqueda, hasActiveFilters, onClearAll, currentPage, totalPages, onPageChange, onDeleteSuccess, isAdmin 
 }: TablaCuentasProps) {
 
   return (
@@ -46,7 +47,7 @@ export default function TablaCuentas({
             ) : clientes.length > 0 ? (
                 // Mapeamos directamente 'clientes', ya vienen filtrados del backend
                 clientes.map((cliente) => (
-                  <FilaCliente key={cliente.id} cliente={cliente} onDeleteSuccess={onDeleteSuccess} />
+                  <FilaCliente key={cliente.id} cliente={cliente} onDeleteSuccess={onDeleteSuccess} isAdmin={isAdmin} />
                 ))
             ) : (
                 <tr>
@@ -73,7 +74,7 @@ export default function TablaCuentas({
       
       {/* Footer Paginación */}
       {!loading && totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 px-2">
+        <div className="flex justify-between items-center px-4 py-3 border-t border-[#ededed] dark:border-[#333]">
           
           {/* Botón Anterior */}
           <button 

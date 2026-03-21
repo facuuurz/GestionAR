@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { crearProveedor } from "@/actions/proveedores";
 import FormularioProveedor from "@/components/Proveedores/FormularioProveedor";
+import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-export default function NuevoProveedorPage() {
+export default async function NuevoProveedorPage() {
+  const session = await getSession();
+  if (session?.role === 'EMPLEADO') redirect('/');
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
       <main className="flex-1 flex flex-col items-center py-8 px-6 lg:px-12 xl:px-40 w-full">

@@ -1,9 +1,9 @@
 import { getSession } from "@/lib/session";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { Shield, User, Building, Phone, MapPin, Mail, Calendar, Key, UserCheck, CreditCard, Hash } from "lucide-react";
+import { Shield, User, Building, Phone, MapPin, Mail, Calendar, UserCheck, CreditCard, Hash, Pencil } from "lucide-react";
+import Link from "next/link";
 import ProfilePicture from "./ProfilePicture";
-import ChangePasswordForm from "./ChangePasswordForm";
 
 const prisma = new PrismaClient();
 
@@ -40,10 +40,19 @@ export default async function CuentaPage() {
         
         {/* Cabecera */}
         <div className="flex flex-col gap-2 pb-8">
-          <h1 className="text-primary dark:text-white text-3xl sm:text-4xl font-bold leading-tight flex items-center gap-3">
-            <User className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
-            Mi Cuenta
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-primary dark:text-white text-3xl sm:text-4xl font-bold leading-tight flex items-center gap-3">
+              <User className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
+              Mi Cuenta
+            </h1>
+            <Link
+              href={`/empleados/editar/${user.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#222] text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#333] transition-all duration-200 shadow-sm hover:scale-105 active:scale-95 shrink-0"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar cuenta
+            </Link>
+          </div>
           <p className="text-neutral-500 dark:text-neutral-400 text-base md:text-lg">
             Gestiona la información de tu perfil y credenciales.
           </p>
@@ -195,12 +204,6 @@ export default async function CuentaPage() {
               </div>
             )}
 
-            {/* Credenciales */}
-            <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
-               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Credenciales</h3>
-               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-balance">Administra tu contraseña de acceso.</p>
-               <ChangePasswordForm userId={user.id} />
-            </div>
 
           </div>
 

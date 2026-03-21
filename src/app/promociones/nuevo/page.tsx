@@ -1,8 +1,12 @@
 import Link from "next/link";
 import FormularioPromocion from "@/components/promociones/FormularioPromocion";
 import { crearPromocion } from "@/actions/promociones";
+import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-export default function NuevaPromocionPage() {
+export default async function NuevaPromocionPage() {
+    const session = await getSession();
+    if (session?.role === 'EMPLEADO') redirect('/');
     return (
         <div className="flex flex-col min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] text-slate-800 dark:text-slate-200 font-sans transition-colors duration-200">
             <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">

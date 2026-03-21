@@ -154,3 +154,5 @@
     @apply font-sans;
   }
 }
+@layer base { button { @apply cursor-pointer; } }
+

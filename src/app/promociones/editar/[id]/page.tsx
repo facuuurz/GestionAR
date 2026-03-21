@@ -1,8 +1,12 @@
 import { obtenerPromocionPorId, actualizarPromocion, eliminarPromocion } from "@/actions/promociones";
-import EditarPromocionForm from "@/components/promociones/EditarPromocionForm";import Link from "next/link";
-import { notFound } from "next/navigation";
+import EditarPromocionForm from "@/components/promociones/EditarPromocionForm";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 
 export default async function EditarPromocionPage(props: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (session?.role === 'EMPLEADO') redirect('/');
   const params = await props.params;
   const id = parseInt(params.id);
   

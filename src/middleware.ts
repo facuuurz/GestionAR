@@ -27,8 +27,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // Si trata de acceder a una ruta de admin y no es admin ni superadmin, redirige al inicio
+  // Excepcion: EMPLEADO puede acceder a su propia pagina de edicion /empleados/editar/[su_id]
+  const editarOwnPattern = /^\/empleados\/editar\/(\d+)$/;
+  const ownEditMatch = editarOwnPattern.exec(path);
+  const isEditingSelf = ownEditMatch ? parseInt(ownEditMatch[1], 10) === session?.userId : false;
+
   if (session && isAdminRoute && session.role !== "ADMIN" && session.role !== "SUPERADMIN") {
-    return NextResponse.redirect(new URL("/", request.nextUrl));
+    if (!(session.role === "EMPLEADO" && isEditingSelf)) {
+      return NextResponse.redirect(new URL("/", request.nextUrl));
+    }
   }
 
   // Si tiene sesión activa e intenta ir al login, redirige al inicio

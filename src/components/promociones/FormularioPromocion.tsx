@@ -525,6 +525,7 @@ export default function FormularioPromocion({ actionFunc, initialData }: Formula
               label="Fecha de Inicio"
               name="fechaInicio"
               type="date"
+              min={new Date().toISOString().split('T')[0]}
               iconName="calendar_today"
               iconColorClass="bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400"
               value={fechaInicio}
@@ -539,6 +540,7 @@ export default function FormularioPromocion({ actionFunc, initialData }: Formula
               label="Fecha de Fin"
               name="fechaFin"
               type="date"
+              min={new Date().toISOString().split('T')[0]}
               iconName="event_busy"
               iconColorClass="bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
               value={fechaFin}

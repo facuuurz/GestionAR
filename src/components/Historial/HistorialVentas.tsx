@@ -133,7 +133,7 @@ export default function HistorialVentas({ ventasIniciales, isAdmin, empleadoNomb
                       {venta.id}
                     </td>
                     <td className={`px-6 py-5 text-sm font-mono font-medium ${venta.cuit === '-' ? 'text-slate-400 dark:text-slate-600' : 'text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4 dark:text-slate-300'}`}>
-                      {venta.cuit}
+                      {venta.cuit === '-' ? 'N/A (No Aplica)' : venta.cuit}
                     </td>
                     {isAdmin && (
                       <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-300">

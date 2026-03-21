@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
+import { getSession } from "@/lib/session";
 
 // --- 1. ESQUEMA DE VALIDACIÓN ---
 const clienteSchema = z.object({
@@ -128,10 +129,14 @@ export async function obtenerClientes(filtros?: {
       estado: calcularEstado(cliente.saldo.toNumber(), cliente.saldoNegativoDesde),
     }));
 
+    const session = await getSession();
+    const isAdmin = session?.role === "ADMIN" || session?.role === "SUPERADMIN";
+
     return {
       clientes,
       totalPages: Math.ceil(totalClientes / ITEMS_POR_PAGINA) || 1,
       totalClientes,
+      isAdmin,
       error: null
     };
 
@@ -143,6 +148,10 @@ export async function obtenerClientes(filtros?: {
 
 // --- 4. CREAR CLIENTE ---
 export async function crearCliente(prevState: State, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const rawData = {
     nombre: formData.get("nombre"),
     cuit: formData.get("cuit"),
@@ -210,6 +219,10 @@ export async function crearCliente(prevState: State, formData: FormData) {
 
 // --- 5. ACTUALIZAR CLIENTE ---
 export async function actualizarCliente(id: number, prevState: State, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const saldoRaw = formData.get("saldo")?.toString();
 
   const rawData = {
@@ -318,6 +331,10 @@ export async function obtenerClientePorId(id: number) {
 
 // --- 7. ELIMINAR CLIENTE ---
 export async function eliminarCliente(id: number) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    throw new Error("Acceso denegado. No tenés permisos.");
+  }
   try {
     await prisma.cuenta_corriente.delete({
       where: { id },

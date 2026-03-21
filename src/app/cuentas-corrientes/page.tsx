@@ -48,7 +48,7 @@ function CuentasCorrientesContent() {
   }, [busqueda]);
 
   // --- 4. DATA DESDE EL HOOK ---
-  const { clientes, totalPages, loading, error, recargar } = useClientes();
+  const { clientes, totalPages, loading, error, isAdmin, recargar } = useClientes();
 
   // --- 5. ACTUALIZAR URL DINÁMICAMENTE ---
   const createQueryString = useCallback(
@@ -167,6 +167,7 @@ function CuentasCorrientesContent() {
           <TablaCuentas 
               clientes={clientes}
               loading={loading}
+              isAdmin={isAdmin}
               busqueda={debouncedBusqueda}
               hasActiveFilters={isAnythingActive}
               onClearAll={handleClearAll}

@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { crearCliente } from "@/actions/cuentas-corrientes";
 import FormularioCliente from "@/components/Cuentas-corrientes/FormularioCliente";
+import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-export default function NuevoClientePage() {
+export default async function NuevoClientePage() {
+  const session = await getSession();
+  if (session?.role === 'EMPLEADO') redirect('/');
   return (
     <div className="flex flex-col min-h-screen bg-[#f3f4f6] dark:bg-[#111827] text-slate-800 dark:text-slate-100 font-sans">
       

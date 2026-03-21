@@ -11,6 +11,7 @@ export function usePromociones() {
   const [promociones, setPromociones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
+  const [isAdmin, setIsAdmin] = useState(false);
   // NUEVO: Estado de error
   const [error, setError] = useState<string | null>(null); 
 
@@ -26,6 +27,7 @@ export function usePromociones() {
       
       setPromociones(data.promociones);
       setTotalPages(data.totalPages);
+      if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
     } catch (err) {
       console.error("Error recargando promociones:", err);
       setError("No se pudo conectar con el servidor de promociones."); // Seteamos el error
@@ -40,7 +42,8 @@ export function usePromociones() {
     promociones,
     loading,
     totalPages,
-    error, // Lo exportamos
+    isAdmin,
+    error,
     recargar
   };
 }

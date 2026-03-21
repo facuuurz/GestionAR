@@ -7,7 +7,7 @@ import { ArrowLeft, UserCog, ShieldCheck, User } from "lucide-react";
 import { updateUser } from "@/actions/usuarios";
 import { toast } from "react-hot-toast";
 
-export default function EditUserForm({ userToEdit, currentUserRole }: { userToEdit: any, currentUserRole: string }) {
+export default function EditUserForm({ userToEdit, currentUserRole, currentUserId }: { userToEdit: any, currentUserRole: string, currentUserId: number }) {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -21,6 +21,11 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
     confirmPassword: "",
     profilePicture: userToEdit.profilePicture || "",
   });
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const isEditingSelf = userToEdit.id === currentUserId;
+  // EMPLEADO editing their own account: no username/role changes allowed
+  const isEmpleadoEditingSelf = currentUserRole === "EMPLEADO" && isEditingSelf;
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -61,6 +66,10 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
     if (!formData.email.trim()) newErrors.email = "Por favor, ingresa el Correo Electrónico";
 
     if (formData.password) {
+      if (isEditingSelf && !currentPassword.trim()) {
+        newErrors.currentPassword = "Debes ingresar tu contraseña actual para cambiarla.";
+      }
+
       if (formData.password.length < 8) {
         newErrors.password = "La contraseña debe tener al menos 8 caracteres.";
       } else if (!/[A-Z]/.test(formData.password)) {
@@ -94,14 +103,34 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
         formData.cuit,
         formData.profilePicture,
         formData.username,
-        formData.password
+        formData.password,
+        currentPassword
       );
 
       if (!res.success) {
+        if (res.error === "La contraseña actual es incorrecta." || res.error === "Debes ingresar tu contraseña actual para poder cambiarla.") {
+          setErrors({ currentPassword: res.error });
+          return;
+        }
+
+        if (res.error === "FIELD_ERRORS" && res.fieldErrors) {
+          setErrors(res.fieldErrors as Record<string, string>);
+          return;
+        }
+
         toast.error(res.error || "Ocurrió un error al actualizar el usuario", {
           style: { background: "#EF4444", color: "#fff" } // Red
         });
         setError(res.error || "Ocurrió un error al actualizar el usuario");
+        return;
+      }
+
+      if (res.requireRelogin) {
+        toast.success("Contraseña actualizada. Inicia sesión nuevamente.", {
+          style: { background: "#3B82F6", color: "#fff", padding: "16px" },
+          iconTheme: { primary: "#fff", secondary: "#3B82F6" }
+        });
+        window.location.href = "/login?message=Contraseña+actualizada.+Por+favor+inicia+sesión+nuevamente.";
         return;
       }
 
@@ -196,17 +225,20 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-[#ededed] dark:border-[#333] pb-2">Datos de Acceso</h3>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre de Usuario *</label>
-                <input 
-                  type="text" 
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.username ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
-                  placeholder="ej: jdoe"
-                />
-                {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
-              </div>
+              {/* Nombre de usuario - hidden for EMPLEADO editing self */}
+              {!isEmpleadoEditingSelf && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre de Usuario *</label>
+                  <input 
+                    type="text" 
+                    value={formData.username}
+                    onChange={(e) => setFormData({...formData, username: e.target.value})}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.username ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                    placeholder="ej: jdoe"
+                  />
+                  {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico *</label>
@@ -218,6 +250,26 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
+
+              {isEditingSelf && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña Actual <span className="text-gray-400 font-normal">(Requerida si cambias contraseña)</span></label>
+                  <input 
+                    type="password" 
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.currentPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                    placeholder="••••••••"
+                  />
+                  {errors.currentPassword ? (
+                    <p className="text-red-500 text-xs mt-1">{errors.currentPassword}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 ml-1">
+                      Necesaria por seguridad para verificar tu identidad.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva Contraseña <span className="text-gray-400 font-normal">(Opcional)</span></label>
@@ -271,8 +323,9 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
                     type="text"
                     value={formData.dni}
                     onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-[#ededed] dark:border-[#444] rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black transition-all"
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.dni ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-black'}`}
                   />
+                  {errors.dni && <p className="text-red-500 text-xs mt-1">{errors.dni}</p>}
                 </div>
 
                 <div>
@@ -281,68 +334,72 @@ export default function EditUserForm({ userToEdit, currentUserRole }: { userToEd
                     type="text"
                     value={formData.cuit}
                     onChange={(e) => setFormData({ ...formData, cuit: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-[#ededed] dark:border-[#444] rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black transition-all"
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.cuit ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-black'}`}
                   />
+                  {errors.cuit && <p className="text-red-500 text-xs mt-1">{errors.cuit}</p>}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel de Acceso *</label>
-                
-                {isSuperadminTarget ? (
-                  <div className="p-4 mt-2 bg-gray-50 dark:bg-[#333] rounded-xl border border-gray-200 dark:border-[#444]">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                      Este usuario es un <strong className="text-red-500">SUPERADMIN</strong> y su nivel de acceso es permanente y no puede ser disminuido.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <label className={`
-                      relative flex flex-col p-4 cursor-pointer rounded-xl border-2 transition-all
-                      ${formData.role === 'EMPLEADO' 
-                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20' 
-                        : 'border-[#ededed] dark:border-[#444] hover:bg-gray-50 dark:hover:bg-[#333]'}
-                    `}>
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="EMPLEADO" 
-                        className="peer sr-only"
-                        onChange={() => setFormData({...formData, role: "EMPLEADO"})}
-                        checked={formData.role === "EMPLEADO"}
-                      />
-                      <User className={`w-6 h-6 mb-2 ${formData.role === 'EMPLEADO' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
-                      <span className={`text-sm font-bold ${formData.role === 'EMPLEADO' ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                        Empleado
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Acceso limitado al punto de venta.</span>
-                    </label>
-
-                    {(currentUserRole === "ADMIN" || currentUserRole === "SUPERADMIN") && (
+              {/* Nivel de Acceso - hidden for EMPLEADO editing self */}
+              {!isEmpleadoEditingSelf && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel de Acceso *</label>
+                  
+                  {isSuperadminTarget ? (
+                    <div className="p-4 mt-2 bg-gray-50 dark:bg-[#333] rounded-xl border border-gray-200 dark:border-[#444]">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                        Este usuario es un <strong className="text-red-500">SUPERADMIN</strong> y su nivel de acceso es permanente y no puede ser disminuido.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 mt-2">
                       <label className={`
                         relative flex flex-col p-4 cursor-pointer rounded-xl border-2 transition-all
-                        ${formData.role === 'ADMIN' 
-                          ? 'border-purple-600 bg-purple-50/50 dark:bg-purple-900/20' 
+                        ${formData.role === 'EMPLEADO' 
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20' 
                           : 'border-[#ededed] dark:border-[#444] hover:bg-gray-50 dark:hover:bg-[#333]'}
                       `}>
                         <input 
                           type="radio" 
                           name="role" 
-                          value="ADMIN" 
+                          value="EMPLEADO" 
                           className="peer sr-only"
-                          onChange={() => setFormData({...formData, role: "ADMIN"})}
-                          checked={formData.role === "ADMIN"}
+                          onChange={() => setFormData({...formData, role: "EMPLEADO"})}
+                          checked={formData.role === "EMPLEADO"}
                         />
-                        <ShieldCheck className={`w-6 h-6 mb-2 ${formData.role === 'ADMIN' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'}`} />
-                        <span className={`text-sm font-bold ${formData.role === 'ADMIN' ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                          Administrador
+                        <User className={`w-6 h-6 mb-2 ${formData.role === 'EMPLEADO' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
+                        <span className={`text-sm font-bold ${formData.role === 'EMPLEADO' ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                          Empleado
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Gestión de inventario y personal.</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Acceso limitado al punto de venta.</span>
                       </label>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                      {(currentUserRole === "ADMIN" || currentUserRole === "SUPERADMIN") && (
+                        <label className={`
+                          relative flex flex-col p-4 cursor-pointer rounded-xl border-2 transition-all
+                          ${formData.role === 'ADMIN' 
+                            ? 'border-purple-600 bg-purple-50/50 dark:bg-purple-900/20' 
+                            : 'border-[#ededed] dark:border-[#444] hover:bg-gray-50 dark:hover:bg-[#333]'}
+                        `}>
+                          <input 
+                            type="radio" 
+                            name="role" 
+                            value="ADMIN" 
+                            className="peer sr-only"
+                            onChange={() => setFormData({...formData, role: "ADMIN"})}
+                            checked={formData.role === "ADMIN"}
+                          />
+                          <ShieldCheck className={`w-6 h-6 mb-2 ${formData.role === 'ADMIN' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'}`} />
+                          <span className={`text-sm font-bold ${formData.role === 'ADMIN' ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                            Administrador
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Gestión de inventario y personal.</span>
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import EditProductForm from "../../../../components/Inventario/EditarProducto";
 
 export default async function EditarProductoPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (session?.role === 'EMPLEADO') redirect('/');
   const { id } = await params;
   const idNumerico = parseInt(id);
 

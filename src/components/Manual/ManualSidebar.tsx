@@ -71,15 +71,6 @@ export default function ManualSidebar({ sections, loading = false }: ManualSideb
         </nav>
       )}
       
-      {/* Sección inferior estática para soporte o feedback */}
-      <div className="mt-auto pt-6 px-2">
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 flex flex-col items-center text-center gap-2 border border-gray-100 dark:border-gray-800">
-           <span className="material-symbols-outlined text-gray-400">support_agent</span>
-           <p className="text-xs text-gray-500 dark:text-gray-400">
-             ¿No encuentras lo que buscas? Contacta con soporte para obtener ayuda adicional.
-           </p>
-        </div>
-      </div>
     </aside>
   );
 }

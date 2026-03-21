@@ -1,7 +1,11 @@
 import Link from "next/link";
 import FormularioNuevoProducto from "@/components/Inventario/FormularioNuevoProducto";
+import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-export default function AgregarProductoPage() {
+export default async function AgregarProductoPage() {
+  const session = await getSession();
+  if (session?.role === 'EMPLEADO') redirect('/');
   return (
     <div className="bg-[#f6f6f8] dark:bg-[#101622] font-sans min-h-screen flex flex-col transition-colors duration-200">
       <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden text-[#0d121b] dark:text-gray-100">
