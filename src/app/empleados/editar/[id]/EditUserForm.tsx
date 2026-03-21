@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, UserCog, ShieldCheck, User } from "lucide-react";
+import { ArrowLeft, UserCog, ShieldCheck, User, Eye, EyeOff } from "lucide-react";
 import { updateUser } from "@/actions/usuarios";
 import { toast } from "react-hot-toast";
 
@@ -26,6 +26,9 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
   });
 
   const [currentPassword, setCurrentPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const isEditingSelf = userToEdit.id === currentUserId;
   // EMPLEADO editing their own account: no username/role changes allowed
   const isEmpleadoEditingSelf = currentUserRole === "EMPLEADO" && isEditingSelf;
@@ -267,13 +270,18 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
               {isEditingSelf && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña Actual <span className="text-gray-400 font-normal">(Requerida si cambias contraseña)</span></label>
-                  <input 
-                    type="password" 
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.currentPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className={`w-full px-3 py-2.5 pr-10 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.currentPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                      placeholder="••••••••"
+                    />
+                    <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                      {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   {errors.currentPassword ? (
                     <p className="text-red-500 text-xs mt-1">{errors.currentPassword}</p>
                   ) : (
@@ -286,13 +294,18 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva Contraseña <span className="text-gray-400 font-normal">(Opcional)</span></label>
-                <input 
-                  type="password" 
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className={`w-full px-3 py-2.5 pr-10 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.password ? (
                   <p className="text-red-500 text-xs mt-1">{errors.password}</p>
                 ) : (
@@ -304,13 +317,18 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Nueva Contraseña</label>
-                <input 
-                  type="password" 
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                  className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    className={`w-full px-3 py-2.5 pr-10 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
               </div>
             </div>
