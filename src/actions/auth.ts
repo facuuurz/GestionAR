@@ -15,7 +15,10 @@ export async function registerUser(
   role: string,
   dni?: string,
   cuit?: string,
-  profilePicture?: string
+  profilePicture?: string,
+  phone?: string,
+  address?: string,
+  localName?: string
 ) {
   try {
     const session = await getSession();
@@ -30,21 +33,24 @@ export async function registerUser(
       return { success: false, error: "No se puede crear un usuario con nivel Super Administrador." };
     }
 
-    // Verify if username or email already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username },
-          { email }
-        ]
-      }
-    });
+    const fieldErrors: Record<string, string> = {};
 
-    if (existingUser) {
-      if (existingUser.username === username) {
-        return { success: false, error: "El nombre de usuario ya está en uso." };
-      }
-      return { success: false, error: "El correo electrónico ya está registrado." };
+    const [existingUsername, existingEmail, existingDni, existingCuit, existingPhone] = await Promise.all([
+      prisma.user.findFirst({ where: { username: { equals: username.trim(), mode: 'insensitive' } } }),
+      prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: 'insensitive' } } }),
+      (dni && dni.trim()) ? prisma.user.findFirst({ where: { dni: dni.trim() } }) : null,
+      (cuit && cuit.trim()) ? prisma.user.findFirst({ where: { cuit: cuit.trim() } }) : null,
+      (phone && phone.trim()) ? prisma.user.findFirst({ where: { phone: phone.trim() } }) : null,
+    ]);
+
+    if (existingUsername) fieldErrors.username = "El nombre de usuario ya está en uso.";
+    if (existingEmail) fieldErrors.email = "El correo electrónico ya está registrado.";
+    if (existingDni) fieldErrors.dni = "Ya existe un usuario con este DNI.";
+    if (existingCuit) fieldErrors.cuit = "Ya existe un usuario con este CUIT / CUIL.";
+    if (existingPhone) fieldErrors.phone = "Ya existe un usuario con este Teléfono.";
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return { success: false, error: "FIELD_ERRORS", fieldErrors };
     }
 
     const passwordHash = await hash(rawPass, 10);
@@ -60,6 +66,9 @@ export async function registerUser(
         dni: dni || null,
         cuit: cuit || null,
         profilePicture: profilePicture || null,
+        phone: phone || null,
+        address: address || null,
+        localName: localName || null,
       }
     });
 

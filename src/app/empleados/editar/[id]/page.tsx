@@ -21,17 +21,6 @@ export default async function EditarEmpleadoPage({ params }: { params: Promise<{
   const userId = parseInt(awaitedParams.id, 10);
   if (isNaN(userId)) redirect("/");
 
-  // EMPLEADO can only edit their own account
-  const isEmpleado = session.role === "EMPLEADO";
-  if (isEmpleado && userId !== session.userId) {
-    redirect("/cuenta");
-  }
-
-  // Only ADMIN, SUPERADMIN, or an EMPLEADO editing themselves can access
-  if (!isEmpleado && session.role !== "ADMIN" && session.role !== "SUPERADMIN") {
-    redirect("/");
-  }
-
   const userToEdit = await (prisma.user as any).findUnique({
     where: { id: userId }
   });

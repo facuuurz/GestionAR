@@ -18,12 +18,11 @@ export default async function CuentaPage() {
     redirect("/login");
   }
 
-  // Fetch complete user data including their creator (encargado)
   const user = await (prisma.user as any).findUnique({
     where: { id: session.userId },
     include: {
       createdBy: {
-        select: { id: true, name: true, username: true, role: true }
+        select: { id: true, name: true, username: true, role: true, localName: true, address: true, phone: true }
       }
     }
   });
@@ -34,6 +33,10 @@ export default async function CuentaPage() {
 
   const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
 
+  const displayLocalName = user.localName || user.createdBy?.localName || "No especificado";
+  const displayAddress = user.address || user.createdBy?.address || "No especificada";
+  // The user might also want to inherit the phone if not specified
+  // Actually, we moved phone to "Información Personal" so it shouldn't inherit, but let's just make the business ones inherit
   return (
     <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-8">
       <div className="layout-content-container flex flex-col max-w-4xl flex-1 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -123,6 +126,17 @@ export default async function CuentaPage() {
                   </div>
                 </div>
 
+                {/* Teléfono - visible para todos */}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
+                    <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</p>
+                    <p className="text-base text-gray-900 dark:text-white">{user.phone || "No especificado"}</p>
+                  </div>
+                </div>
+
                 {/* DNI - visible para todos */}
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
@@ -165,44 +179,32 @@ export default async function CuentaPage() {
               </div>
             </div>
 
-            {/* Información del Local (Solo Admin) */}
-            {isAdmin && (
-              <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Información del Negocio</h3>
-                
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
-                      <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre del Local</p>
-                      <p className="text-base text-gray-900 dark:text-white">{user.localName || "No especificado"}</p>
-                    </div>
+            {/* Información del Local */}
+            <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Información del Negocio</h3>
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
+                    <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
-                      <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Dirección</p>
-                      <p className="text-base text-gray-900 dark:text-white">{user.address || "No especificada"}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre del Local</p>
+                    <p className="text-base text-gray-900 dark:text-white">{displayLocalName}</p>
                   </div>
+                </div>
 
-                  <div className="flex items-start gap-3 sm:col-span-2">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
-                      <Phone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</p>
-                      <p className="text-base text-gray-900 dark:text-white">{user.phone || "No especificado"}</p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
+                    <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Dirección</p>
+                    <p className="text-base text-gray-900 dark:text-white">{displayAddress}</p>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
 
           </div>
