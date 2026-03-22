@@ -46,7 +46,7 @@ export async function restoreFromBackup(jsonContent: string) {
       return { success: false, message: "El formato del backup es inválido." };
     }
 
-    const { productos, proveedores, promociones, clientes, ventas, usuarios } = parsedData.datos;
+    const { productos, proveedores, promociones, clientes, ventas, usuarios, categorias, movimientos } = parsedData.datos;
 
     logger.info("Iniciando proceso de restauración...");
 
@@ -60,9 +60,11 @@ export async function restoreFromBackup(jsonContent: string) {
       await tx.promocionProducto.deleteMany({});
       await tx.promocion.deleteMany({});
 
-      // Productos, Proveedores y Clientes (Cuenta_corriente)
+      // Productos, Proveedores, Movimientos y Clientes (Cuenta_corriente)
       await tx.producto.deleteMany({});
+      await tx.categoria.deleteMany({});
       await tx.proveedor.deleteMany({});
+      await tx.movimiento.deleteMany({});
       await tx.cuenta_corriente.deleteMany({});
 
       // Usuarios y Dependencias (solo si vienen en el backup)
@@ -99,6 +101,18 @@ export async function restoreFromBackup(jsonContent: string) {
         // En el schema, Cuenta_corriente -> @map("Cuentas_corrientes")
         await tx.cuenta_corriente.createMany({ data: clientes, skipDuplicates: true });
         await tx.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Cuentas_corrientes"', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM "Cuentas_corrientes";`);
+      }
+
+      // Movimientos
+      if (movimientos && movimientos.length > 0) {
+        await tx.movimiento.createMany({ data: movimientos, skipDuplicates: true });
+        await tx.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"movimientos"', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM "movimientos";`);
+      }
+
+      // Categorias
+      if (categorias && categorias.length > 0) {
+        await tx.categoria.createMany({ data: categorias, skipDuplicates: true });
+        await tx.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Categoria"', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM "Categoria";`);
       }
 
       // Productos
