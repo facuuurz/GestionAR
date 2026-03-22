@@ -16,6 +16,7 @@ interface DatosVentaExport {
   fecha: string;
   hora: string;
   cliente: string;
+  vendedor: string;
   productos: ProductoExport[];
   totalFinal: string;
 }
@@ -44,6 +45,7 @@ export default function BotonExportarVenta({ venta }: Props) {
         [],
         ["ID Venta",    venta.idVisual],
         ["Fecha",       `${venta.fecha} ${venta.hora}`],
+        ["Vendedor",    venta.vendedor],
         ["Cliente",     venta.cliente],
         ["Tipo",        tipoCliente],
         ["Total Final", venta.totalFinal],
