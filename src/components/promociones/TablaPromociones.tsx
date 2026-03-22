@@ -12,6 +12,7 @@ interface TablaPromocionesProps {
   totalPages: number;
   onPageChange: (newPage: number) => void;
   onDeleteSuccess?: () => void;
+  isAdmin: boolean;
 }
 
 export default function TablaPromociones({ 
@@ -22,7 +23,8 @@ export default function TablaPromociones({
   currentPage,
   totalPages,
   onPageChange,
-  onDeleteSuccess
+  onDeleteSuccess,
+  isAdmin
 }: TablaPromocionesProps) {
   
   return (
@@ -36,7 +38,9 @@ export default function TablaPromociones({
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[15%]">Precio</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[20%] hidden md:table-cell">Vigencia</th>
               <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider w-[10%]">Estado</th>
-              <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+              {isAdmin && (
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center sticky right-0 bg-[#f9f9f9] dark:bg-[#151a25] shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">Acciones</th>
+              )}
             </tr>
           </thead>
           
@@ -52,7 +56,7 @@ export default function TablaPromociones({
                 </tr>
             ) : promociones.length > 0 ? (
                 promociones.map((promo) => (
-                  <PromocionRow key={promo.id} promo={promo} onDeleteSuccess={onDeleteSuccess} />
+                  <PromocionRow key={promo.id} promo={promo} onDeleteSuccess={onDeleteSuccess} isAdmin={isAdmin} />
                 ))
             ) : (
                 <tr>

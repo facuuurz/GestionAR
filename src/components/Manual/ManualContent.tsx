@@ -113,10 +113,6 @@ export default function ManualContent({ content, loading, error }: ManualContent
 
       <footer className="mt-12 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-sm text-gray-400">
         <span>Última actualización: Hoy</span>
-        <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
-          <span className="material-symbols-outlined text-sm">thumb_up</span>
-          ¿Te fue útil este artículo?
-        </button>
       </footer>
     </article>
   );

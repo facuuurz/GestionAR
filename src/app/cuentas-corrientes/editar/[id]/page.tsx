@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obtenerClientePorId, actualizarCliente, eliminarCliente } from "@/actions/cuentas-corrientes";
 import EditarClienteForm from "@/components/Cuentas-corrientes/EditarClienteForm"; // Ajusta la ruta si es necesario
+import { getSession } from "@/lib/session";
 
 export default async function EditarClientePage(props: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (session?.role === 'EMPLEADO') redirect('/');
   const params = await props.params;
   const id = parseInt(params.id);
   

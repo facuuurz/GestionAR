@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, UserPlus, ShieldCheck, User } from "lucide-react";
+import { ArrowLeft, UserPlus, ShieldCheck, User, Eye, EyeOff } from "lucide-react";
 import { registerUser } from "@/actions/auth"; // We'll modify or create an action for this
 import { toast } from "react-hot-toast";
 
@@ -20,12 +20,17 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
     dni: "",
     cuit: "",
     profilePicture: "",
+    phone: "",
+    localName: "",
+    address: "",
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,15 +64,22 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
     if (!formData.email.trim()) newErrors.email = "Por favor, ingresa el Correo Electrónico";
     if (!formData.password) newErrors.password = "Por favor, ingresa una Contraseña";
     if (!formData.name.trim()) newErrors.name = "Por favor, ingresa el Nombre Completo";
+    if (!formData.localName.trim()) newErrors.localName = "Por favor, ingresa el Nombre del Local";
+    if (!formData.address.trim()) newErrors.address = "Por favor, ingresa la Dirección";
+    if (!formData.dni.trim()) newErrors.dni = "Por favor, ingresa el DNI";
+    if (!formData.cuit.trim()) newErrors.cuit = "Por favor, ingresa el CUIT / CUIL";
+    if (!formData.phone.trim()) newErrors.phone = "Por favor, ingresa el Teléfono";
 
-    if (formData.password && formData.password.length < 8) {
-      newErrors.password = "La contraseña debe tener al menos 8 caracteres.";
-    } else if (formData.password && !/[A-Z]/.test(formData.password)) {
-      newErrors.password = "La contraseña debe incluir al menos una letra mayúscula.";
-    } else if (formData.password && !/[0-9]/.test(formData.password)) {
-      newErrors.password = "La contraseña debe incluir al menos un número (0-9).";
-    } else if (formData.password && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(formData.password)) {
-      newErrors.password = "La contraseña debe incluir al menos un símbolo especial.";
+    if (formData.password) {
+      const pwdErrors = [];
+      if (formData.password.length < 8) pwdErrors.push("al menos 8 caracteres");
+      if (!/[A-Z]/.test(formData.password)) pwdErrors.push("una mayúscula");
+      if (!/[0-9]/.test(formData.password)) pwdErrors.push("un número");
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(formData.password)) pwdErrors.push("un símbolo especial");
+
+      if (pwdErrors.length > 0) {
+        newErrors.password = "Debe incluir: " + pwdErrors.join(", ") + ".";
+      }
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -91,10 +103,19 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
         formData.role,
         formData.dni,
         formData.cuit,
-        formData.profilePicture
+        formData.profilePicture,
+        formData.phone,
+        formData.address,
+        formData.localName
       );
 
       if (!res.success) {
+        if (res.error === "FIELD_ERRORS" && res.fieldErrors) {
+          setErrors(res.fieldErrors as Record<string, string>);
+          setLoading(false);
+          return;
+        }
+
         toast.error(res.error || "Ocurrió un error al registrar el usuario", {
           style: { background: "#EF4444", color: "#fff" } // Red
         });
@@ -219,13 +240,18 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña Inicial *</label>
-                <input 
-                  type="password" 
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className={`w-full px-3 py-2.5 pr-10 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.password ? (
                   <p className="text-red-500 text-xs mt-1">{errors.password}</p>
                 ) : (
@@ -237,13 +263,18 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar Contraseña *</label>
-                <input 
-                  type="password" 
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                  className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    className={`w-full px-3 py-2.5 pr-10 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
               </div>
             </div>
@@ -265,24 +296,71 @@ export default function NewUserForm({ currentUserRole }: { currentUserRole: stri
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI *</label>
                   <input 
                     type="text" 
                     value={formData.dni}
-                    onChange={(e) => setFormData({...formData, dni: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-[#ededed] dark:border-[#444] rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({...formData, dni: val});
+                    }}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.dni ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
                     placeholder="Sin puntos"
                   />
+                  {errors.dni && <p className="text-red-500 text-xs mt-1">{errors.dni}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CUIT / CUIL</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CUIT / CUIL *</label>
                   <input 
                     type="text" 
                     value={formData.cuit}
-                    onChange={(e) => setFormData({...formData, cuit: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-[#ededed] dark:border-[#444] rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9-]/g, '');
+                      setFormData({...formData, cuit: val});
+                    }}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.cuit ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
                     placeholder="20-12345678-9"
                   />
+                  {errors.cuit && <p className="text-red-500 text-xs mt-1">{errors.cuit}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono *</label>
+                  <input 
+                    type="text" 
+                    value={formData.phone}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9+]/g, '');
+                      setFormData({...formData, phone: val});
+                    }}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                  />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Local *</label>
+                  <input 
+                    type="text" 
+                    value={formData.localName}
+                    onChange={(e) => setFormData({...formData, localName: e.target.value})}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.localName ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                  />
+                  {errors.localName && <p className="text-red-500 text-xs mt-1">{errors.localName}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección *</label>
+                  <input 
+                    type="text" 
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.address ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
+                  />
+                  {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
                 </div>
               </div>
 

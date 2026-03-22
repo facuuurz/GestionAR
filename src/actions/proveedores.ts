@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { getSession } from "@/lib/session";
 import { logger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications";
 
@@ -13,32 +14,17 @@ const proveedorSchema = z.object({
     .min(1, "El código es obligatorio")
     .max(20, "El código no puede tener más de 20 caracteres")
     .trim(),
-  razonSocial: z.string().min(4, "La Razón Social debe tener al menos 4 caracteres"),
+  razonSocial: z.string().min(1, "La Razón Social es obligatoria"),
   contacto: z.string()
-    .min(4, "El contacto debe tener al menos 4 caracteres")
     .max(50, "El contacto no puede tener más de 50 caracteres")
-    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios"),
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios")
+    .optional(),
   telefono: z.string()
     .trim()
-    .min(1, "El teléfono es obligatorio")
-    .refine((val) => /^\+?[0-9]+$/.test(val), {
+    .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {
       message: "Solo números (ej: 112233) o + al inicio",
-    }),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-});
-
-const actualizacionProveedorSchema = z.object({
-  razonSocial: z.string().min(4, "La Razón Social debe tener al menos 4 caracteres"),
-  contacto: z.string()
-    .min(4, "El contacto debe tener al menos 4 caracteres")
-    .max(50, "El contacto no puede tener más de 50 caracteres")
-    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios"),
-  telefono: z.string()
-    .trim()
-    .min(1, "El teléfono es obligatorio")
-    .refine((val) => /^\+?[0-9]+$/.test(val), {
-      message: "Solo números (ej: 112233) o + al inicio",
-    }),
+    })
+    .optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
@@ -62,6 +48,10 @@ export type State = {
  * CREAR PROVEEDOR
  */
 export async function crearProveedor(prevState: State, formData: FormData): Promise<State> {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const rawData = {
     codigo: formData.get("codigo") as string,
     razonSocial: formData.get("razonSocial") as string,
@@ -176,6 +166,10 @@ export async function obtenerProveedores(query: string = "", sort: string = "", 
  * ACTUALIZAR PROVEEDOR
  */
 export async function actualizarProveedor(prevState: State, formData: FormData): Promise<State> {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const id = parseInt(formData.get("id") as string);
   
   const rawData = {
@@ -189,24 +183,23 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
     return { message: "ID de proveedor no válido", errors: {} };
   }
 
-  const validatedFields = actualizacionProveedorSchema.safeParse(rawData);
-
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "Faltan datos o son incorrectos.",
-      payload: rawData,
-    };
-  }
-
   try {
+    // Verificar que el proveedor esté activo (protección en el backend por si se evade la UI)
+    const provQuery = await prisma.$queryRaw<{ activo: boolean }[]>`SELECT activo FROM "proveedores" WHERE id = ${id} LIMIT 1`;
+    if (provQuery.length === 0) {
+        return { message: "El proveedor no existe.", payload: rawData };
+    }
+    if (provQuery[0].activo === false) {
+        return { message: "No se puede actualizar de un proveedor inactivo. ¡Actívalo primero revisando la tabla de proveedores!", payload: rawData };
+    }
+
     await prisma.proveedor.update({
       where: { id },
       data: {
-        razonSocial: validatedFields.data.razonSocial,
-        contacto: validatedFields.data.contacto,
-        telefono: validatedFields.data.telefono,
-        email: validatedFields.data.email || null,
+        razonSocial: rawData.razonSocial,
+        contacto: rawData.contacto,
+        telefono: rawData.telefono,
+        email: rawData.email,
       },
     });
     
@@ -229,6 +222,10 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
  * ELIMINAR PROVEEDOR
  */
 export async function eliminarProveedor(prevState: State, formData: FormData): Promise<State> {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos." };
+  }
   const id = parseInt(formData.get("id") as string);
 
   if (!id || isNaN(id)) return { message: "ID de proveedor no válido" };
@@ -279,3 +276,92 @@ export async function eliminarProveedor(prevState: State, formData: FormData): P
   revalidatePath("/inventario"); 
   redirect("/proveedores");
 }
+
+/**
+ * INACTIVAR PROVEEDOR
+ */
+export async function inactivarProveedor(id: number) {
+  const session = await getSession();
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'SUPERADMIN')) {
+    return { error: 'Acceso denegado' };
+  }
+
+  try {
+    await prisma.$executeRaw`UPDATE "proveedores" SET "activo" = false WHERE "id" = ${id}`;
+    revalidatePath('/proveedores');
+    return { success: true };
+  } catch (error) {
+    logger.error({ err: error, proveedorId: id }, "Error al inactivar proveedor");
+    return { error: "No se pudo inactivar el proveedor." };
+  }
+}
+
+/**
+ * ACTIVAR PROVEEDOR
+ */
+export async function activarProveedor(id: number) {
+  const session = await getSession();
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'SUPERADMIN')) {
+    return { error: 'Acceso denegado' };
+  }
+
+  try {
+    await prisma.$executeRaw`UPDATE "proveedores" SET "activo" = true WHERE "id" = ${id}`;
+    revalidatePath('/proveedores');
+    return { success: true };
+  } catch (error) {
+    logger.error({ err: error, proveedorId: id }, "Error al activar proveedor");
+    return { error: "No se pudo activar el proveedor." };
+  }
+}
+
+/**
+ * OBTENER PRODUCTOS CON STOCK POR PROVEEDOR
+ */
+export async function obtenerProductosProveedoresConStock(codigo: string) {
+  try {
+    const productos = await prisma.producto.findMany({
+      where: { 
+        proveedor: codigo,
+        stock: { gt: 0 }
+      },
+      select: {
+        id: true,
+        nombre: true,
+        stock: true,
+      },
+      take: 5,
+      orderBy: { stock: 'desc' }
+    });
+    
+    const totalCount = await prisma.producto.count({
+      where: {
+        proveedor: codigo,
+        stock: { gt: 0 }
+      }
+    });
+
+    return { productos, totalCount };
+  } catch (error) {
+    logger.error({ err: error, proveedor: codigo }, "Error al obtener productos con stock por proveedor");
+    return { productos: [], totalCount: 0 };
+  }
+}
+
+/**
+ * OBTENER PROVEEDORES ACTIVOS
+ */
+export async function obtenerProveedoresActivos() {
+  try {
+    const proveedores = await prisma.$queryRaw<{ codigo: string; razonSocial: string }[]>`
+      SELECT "codigo", "razonSocial" 
+      FROM "proveedores" 
+      WHERE "activo" = true 
+      ORDER BY "codigo" ASC
+    `;
+    return proveedores;
+  } catch (error) {
+    logger.error({ err: error }, "Error al obtener proveedores activos");
+    return [];
+  }
+}

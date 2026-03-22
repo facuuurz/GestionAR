@@ -8,6 +8,9 @@ interface EliminarProveedorModalProps {
   onConfirm: () => void;
   isDeleting: boolean;
   nombreProveedor?: string;
+  productosAfectados?: {nombre: string, stock: number}[];
+  totalProductosAfectados?: number;
+  isLoadingProductos?: boolean;
 }
 
 export default function EliminarProveedorModal({
@@ -16,6 +19,9 @@ export default function EliminarProveedorModal({
   onConfirm,
   isDeleting,
   nombreProveedor,
+  productosAfectados,
+  totalProductosAfectados,
+  isLoadingProductos,
 }: EliminarProveedorModalProps) {
   
   const [mounted, setMounted] = useState(false);
@@ -41,13 +47,40 @@ export default function EliminarProveedorModal({
             
             {/* Alerta de impacto */}
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg p-3 text-red-600 dark:text-red-300 text-xs text-left">
-                <p className="font-bold flex items-center gap-1">
+                <p className="font-bold flex items-center gap-1 mb-1">
                     <span className="material-symbols-outlined text-sm">dangerous</span>
                     Acción Irreversible
                 </p>
-                <p className="mt-1 opacity-90">
+                <p className="opacity-90">
                     Esto eliminará al proveedor y <b>todos los productos asociados</b> a él de forma permanente.
                 </p>
+
+                {isLoadingProductos ? (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-red-500 opacity-80 bg-white/40 dark:bg-black/20 rounded p-2">
+                        <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                        <span>Buscando info de stock...</span>
+                    </div>
+                ) : (
+                    productosAfectados && productosAfectados.length > 0 && (
+                        <div className="mt-3 bg-white/50 dark:bg-black/20 rounded p-2 border border-red-100 dark:border-red-800/50">
+                            <p className="font-semibold mb-1 text-red-700 dark:text-red-300">
+                              ⚠️ Estos son algunos de los productos que aún tienen stock:
+                            </p>
+                            <ul className="list-disc pl-5 space-y-0.5 text-red-600 dark:text-red-400">
+                                {productosAfectados.map((p, idx) => (
+                                    <li key={idx} className="truncate" title={p.nombre}>
+                                        <span className="font-medium">{p.nombre}</span> <span className="opacity-80">(Stock: {p.stock})</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {totalProductosAfectados && totalProductosAfectados > productosAfectados.length ? (
+                                <p className="mt-1.5 italic opacity-80 ext-red-500">
+                                  ...y {totalProductosAfectados - productosAfectados.length} producto(s) más.
+                                </p>
+                            ) : null}
+                        </div>
+                    )
+                )}
             </div>
           </div>
         </div>

@@ -127,13 +127,20 @@ export async function updateUser(
   cuit?: string,
   profilePicture?: string,
   username?: string,
-  password?: string
+  password?: string,
+  currentPassword?: string,
+  phone?: string,
+  address?: string,
+  localName?: string
 ) {
   try {
     const session = await getSession();
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
+    if (!session) {
       return { success: false, error: "No autorizado" };
     }
+
+    const isEmpleado = session.role === "EMPLEADO";
+    const isAdminOrSuperAdmin = session.role === "ADMIN" || session.role === "SUPERADMIN";
 
     const userToEdit = await prisma.user.findUnique({ where: { id: userId } });
     if (!userToEdit) {
@@ -155,45 +162,63 @@ export async function updateUser(
       return { success: false, error: "Solo puedes editar usuarios creados por ti" };
     }
 
-    // Validation for duplicate emails
-    const existingEmail = await prisma.user.findFirst({
-      where: {
-        email,
-        NOT: { id: userId }
-      }
-    });
+    const fieldErrors: Record<string, string> = {};
 
-    if (existingEmail) {
-      return { success: false, error: "El correo electrónico ya está en uso por otro usuario" };
-    }
+    const [existingEmail, existingUsername, existingDni, existingCuit, existingPhone] = await Promise.all([
+      prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: 'insensitive' }, NOT: { id: userId } } }),
+      username ? prisma.user.findFirst({ where: { username: { equals: username.trim(), mode: 'insensitive' }, NOT: { id: userId } } }) : null,
+      (dni && dni.trim()) ? prisma.user.findFirst({ where: { dni: dni.trim(), NOT: { id: userId } } }) : null,
+      (cuit && cuit.trim()) ? prisma.user.findFirst({ where: { cuit: cuit.trim(), NOT: { id: userId } } }) : null,
+      (phone && phone.trim()) ? prisma.user.findFirst({ where: { phone, NOT: { id: userId } } }) : null,
+    ]);
 
-    // Validation for duplicate usernames
-    if (username) {
-      const existingUsername = await prisma.user.findFirst({
-        where: {
-          username,
-          NOT: { id: userId }
-        }
-      });
-      if (existingUsername) {
-        return { success: false, error: "El nombre de usuario ya está en uso por otro usuario" };
-      }
+    if (existingEmail) fieldErrors.email = "El correo electrónico ya está en uso por otro usuario.";
+    if (existingUsername) fieldErrors.username = "El nombre de usuario ya está en uso por otro usuario.";
+    if (existingDni) fieldErrors.dni = "Ya existe un usuario con ese DNI.";
+    if (existingCuit) fieldErrors.cuit = "Ya existe un usuario con ese CUIT / CUIL.";
+    if (existingPhone) fieldErrors.phone = "Ya existe un usuario con ese Teléfono.";
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return { success: false, error: "FIELD_ERRORS", fieldErrors };
     }
 
     let passwordHash = undefined;
+    let requireRelogin = false;
+    let reloginReason = "";
+    
     if (password) {
+      if (userToEdit.id === session.userId) {
+        if (!currentPassword) {
+          return { success: false, error: "Debes ingresar tu contraseña actual para poder cambiarla." };
+        }
+        const isMatch = await bcrypt.compare(currentPassword, userToEdit.passwordHash);
+        if (!isMatch) {
+          return { success: false, error: "La contraseña actual es incorrecta." };
+        }
+        requireRelogin = true;
+        reloginReason = "Contraseña actualizada.";
+      }
       passwordHash = await bcrypt.hash(password, 10);
+    }
+
+    if (userToEdit.id === session.userId && userToEdit.role !== role) {
+      requireRelogin = true;
+      reloginReason = reloginReason ? "Contraseña y permisos actualizados." : "Permisos actualizados.";
     }
 
     const updateData: any = {
       name,
       email,
-      role: role as any,
+      // EMPLEADO cannot change their own role or username - enforce server-side
+      role: (isEmpleado && userId === session.userId) ? userToEdit.role : (role as any),
       dni: dni || null,
       cuit: cuit || null,
+      phone: phone || null,
+      address: address || null,
+      localName: localName || null,
     };
 
-    if (username) updateData.username = username;
+    if (username && !(isEmpleado && userId === session.userId)) updateData.username = username;
     if (passwordHash) updateData.passwordHash = passwordHash;
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
 
@@ -201,6 +226,11 @@ export async function updateUser(
       where: { id: userId },
       data: updateData
     });
+
+    if (requireRelogin) {
+      await deleteSession();
+      return { success: true, requireRelogin: true, reloginReason };
+    }
 
     revalidatePath("/empleados");
     revalidatePath(`/empleados/editar/${userId}`);

@@ -10,6 +10,7 @@ import InputConIcono from "@/components/Inventario/ui/InputConIcono";
 import TextareaConContador from "@/components/Inventario/ui/TextareaConContador";
 import ToggleSwitch from "@/components/Inventario/ui/ToggleSwitch";
 import { toast } from "react-hot-toast";
+import { obtenerProveedoresActivos } from "@/actions/proveedores";
 
 type Categoria = {
   id: number;
@@ -39,6 +40,13 @@ export default function FormularioNuevoProducto() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [esPorPeso, setEsPorPeso] = useState(false);
 
+  // States for Proveedor combobox
+  const [proveedores, setProveedores] = useState<{codigo: string, razonSocial: string}[]>([]);
+  const [searchProveedor, setSearchProveedor] = useState("");
+  const [selectedProveedor, setSelectedProveedor] = useState("");
+  const [isProvDropdownOpen, setIsProvDropdownOpen] = useState(false);
+  const provDropdownRef = useRef<HTMLDivElement>(null);
+
   const [descLength, setDescLength] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -58,6 +66,18 @@ export default function FormularioNuevoProducto() {
 
   useEffect(() => {
     cargarCategorias();
+    obtenerProveedoresActivos().then(setProveedores);
+  }, []);
+
+  // Click outside for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (provDropdownRef.current && !provDropdownRef.current.contains(event.target as Node)) {
+        setIsProvDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // --- 2. EFECTO PARA RECUPERAR DATOS SI HAY ERROR ---
@@ -65,7 +85,11 @@ export default function FormularioNuevoProducto() {
     if (state.payload) {
       setNombre(state.payload.nombre || "");
       setCodigoBarra(state.payload.codigoBarra || "");
-      setProveedor(state.payload.proveedor || "");
+      
+      const provVal = state.payload.proveedor || "";
+      setSearchProveedor(provVal);
+      setSelectedProveedor(provVal);
+
       setStock(state.payload.stock?.toString() || "");
       setPrecio(state.payload.precio?.toString() || "");
       setFechaVencimiento(state.payload.fechaVencimiento || "");
@@ -131,6 +155,11 @@ export default function FormularioNuevoProducto() {
   const misCategoriasFiltradas = useMemo(() => categorias.filter(c =>
     c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   ), [categorias, searchTerm]);
+
+  const proveedoresFiltrados = useMemo(() => proveedores.filter(p => 
+    p.codigo.toLowerCase().includes(searchProveedor.toLowerCase()) || 
+    p.razonSocial.toLowerCase().includes(searchProveedor.toLowerCase())
+  ), [proveedores, searchProveedor]);
 
   return (
     <>
@@ -232,18 +261,57 @@ export default function FormularioNuevoProducto() {
               )}
             </div>
 
-            <InputConIcono
-              className="z-20"
-              name="proveedor"
-              label="Código de Proveedor *"
-              icon="local_shipping"
-              iconBgColor="bg-teal-100 text-teal-700"
-              placeholder="REF-000"
-              type="text"
-              value={proveedor}
-              onChange={(e) => setProveedor(e.target.value)}
-              error={state.errors?.proveedor?.[0]}
-            />
+            <div className="flex flex-col gap-2 relative z-20" ref={provDropdownRef}>
+              <span className="text-[#0d121b] dark:text-gray-200 text-sm font-semibold">Código de Proveedor *</span>
+              <div className="flex gap-2 relative">
+                <div className="relative w-full">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 pointer-events-none z-10">
+                    <span className="material-symbols-outlined text-lg">local_shipping</span>
+                  </div>
+                  <input type="hidden" name="proveedor" value={selectedProveedor || searchProveedor} />
+                  <input
+                    type="text"
+                    placeholder="Buscar o ingresar REF-000..."
+                    className={`flex w-full rounded-lg border ${state.errors?.proveedor ? 'border-red-500' : 'border-[#cfd7e7] dark:border-[#4a5568]'} bg-[#f8f9fc] dark:bg-[#2d3748] text-[#0d121b] dark:text-white h-12 pl-12 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-black/20`}
+                    value={searchProveedor}
+                    onChange={(e) => { 
+                      setSearchProveedor(e.target.value); 
+                      setSelectedProveedor(e.target.value); 
+                      setIsProvDropdownOpen(true); 
+                    }}
+                    onFocus={() => setIsProvDropdownOpen(true)}
+                    autoComplete="off"
+                  />
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-black dark:text-gray-400">
+                    <span className="material-symbols-outlined text-xl">expand_more</span>
+                  </div>
+                  {isProvDropdownOpen && proveedoresFiltrados.length > 0 && (
+                    <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#2d3748] border border-[#e5e7eb] dark:border-[#4a5568] rounded-lg shadow-lg max-h-60 overflow-y-auto z-40">
+                      {proveedoresFiltrados.map((prov) => (
+                        <button 
+                          key={prov.codigo} 
+                          type="button" 
+                          onClick={() => {
+                            setSelectedProveedor(prov.codigo);
+                            setSearchProveedor(prov.codigo);
+                            setIsProvDropdownOpen(false);
+                          }} 
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#4a5568]"
+                        >
+                          {prov.codigo} — {prov.razonSocial}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {state.errors?.proveedor && (
+                  <p className="text-red-500 text-xs mt-1 font-medium ml-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">error</span>
+                      {state.errors.proveedor[0]}
+                  </p>
+              )}
+            </div>
 
             <InputConIcono
               className="z-10"
@@ -252,6 +320,7 @@ export default function FormularioNuevoProducto() {
               icon="event"
               iconBgColor="bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300"
               type="date"
+              min={new Date().toISOString().split('T')[0]}
               value={fechaVencimiento}
               onChange={(e) => setFechaVencimiento(e.target.value)}
             />

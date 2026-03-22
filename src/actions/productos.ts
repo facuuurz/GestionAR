@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 import { createNotification } from "@/lib/notifications";
+import { getSession } from "@/lib/session";
 
 // ----------------------------------------------------------------------
 // 1. ESQUEMA DE VALIDACIÓN Y TIPOS
@@ -65,6 +66,10 @@ export type State = {
 // ----------------------------------------------------------------------
 
 export async function crearProducto(prevState: State, formData: FormData): Promise<State> {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
 
   const rawEsPorPeso = formData.get("esPorPeso");
   const esPorPesoBoolean = rawEsPorPeso === "on" || rawEsPorPeso === "true";
@@ -149,6 +154,10 @@ export async function crearProducto(prevState: State, formData: FormData): Promi
 // ----------------------------------------------------------------------
 
 export async function actualizarProducto(prevState: State, formData: FormData): Promise<State> {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const id = parseInt(formData.get("id") as string);
 
   const rawEsPorPeso = formData.get("esPorPeso");
@@ -240,6 +249,10 @@ export async function actualizarProducto(prevState: State, formData: FormData): 
 // ----------------------------------------------------------------------
 
 export async function eliminarProducto(formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    throw new Error("Acceso denegado. No tenés permisos.");
+  }
   const id = parseInt(formData.get("id") as string);
   try {
     const prod = await prisma.producto.findUnique({ where: { id } });

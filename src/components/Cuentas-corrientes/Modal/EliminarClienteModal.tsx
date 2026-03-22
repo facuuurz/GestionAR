@@ -8,6 +8,7 @@ interface EliminarClienteModalProps {
   onConfirm: () => void;
   isDeleting: boolean;
   nombreCliente?: string;
+  saldoActual?: number;
 }
 
 export default function EliminarClienteModal({
@@ -16,6 +17,7 @@ export default function EliminarClienteModal({
   onConfirm,
   isDeleting,
   nombreCliente,
+  saldoActual,
 }: EliminarClienteModalProps) {
   
   const [mounted, setMounted] = useState(false);
@@ -48,6 +50,20 @@ export default function EliminarClienteModal({
                 <p className="mt-1 opacity-90">
                     Se eliminará la cuenta corriente y todo el historial de movimientos asociados a este cliente.
                 </p>
+
+                {saldoActual !== undefined && saldoActual < 0 && (
+                    <div className="mt-3 bg-white/50 dark:bg-black/20 rounded p-2 border border-red-100 dark:border-red-800/50">
+                        <p className="font-semibold mb-1 text-red-700 dark:text-red-300">
+                          ⚠️ ¡Atención! Saldo Deudor
+                        </p>
+                        <p className="text-red-600 dark:text-red-400 text-xs flex flex-col gap-1.5">
+                          <span>Este cliente aún tiene un <b>balance negativo</b> en su cuenta corriente.</span>
+                          <span className="bg-red-100 dark:bg-red-900/30 w-fit px-2 py-1 rounded text-red-800 dark:text-red-200">
+                             Debe: <b className="font-mono text-sm">{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(Math.abs(saldoActual))}</b>
+                          </span>
+                        </p>
+                    </div>
+                )}
             </div>
           </div>
         </div>

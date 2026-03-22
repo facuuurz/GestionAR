@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logger } from "@/lib/logger"; // <-- 1. IMPORTAMOS EL LOGGER
 import { createNotification } from "@/lib/notifications";
+import { getSession } from "@/lib/session";
 
 // 1. Esquema de Validación
 const promocionSchema = z.object({
@@ -130,10 +131,14 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
       }))
     }));
 
+    const session = await getSession();
+    const isAdmin = session?.role === "ADMIN" || session?.role === "SUPERADMIN";
+
     return {
       promociones: promocionesFormateadas,
       totalPages: Math.ceil(totalPromociones / ITEMS_POR_PAGINA) || 1,
-      totalPromociones
+      totalPromociones,
+      isAdmin
     };
 
   } catch (error) {
@@ -144,6 +149,10 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
 
 // --- CREAR PROMOCIÓN ---
 export async function crearPromocion(prevState: State, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const activoRaw = formData.get("activo");
   // OJO: Chequeamos si llega "on" (checkbox nativo) o "true" (toggles de React)
   const isActivo = activoRaw === "on" || activoRaw === "true";
@@ -242,6 +251,10 @@ export async function crearPromocion(prevState: State, formData: FormData) {
 
 // --- ACTUALIZAR PROMOCIÓN ---
 export async function actualizarPromocion(id: number, prevState: State, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    return { message: "Acceso denegado. No tenés permisos.", payload: Object.fromEntries(formData.entries()) };
+  }
   const rawData = {
     nombre: formData.get("nombre"),
     descripcion: formData.get("descripcion"),
@@ -331,6 +344,10 @@ export async function actualizarPromocion(id: number, prevState: State, formData
 
 // --- ELIMINAR PROMOCIÓN ---
 export async function eliminarPromocion(id: number) {
+  const session = await getSession();
+  if (!session || session.role === "EMPLEADO") {
+    throw new Error("Acceso denegado. No tenés permisos.");
+  }
   try {
     const promo = await prisma.promocion.findUnique({ where: { id } });
 

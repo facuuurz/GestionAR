@@ -11,9 +11,10 @@ import EliminarClienteModal from "@/components/Cuentas-corrientes/Modal/Eliminar
 interface ClienteRowProps {
   cliente: any; 
   onDeleteSuccess?: () => void;
+  isAdmin: boolean;
 }
 
-export default function FilaCliente({ cliente, onDeleteSuccess }: ClienteRowProps) {
+export default function FilaCliente({ cliente, onDeleteSuccess, isAdmin }: ClienteRowProps) {
   const router = useRouter();
   const [showSaldarModal, setShowSaldarModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -150,24 +151,28 @@ export default function FilaCliente({ cliente, onDeleteSuccess }: ClienteRowProp
                     <span>Saldar</span>
                 </button>
 
-                <Link 
-                href={`/cuentas-corrientes/editar/${cliente.id}`}
-                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
-                >
-                <span className="material-symbols-outlined text-[16px] transition-transform duration-500 ease-in-out group-hover:rotate-12">
-                    edit 
-                </span>
-                <span>Actualizar</span>
-                </Link>
+                {isAdmin && (
+                  <>
+                    <Link 
+                    href={`/cuentas-corrientes/editar/${cliente.id}`}
+                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
+                    >
+                    <span className="material-symbols-outlined text-[16px] transition-transform duration-500 ease-in-out group-hover:rotate-12">
+                        edit 
+                    </span>
+                    <span>Actualizar</span>
+                    </Link>
 
-                <button 
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white rounded p-1.5 transition-all shadow-sm flex items-center justify-center hover:scale-105 active:scale-95"
-                  title="Eliminar Cliente"
-                >
-                   <span className="material-symbols-outlined text-[18px]">delete</span>
-                </button>
+                    <button 
+                      type="button"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="bg-red-600 hover:bg-red-700 text-white rounded p-1.5 transition-all shadow-sm flex items-center justify-center hover:scale-105 active:scale-95"
+                      title="Eliminar Cliente"
+                    >
+                       <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </>
+                )}
 
             </div>
 
@@ -186,6 +191,7 @@ export default function FilaCliente({ cliente, onDeleteSuccess }: ClienteRowProp
                 onConfirm={handleConfirmDelete}
                 isDeleting={isDeleting}
                 nombreCliente={cliente.nombre}
+                saldoActual={saldoVisual}
             />
         </td>
     </tr>

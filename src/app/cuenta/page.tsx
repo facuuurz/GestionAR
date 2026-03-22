@@ -1,9 +1,9 @@
 import { getSession } from "@/lib/session";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { Shield, User, Building, Phone, MapPin, Mail, Calendar, Key, UserCheck, CreditCard, Hash, Edit } from "lucide-react";
-import ProfilePicture from "./ProfilePicture";
+import { Shield, User, Building, Phone, MapPin, Mail, Calendar, UserCheck, CreditCard, Hash, Pencil } from "lucide-react";
 import Link from "next/link";
+import ProfilePicture from "./ProfilePicture";
 
 const prisma = new PrismaClient();
 
@@ -18,12 +18,11 @@ export default async function CuentaPage() {
     redirect("/login");
   }
 
-  // Fetch complete user data including their creator (encargado)
   const user = await (prisma.user as any).findUnique({
     where: { id: session.userId },
     include: {
       createdBy: {
-        select: { id: true, name: true, username: true, role: true }
+        select: { id: true, name: true, username: true, role: true, localName: true, address: true, phone: true }
       }
     }
   });
@@ -34,26 +33,28 @@ export default async function CuentaPage() {
 
   const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
 
+  const displayLocalName = user.localName || user.createdBy?.localName || "No especificado";
+  const displayAddress = user.address || user.createdBy?.address || "No especificada";
+  // The user might also want to inherit the phone if not specified
+  // Actually, we moved phone to "Información Personal" so it shouldn't inherit, but let's just make the business ones inherit
   return (
     <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-8">
       <div className="layout-content-container flex flex-col max-w-4xl flex-1 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Cabecera */}
         <div className="flex flex-col gap-2 pb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <h1 className="text-primary dark:text-white text-3xl sm:text-4xl font-bold leading-tight flex items-center gap-3">
               <User className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
               Mi Cuenta
             </h1>
-            {isAdmin && (
-              <Link 
-                href={`/empleados/editar/${user.id}`}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                <Edit className="w-4 h-4" />
-                Editar
-              </Link>
-            )}
+            <Link
+              href={`/empleados/editar/${user.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#222] text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#333] transition-all duration-200 shadow-sm hover:scale-105 active:scale-95 shrink-0"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar cuenta
+            </Link>
           </div>
           <p className="text-neutral-500 dark:text-neutral-400 text-base md:text-lg">
             Gestiona la información de tu perfil y credenciales.
@@ -125,6 +126,17 @@ export default async function CuentaPage() {
                   </div>
                 </div>
 
+                {/* Teléfono - visible para todos */}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
+                    <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</p>
+                    <p className="text-base text-gray-900 dark:text-white">{user.phone || "No especificado"}</p>
+                  </div>
+                </div>
+
                 {/* DNI - visible para todos */}
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0">
@@ -167,44 +179,33 @@ export default async function CuentaPage() {
               </div>
             </div>
 
-            {/* Información del Local (Solo Admin) */}
-            {isAdmin && (
-              <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Información del Negocio</h3>
-                
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
-                      <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre del Local</p>
-                      <p className="text-base text-gray-900 dark:text-white">{user.localName || "No especificado"}</p>
-                    </div>
+            {/* Información del Local */}
+            <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Información del Negocio</h3>
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
+                    <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
-                      <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Dirección</p>
-                      <p className="text-base text-gray-900 dark:text-white">{user.address || "No especificada"}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre del Local</p>
+                    <p className="text-base text-gray-900 dark:text-white">{displayLocalName}</p>
                   </div>
+                </div>
 
-                  <div className="flex items-start gap-3 sm:col-span-2">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
-                      <Phone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</p>
-                      <p className="text-base text-gray-900 dark:text-white">{user.phone || "No especificado"}</p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg shrink-0">
+                    <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Dirección</p>
+                    <p className="text-base text-gray-900 dark:text-white">{displayAddress}</p>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+
 
           </div>
 

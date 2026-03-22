@@ -143,6 +143,7 @@ export default function ProductRow({ prod, isAdmin = true, onDeleteSuccess }: Pr
               onConfirm={handleConfirmDelete}
               isDeleting={isDeleting}
               nombreProducto={prod.nombre}
+              stockActual={prod.stock}
             />
           </td>
         )}

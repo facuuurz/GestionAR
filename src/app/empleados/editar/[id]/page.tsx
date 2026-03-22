@@ -13,18 +13,19 @@ export default async function EditarEmpleadoPage({ params }: { params: Promise<{
   const session = await getSession();
   const awaitedParams = await params;
 
-  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
+  if (!session) {
     redirect("/");
+    return; // TypeScript narrowing
   }
 
   const userId = parseInt(awaitedParams.id, 10);
-  if (isNaN(userId)) redirect("/empleados");
+  if (isNaN(userId)) redirect("/");
 
   const userToEdit = await (prisma.user as any).findUnique({
     where: { id: userId }
   });
 
-  if (!userToEdit) redirect("/empleados");
+  if (!userToEdit) redirect("/");
 
   // Prevent ADMIN from editing SUPERADMIN
   if (userToEdit.role === "SUPERADMIN" && session.role !== "SUPERADMIN") {
@@ -36,5 +37,5 @@ export default async function EditarEmpleadoPage({ params }: { params: Promise<{
   //    redirect("/empleados");
   // }
 
-  return <EditUserForm userToEdit={userToEdit} currentUserRole={session.role} />;
+  return <EditUserForm userToEdit={userToEdit} currentUserRole={session.role} currentUserId={session.userId} />;
 }

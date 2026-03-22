@@ -8,6 +8,7 @@ interface EliminarProductoModalProps {
   onConfirm: () => void;
   isDeleting: boolean;
   nombreProducto?: string;
+  stockActual?: number;
 }
 
 export default function EliminarProductoModal({
@@ -16,6 +17,7 @@ export default function EliminarProductoModal({
   onConfirm,
   isDeleting,
   nombreProducto,
+  stockActual,
 }: EliminarProductoModalProps) {
   
   const [mounted, setMounted] = useState(false);
@@ -47,6 +49,17 @@ export default function EliminarProductoModal({
                 <p className="mt-1 opacity-90">
                     Este producto se eliminará del inventario y dejará de estar disponible para ventas o promociones.
                 </p>
+
+                {stockActual !== undefined && stockActual > 0 && (
+                    <div className="mt-3 bg-white/50 dark:bg-black/20 rounded p-2 border border-red-100 dark:border-red-800/50">
+                        <p className="font-semibold mb-1 text-red-700 dark:text-red-300">
+                          ⚠️ Advertencia de Stock Activo
+                        </p>
+                        <p className="text-red-600 dark:text-red-400 text-xs">
+                          Cuidado: Este producto aún tiene <b>{stockActual}</b> unidades en stock. Perderás este registro contable.
+                        </p>
+                    </div>
+                )}
             </div>
           </div>
         </div>

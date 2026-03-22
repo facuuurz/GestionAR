@@ -24,7 +24,7 @@ function PromocionesContent() {
   const [debouncedBusqueda, setDebouncedBusqueda] = useState(urlQuery);
 
   // 2. Traemos los datos (ahora el hook debe devolver 'totalPages' también)
-  const { promociones, loading, totalPages = 1, error, recargar } = usePromociones();
+  const { promociones, loading, totalPages = 1, error, isAdmin, recargar } = usePromociones();
 
   // 3. Debounce para la búsqueda (espera 400ms antes de buscar en la BD)
   useEffect(() => {
@@ -105,6 +105,7 @@ function PromocionesContent() {
           <TablaPromociones
             promociones={promociones}
             loading={loading}
+            isAdmin={isAdmin}
             busqueda={debouncedBusqueda}
             onClearBusqueda={() => setBusqueda("")}
             currentPage={currentPage}

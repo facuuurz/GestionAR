@@ -2,7 +2,7 @@ import { getSession } from "@/lib/session";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Key, ShoppingCart, Calendar, Mail, Building, Clock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, User, Key, ShoppingCart, Calendar, Mail, Building, Clock, ShieldCheck, Phone, MapPin, Hash, CreditCard } from "lucide-react";
 
 // For Next.js 14 params are synchronous but in recent versions it can be a Promise
 // So we use standard Next.js 14 Page props or modern ones
@@ -27,7 +27,12 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
   }
 
   const empleado = await (prisma.user as any).findUnique({
-    where: { id: employeeId }
+    where: { id: employeeId },
+    include: {
+      createdBy: {
+        select: { id: true, name: true, username: true, role: true, localName: true, address: true, phone: true }
+      }
+    }
   });
 
   if (!empleado) {
@@ -37,6 +42,9 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
   const cantidadVentas = await (prisma.venta as any).count({
     where: { userId: employeeId }
   });
+
+  const displayLocalName = empleado.localName || empleado.createdBy?.localName || "—";
+  const displayAddress = empleado.address || empleado.createdBy?.address || "—";
 
   return (
     <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-8">
@@ -112,7 +120,7 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
 
               <div className="flex items-start gap-4">
                 <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl shrink-0">
-                  <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">DNI / Documento</p>
@@ -122,11 +130,21 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
 
               <div className="flex items-start gap-4">
                 <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl shrink-0">
-                  <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CUIT / CUIL</p>
                   <p className="text-base font-medium text-gray-900 dark:text-white mt-0.5">{empleado.cuit || "—"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl shrink-0">
+                  <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-white mt-0.5">{empleado.phone || "—"}</p>
                 </div>
               </div>
             </div>
@@ -193,6 +211,32 @@ export default async function EmpleadoDetallePage({ params }: PageProps) {
           </div>
 
         </div>
+
+        {/* Información del Negocio (Ocupa el ancho completo) */}
+        <div className="mt-6 bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Información del Negocio</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl shrink-0">
+                <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre del Local</p>
+                <p className="text-base font-medium text-gray-900 dark:text-white mt-0.5">{displayLocalName}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl shrink-0">
+                <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</p>
+                <p className="text-base font-medium text-gray-900 dark:text-white mt-0.5">{displayAddress}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
