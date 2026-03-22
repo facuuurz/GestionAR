@@ -13,17 +13,32 @@ const proveedorSchema = z.object({
     .min(1, "El código es obligatorio")
     .max(20, "El código no puede tener más de 20 caracteres")
     .trim(),
-  razonSocial: z.string().min(1, "La Razón Social es obligatoria"),
+  razonSocial: z.string().min(4, "La Razón Social debe tener al menos 4 caracteres"),
   contacto: z.string()
+    .min(4, "El contacto debe tener al menos 4 caracteres")
     .max(50, "El contacto no puede tener más de 50 caracteres")
-    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios")
-    .optional(),
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios"),
   telefono: z.string()
     .trim()
-    .refine((val) => val === "" || /^\+?[0-9]+$/.test(val), {
+    .min(1, "El teléfono es obligatorio")
+    .refine((val) => /^\+?[0-9]+$/.test(val), {
       message: "Solo números (ej: 112233) o + al inicio",
-    })
-    .optional(),
+    }),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+});
+
+const actualizacionProveedorSchema = z.object({
+  razonSocial: z.string().min(4, "La Razón Social debe tener al menos 4 caracteres"),
+  contacto: z.string()
+    .min(4, "El contacto debe tener al menos 4 caracteres")
+    .max(50, "El contacto no puede tener más de 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "El contacto solo puede contener letras y espacios"),
+  telefono: z.string()
+    .trim()
+    .min(1, "El teléfono es obligatorio")
+    .refine((val) => /^\+?[0-9]+$/.test(val), {
+      message: "Solo números (ej: 112233) o + al inicio",
+    }),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
@@ -174,14 +189,24 @@ export async function actualizarProveedor(prevState: State, formData: FormData):
     return { message: "ID de proveedor no válido", errors: {} };
   }
 
+  const validatedFields = actualizacionProveedorSchema.safeParse(rawData);
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Faltan datos o son incorrectos.",
+      payload: rawData,
+    };
+  }
+
   try {
     await prisma.proveedor.update({
       where: { id },
       data: {
-        razonSocial: rawData.razonSocial,
-        contacto: rawData.contacto,
-        telefono: rawData.telefono,
-        email: rawData.email,
+        razonSocial: validatedFields.data.razonSocial,
+        contacto: validatedFields.data.contacto,
+        telefono: validatedFields.data.telefono,
+        email: validatedFields.data.email || null,
       },
     });
     

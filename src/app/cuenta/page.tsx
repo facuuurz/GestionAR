@@ -1,9 +1,9 @@
 import { getSession } from "@/lib/session";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { Shield, User, Building, Phone, MapPin, Mail, Calendar, Key, UserCheck, CreditCard, Hash } from "lucide-react";
+import { Shield, User, Building, Phone, MapPin, Mail, Calendar, Key, UserCheck, CreditCard, Hash, Edit } from "lucide-react";
 import ProfilePicture from "./ProfilePicture";
-import ChangePasswordForm from "./ChangePasswordForm";
+import Link from "next/link";
 
 const prisma = new PrismaClient();
 
@@ -40,10 +40,21 @@ export default async function CuentaPage() {
         
         {/* Cabecera */}
         <div className="flex flex-col gap-2 pb-8">
-          <h1 className="text-primary dark:text-white text-3xl sm:text-4xl font-bold leading-tight flex items-center gap-3">
-            <User className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
-            Mi Cuenta
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-primary dark:text-white text-3xl sm:text-4xl font-bold leading-tight flex items-center gap-3">
+              <User className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
+              Mi Cuenta
+            </h1>
+            {isAdmin && (
+              <Link 
+                href={`/empleados/editar/${user.id}`}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                Editar
+              </Link>
+            )}
+          </div>
           <p className="text-neutral-500 dark:text-neutral-400 text-base md:text-lg">
             Gestiona la información de tu perfil y credenciales.
           </p>
@@ -194,13 +205,6 @@ export default async function CuentaPage() {
                 </div>
               </div>
             )}
-
-            {/* Credenciales */}
-            <div className="bg-white dark:bg-[#222] border border-[#ededed] dark:border-[#333] rounded-2xl p-6 shadow-sm">
-               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Credenciales</h3>
-               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-balance">Administra tu contraseña de acceso.</p>
-               <ChangePasswordForm userId={user.id} />
-            </div>
 
           </div>
 

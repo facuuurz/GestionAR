@@ -141,6 +141,7 @@ export default function EditarProveedorForm({ proveedor }: { proveedor: Proveedo
                   iconColorClass="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
                   defaultValue={stateUpdate.payload?.contacto || proveedor.contacto || ""}
                   errors={stateUpdate.errors?.contacto}
+                  requiredMark
                 />
 
                 {/* 4. Teléfono */}
