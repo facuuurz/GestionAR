@@ -21,8 +21,12 @@ export default function ChatBot() {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (isOpen) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  }, [messages, isOpen]);
 
   if (!isMounted) return null;
   if (pathname === '/login') return null;
@@ -31,7 +35,7 @@ export default function ChatBot() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 z-50"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-black hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-black rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 z-50"
       >
         <span className="material-symbols-outlined text-2xl">
           {isOpen ? "close" : "chat"}
@@ -41,9 +45,9 @@ export default function ChatBot() {
       {isOpen && (
         <div className="fixed bottom-24 right-6 w-[350px] h-[500px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 transition-all font-display">
           
-          <div className="bg-indigo-600 p-4 flex items-center justify-between text-white shrink-0">
+          <div className="bg-black p-4 flex items-center justify-between text-white shrink-0">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-xl">smart_toy</span>
+              <img src="/icon.png" alt="GestionAR Logo" className="w-6 h-6 object-contain" />
               <h3 className="font-bold">Asistente GestionAR</h3>
             </div>
             <button onClick={() => setIsOpen(false)} className="hover:text-indigo-200 transition-colors flex items-center justify-center">
@@ -58,11 +62,11 @@ export default function ChatBot() {
                 <p className="text-sm">¡Hola! Soy tu asistente. ¿En qué puedo ayudarte hoy?</p>
               </div>
             ) : (
-              messages.map(m => (
+              messages.filter(m => m.content.trim().length > 0).map(m => (
                 <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] rounded-2xl px-4 py-2 ${
                     m.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-sm' 
+                      ? 'bg-black text-white dark:bg-white dark:text-black rounded-tr-sm' 
                       : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm'
                   }`}>
                     <div className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
