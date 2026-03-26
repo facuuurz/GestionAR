@@ -17,8 +17,8 @@ function createTransporter() {
 }
 
 export async function submitRecovery(email: string) {
-  const user = await (prisma.user as any).findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email.trim(), mode: "insensitive" } },
   });
 
   if (!user) {

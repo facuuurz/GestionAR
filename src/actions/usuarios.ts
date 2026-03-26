@@ -164,6 +164,10 @@ export async function updateUser(
 
     const fieldErrors: Record<string, string> = {};
 
+    if (username && /\s/.test(username)) {
+      return { success: false, error: "FIELD_ERRORS", fieldErrors: { username: "El nombre de usuario no puede contener espacios." } };
+    }
+
     const [existingEmail, existingUsername, existingDni, existingCuit, existingPhone] = await Promise.all([
       prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: 'insensitive' }, NOT: { id: userId } } }),
       username ? prisma.user.findFirst({ where: { username: { equals: username.trim(), mode: 'insensitive' }, NOT: { id: userId } } }) : null,
@@ -207,18 +211,18 @@ export async function updateUser(
     }
 
     const updateData: any = {
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
       // EMPLEADO cannot change their own role or username - enforce server-side
       role: (isEmpleado && userId === session.userId) ? userToEdit.role : (role as any),
-      dni: dni || null,
-      cuit: cuit || null,
-      phone: phone || null,
-      address: address || null,
-      localName: localName || null,
+      dni: dni?.trim() || null,
+      cuit: cuit?.trim() || null,
+      phone: phone?.trim() || null,
+      address: address?.trim() || null,
+      localName: localName?.trim() || null,
     };
 
-    if (username && !(isEmpleado && userId === session.userId)) updateData.username = username;
+    if (username && !(isEmpleado && userId === session.userId)) updateData.username = username.trim();
     if (passwordHash) updateData.passwordHash = passwordHash;
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
 
