@@ -69,6 +69,7 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
 
     if (!formData.name.trim()) newErrors.name = "Por favor, ingresa el Nombre Completo";
     if (!formData.username.trim()) newErrors.username = "Por favor, ingresa el Nombre de Usuario";
+    else if (/\s/.test(formData.username)) newErrors.username = "El nombre de usuario no puede contener espacios.";
     if (!formData.email.trim()) newErrors.email = "Por favor, ingresa el Correo Electrónico";
     if (!formData.dni.trim()) newErrors.dni = "Por favor, ingresa el DNI";
     if (!formData.cuit.trim()) newErrors.cuit = "Por favor, ingresa el CUIT / CUIL";
@@ -127,6 +128,10 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
 
         if (res.error === "FIELD_ERRORS" && res.fieldErrors) {
           setErrors(res.fieldErrors as Record<string, string>);
+          const firstMsg = Object.values(res.fieldErrors)[0] as string;
+          toast.error(firstMsg || "Hay errores en el formulario.", {
+            style: { background: "#EF4444", color: "#fff" },
+          });
           return;
         }
 
@@ -248,7 +253,7 @@ export default function EditUserForm({ userToEdit, currentUserRole, currentUserI
                   <input 
                     type="text" 
                     value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
+                    onChange={(e) => setFormData({...formData, username: e.target.value.replace(/\s/g, '')})}
                     className={`w-full px-3 py-2.5 border rounded-xl bg-gray-50 dark:bg-[#111] text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${errors.username ? 'border-red-500 focus:ring-red-500' : 'border-[#ededed] dark:border-[#444] focus:ring-indigo-500'}`}
                     placeholder="ej: jdoe"
                   />

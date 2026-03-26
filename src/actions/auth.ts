@@ -35,6 +35,10 @@ export async function registerUser(
 
     const fieldErrors: Record<string, string> = {};
 
+    if (/\s/.test(username)) {
+      return { success: false, error: "FIELD_ERRORS", fieldErrors: { username: "El nombre de usuario no puede contener espacios." } };
+    }
+
     const [existingUsername, existingEmail, existingDni, existingCuit, existingPhone] = await Promise.all([
       prisma.user.findFirst({ where: { username: { equals: username.trim(), mode: 'insensitive' } } }),
       prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: 'insensitive' } } }),
@@ -57,25 +61,25 @@ export async function registerUser(
 
     const newUser = await prisma.user.create({
       data: {
-        username,
-        email,
-        name,
+        username: username.trim(),
+        email: email.trim(),
+        name: name.trim(),
         passwordHash,
         role: role as any,
         createdById: session.userId, // Asignamos el ID del administrador que lo creó
-        dni: dni || null,
-        cuit: cuit || null,
+        dni: dni?.trim() || null,
+        cuit: cuit?.trim() || null,
         profilePicture: profilePicture || null,
-        phone: phone || null,
-        address: address || null,
-        localName: localName || null,
+        phone: phone?.trim() || null,
+        address: address?.trim() || null,
+        localName: localName?.trim() || null,
       }
     });
 
     await createNotification(
       ["SUPERADMIN"],
       "USER_CREATED",
-      `Se ha creado un nuevo usuario: ${username}`,
+      `Se ha creado un nuevo usuario: ${username.trim()}`,
       `/empleados/${newUser.id}`
     );
 
