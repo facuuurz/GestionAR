@@ -24,8 +24,8 @@ const manualData: ManualSection[] = [
       
       - **Empleado (Normal):** Es el nivel operativo básico para el trabajo diario (como cajeros o repositores).
         - Tienen acceso a las herramientas de venta y gestión diaria.
-        - No están autorizados para realizar ni cargar copias de seguridad (Backups) del sistema.
-      
+        - Tienen permisos para generar y restaurar backups del sistema.
+
       - **Administrador (Admin):** Es un nivel intermedio.
         - Pueden acceder al panel de estadísticas para analizar el rendimiento.
         - Tienen permisos para generar y restaurar backups del sistema.

@@ -21,6 +21,7 @@ type Producto = {
 type ItemPromocionDB = {
     producto: Producto;
     cantidad: number;
+    precioPromocional: number;
 };
 
 type PromocionData = {
@@ -94,7 +95,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
         promocion.productos.map(item => ({
             producto: item.producto,
             cantidad: item.cantidad,
-            precioPromoUnitario: item.producto.precio 
+            precioPromoUnitario: item.precioPromocional ?? item.producto.precio 
         }))
     );
 
@@ -313,7 +314,7 @@ export default function EditarPromocionForm({ promocion, actualizarAction, elimi
                 <input 
                     type="hidden" 
                     name="productosData" 
-                    value={JSON.stringify(productosSeleccionados.map(p => ({ id: p.producto.id, cantidad: p.cantidad <= 0 ? 1 : p.cantidad })))} 
+                    value={JSON.stringify(productosSeleccionados.map(p => ({ id: p.producto.id, cantidad: p.cantidad <= 0 ? 1 : p.cantidad, precioPromoUnitario: p.precioPromoUnitario })))} 
                 />
                 <input 
                     type="hidden" 

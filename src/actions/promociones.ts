@@ -123,6 +123,7 @@ export async function obtenerPromociones(query: string = "", soloActivas: boolea
       precio: Number(promo.precio),
       items: promo.items.map(item => ({
         ...item,
+        precioPromocional: Number(item.precioPromocional),
         producto: {
             ...item.producto,
             precio: Number(item.producto.precio)
@@ -166,7 +167,7 @@ export async function crearPromocion(prevState: State, formData: FormData) {
   };
 
   const productosDataRaw = formData.get("productosData") as string;
-  let productosParaInsertar: { id: number; cantidad: number }[] = [];
+  let productosParaInsertar: { id: number; cantidad: number; precioPromoUnitario?: number }[] = [];
 
   try {
     if (productosDataRaw) {
@@ -209,7 +210,8 @@ export async function crearPromocion(prevState: State, formData: FormData) {
         items: {
             create: productosParaInsertar.map((item) => ({
                 productoId: item.id,
-                cantidad: item.cantidad
+                cantidad: item.cantidad,
+                precioPromocional: item.precioPromoUnitario || 0
             }))
         }
       },
@@ -243,7 +245,7 @@ export async function crearPromocion(prevState: State, formData: FormData) {
     };
   }
 
-  revalidatePath("/promociones");
+  revalidatePath("/promociones", "layout");
   return { success: true };
 }
 
@@ -263,7 +265,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
   };
 
   const productosDataRaw = formData.get("productosData") as string;
-  let productosParaInsertar: { id: number; cantidad: number }[] = [];
+  let productosParaInsertar: { id: number; cantidad: number; precioPromoUnitario?: number }[] = [];
 
   try {
     if (productosDataRaw) {
@@ -315,6 +317,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
           promocionId: id,
           productoId: item.id,
           cantidad: item.cantidad,
+          precioPromocional: item.precioPromoUnitario || 0,
         })),
       });
     });
@@ -335,7 +338,7 @@ export async function actualizarPromocion(id: number, prevState: State, formData
     };
   }
 
-  revalidatePath("/promociones");
+  revalidatePath("/promociones", "layout");
   return { success: true };
 }
 
@@ -399,6 +402,7 @@ export async function obtenerPromocionPorId(id: number) {
       precio: Number(promocion.precio),
       items: promocion.items.map((item) => ({
         ...item,
+        precioPromocional: Number(item.precioPromocional),
         producto: {
             ...item.producto,
             precio: Number(item.producto.precio)
@@ -410,6 +414,7 @@ export async function obtenerPromocionPorId(id: number) {
             precio: Number(p.producto.precio)
         },
         cantidad: p.cantidad,
+        precioPromocional: Number(p.precioPromocional),
       })),
     };
   } catch (error) {

@@ -46,7 +46,7 @@ export async function restoreFromBackup(jsonContent: string) {
       return { success: false, message: "El formato del backup es inválido." };
     }
 
-    const { productos, proveedores, promociones, clientes, ventas } = parsedData.datos;
+    const { productos, proveedores, promociones, clientes, ventas, usuarios } = parsedData.datos;
 
     logger.info("Iniciando proceso de restauración...");
 
@@ -65,7 +65,29 @@ export async function restoreFromBackup(jsonContent: string) {
       await tx.proveedor.deleteMany({});
       await tx.cuenta_corriente.deleteMany({});
 
+      // Usuarios y Dependencias (solo si vienen en el backup)
+      if (usuarios && usuarios.length > 0) {
+        await tx.passwordHistory.deleteMany({});
+        await tx.notification.deleteMany({});
+        await tx.user.updateMany({ data: { createdById: null } });
+        await tx.user.deleteMany({});
+      }
+
       // 2. Insertar los datos del backup (desactivando temporalmente triggers si es posible, o insertando con ids)
+      // Usuarios
+      if (usuarios && usuarios.length > 0) {
+        const usersToInsert = usuarios.map((u: any) => ({ ...u, createdById: null }));
+        await tx.user.createMany({ data: usersToInsert, skipDuplicates: true });
+        await tx.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"users"', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM "users";`);
+
+        // Restaurar createdById
+        for (const u of usuarios) {
+          if (u.createdById) {
+            await tx.user.update({ where: { id: u.id }, data: { createdById: u.createdById } });
+          }
+        }
+      }
+
       // Proveedores
       if (proveedores && proveedores.length > 0) {
         await tx.proveedor.createMany({ data: proveedores, skipDuplicates: true });

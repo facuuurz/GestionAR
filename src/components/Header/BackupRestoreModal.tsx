@@ -7,9 +7,10 @@ import { generarBackupLocal } from "@/actions/backup";
 interface BackupRestoreModalProps {
   isOpen: boolean;
   onClose: () => void;
+  role?: string;
 }
 
-export default function BackupRestoreModal({ isOpen, onClose }: BackupRestoreModalProps) {
+export default function BackupRestoreModal({ isOpen, onClose, role }: BackupRestoreModalProps) {
   const [backups, setBackups] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState<string>("");
@@ -141,60 +142,62 @@ export default function BackupRestoreModal({ isOpen, onClose }: BackupRestoreMod
             </button>
           </div>
 
-          <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-            <span className="shrink-0 px-4 text-sm text-gray-400">Restaurar</span>
-            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Cargar el último backup (Automático)
-            </label>
-            {backups.length > 0 ? (
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedBackup}
-                  onChange={(e) => setSelectedBackup(e.target.value)}
-                  className="flex-1 w-0 truncate p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-[#2a2a2a] outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
-                >
-                  {backups.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleRestoreServer}
-                  disabled={loading}
-                  className="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-lg font-medium hover:bg-black/80 dark:hover:bg-gray-200 transition disabled:opacity-50"
-                >
-                  {loading ? "..." : "Restaurar"}
-                </button>
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+                <span className="shrink-0 px-4 text-sm text-gray-400">Restaurar</span>
+                <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
               </div>
-            ) : (
-              <p className="text-sm text-gray-500">No hay backups locales disponibles.</p>
-            )}
-          </div>
 
-          <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-            <span className="shrink-0 px-4 text-sm text-gray-400">O cargar archivo</span>
-            <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-          </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Cargar el último backup (Automático)
+                </label>
+                {backups.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedBackup}
+                      onChange={(e) => setSelectedBackup(e.target.value)}
+                      className="flex-1 w-0 truncate p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-[#2a2a2a] outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                    >
+                      {backups.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleRestoreServer}
+                      disabled={loading}
+                      className="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-lg font-medium hover:bg-black/80 dark:hover:bg-gray-200 transition disabled:opacity-50"
+                    >
+                      {loading ? "..." : "Restaurar"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No hay backups locales disponibles.</p>
+                )}
+              </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Subir archivo JSON
-            </label>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleFileUpload}
-              disabled={loading}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 dark:file:bg-[#2a2a2a] dark:file:text-white dark:hover:file:bg-gray-700 cursor-pointer"
-            />
-          </div>
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+                <span className="shrink-0 px-4 text-sm text-gray-400">O cargar archivo</span>
+                <div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Subir archivo JSON
+                </label>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileUpload}
+                  disabled={loading}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 dark:file:bg-[#2a2a2a] dark:file:text-white dark:hover:file:bg-gray-700 cursor-pointer"
+                />
+              </div>
+
         </div>
       </div>
     </div>

@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { obtenerDetalleVenta } from '@/actions/ventas';
+import BotonExportarVenta from '@/components/Historial/BotonExportarVenta';
+import BotonExportarPDF from '@/components/Historial/BotonExportarPDF';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -52,11 +54,19 @@ export default async function DetalleVentaPage({ params }: PageProps) {
       <div className="bg-white dark:bg-[#1e2736] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         
         {/* Info General (Grid de Tarjetas) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
-          <InfoCard icon="tag" label="ID Venta" value={venta.idVisual} color="text-blue-600" bgColor="bg-blue-100 dark:bg-blue-900/30" />
-          <InfoCard icon="calendar_today" label="Fecha" value={venta.fecha} color="text-orange-600" bgColor="bg-orange-100 dark:bg-orange-900/30" />
-          <InfoCard icon="schedule" label="Hora" value={venta.hora} color="text-emerald-600" bgColor="bg-emerald-100 dark:bg-emerald-900/30" />
-          <InfoCard icon="person" label="Sujeto / Cliente" value={venta.cliente} color="text-purple-600" bgColor="bg-purple-100 dark:bg-purple-900/30" />
+        <div className="p-6 space-y-4 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
+          {/* Fila 1: ID, Fecha, Hora */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <InfoCard icon="tag" label="ID Venta" value={venta.idVisual} color="text-blue-600" bgColor="bg-blue-100 dark:bg-blue-900/30" />
+            <InfoCard icon="calendar_today" label="Fecha" value={venta.fecha} color="text-orange-600" bgColor="bg-orange-100 dark:bg-orange-900/30" />
+            <InfoCard icon="schedule" label="Hora" value={venta.hora} color="text-emerald-600" bgColor="bg-emerald-100 dark:bg-emerald-900/30" />
+          </div>
+          
+          {/* Fila 2: Cliente, Vendedor */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InfoCard icon="person" label="Sujeto / Cliente" value={venta.cliente} color="text-purple-600" bgColor="bg-purple-100 dark:bg-purple-900/30" />
+            <InfoCard icon="badge" label="Realizado por" value={venta.vendedor} color="text-indigo-600" bgColor="bg-indigo-100 dark:bg-indigo-900/30" />
+          </div>
         </div>
 
         {/* Tabla de Productos */}
@@ -117,6 +127,8 @@ export default async function DetalleVentaPage({ params }: PageProps) {
               <span className="material-symbols-outlined text-lg">arrow_back</span>
               Volver
             </Link>
+            <BotonExportarVenta venta={venta} />
+            <BotonExportarPDF venta={venta} />
           </div>
 
           <div className="w-full md:w-80 flex flex-col gap-3">
