@@ -59,12 +59,10 @@ function calcularFechaNegativo(saldo: number, fechaActual: Date | null): Date | 
   return new Date();                     // recién se volvió negativo
 }
 
-// Calcula el estado visible usando el período de gracia de 4 días
+// Calcula el estado visible (inmediato) al tener saldo negativo
 function calcularEstado(saldo: number, saldoNegativoDesde: Date | null): string {
   if (saldo >= 0) return "Al Día";
-  if (!saldoNegativoDesde) return "Al Día"; // acaba de ponerse negativo
-  const diasNegativo = (Date.now() - saldoNegativoDesde.getTime()) / (1000 * 60 * 60 * 24);
-  return diasNegativo > 4 ? "Deudor" : "Al Día";
+  return "Deudor";
 }
 
 // --- 3. OBTENER TODOS LOS CLIENTES (PAGINADOS Y FILTRADOS) ---

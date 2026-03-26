@@ -197,9 +197,17 @@ export async function procesarVenta(
       }
 
       if (clienteId) {
+        // Obtenemos el saldo actual para verificar si caerá en números negativos
+        const cuentaActual = await tx.cuenta_corriente.findUnique({ where: { id: clienteId } });
+        const nuevoSaldo = cuentaActual ? (Number(cuentaActual.saldo) - total) : -total;
+        const nuevoEstado = nuevoSaldo < 0 ? "Deudor" : "Al Día";
+
         await tx.cuenta_corriente.update({
           where: { id: clienteId },
-          data: { saldo: { decrement: total } }
+          data: { 
+            saldo: { decrement: total },
+            estado: nuevoEstado
+          }
         });
 
         await tx.movimiento.create({

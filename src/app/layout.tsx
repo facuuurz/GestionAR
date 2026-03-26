@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header/Header";
+import ChatBot from "@/components/ChatBot/ChatBot";
 import { getSession } from "@/lib/session";
 import { Plus_Jakarta_Sans, Geist } from "next/font/google";
 import { PrismaClient } from "@prisma/client";
@@ -72,6 +73,7 @@ export default async function RootLayout({
               </footer>
             )}
             
+            <ChatBot />
             <Toaster position="bottom-left" />
           </div>
         </ThemeProvider>

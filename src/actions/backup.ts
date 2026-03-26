@@ -10,18 +10,20 @@ export async function generarBackupLocal() {
     logger.info("Iniciando generación de Backup automático local...");
 
     // 1. Extraer toda la información de la base de datos
-    const [productos, proveedores, promociones, clientes, ventas] = await Promise.all([
+    const [productos, proveedores, promociones, clientes, ventas, categorias, movimientos] = await Promise.all([
       prisma.producto.findMany(),
       prisma.proveedor.findMany(),
       prisma.promocion.findMany({ include: { items: true } }),
       prisma.cuenta_corriente.findMany(),
-      prisma.venta.findMany({ include: { detalles: true } })
+      prisma.venta.findMany({ include: { detalles: true } }),
+      prisma.categoria.findMany(),
+      prisma.movimiento.findMany()
     ]);
 
     // 2. Empaquetar
     const backupData = {
       fechaBackup: new Date().toISOString(),
-      datos: { productos, proveedores, promociones, clientes, ventas }
+      datos: { productos, proveedores, promociones, clientes, ventas, categorias, movimientos }
     };
 
     const jsonString = JSON.stringify(backupData, null, 2);
