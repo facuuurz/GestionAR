@@ -278,7 +278,8 @@ export default function FormularioPromocion({ actionFunc, initialData }: Formula
           value={JSON.stringify(
             productosSeleccionados.map(p => ({ 
               id: p.producto.id, 
-              cantidad: p.cantidad <= 0 ? 1 : p.cantidad
+              cantidad: p.cantidad <= 0 ? 1 : p.cantidad,
+              precioPromoUnitario: p.precioPromoUnitario
             }))
           )} 
         />

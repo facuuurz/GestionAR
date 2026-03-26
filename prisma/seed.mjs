@@ -179,6 +179,34 @@ async function main() {
   console.log(`✅ ${ventas.length} ventas creadas (con sus respectivos detalles)`);
 
   // ========== PROMOCIONES ==========
+  const promoNames = [
+    'Especial Fin de Semana', 
+    'Locura de Precios', 
+    'Combo Ahorro', 
+    'Descuento Mayorista', 
+    'Super Oferta', 
+    'Liquidación de Temporada', 
+    'Sale con Fritas', 
+    'Promo Familiar', 
+    'Semana de Descuentos', 
+    'Viernes Loco',
+    'Combo Desayuno',
+    'Ahorro Extra',
+    'Llevate Todo',
+    'Precios Congelados',
+    'Promo de Locos'
+  ];
+  
+  const promoDescriptions = [
+    'Aprovechá esta oportunidad única para llevarte más por menos.',
+    'Los mejores productos al mejor precio garantizado.',
+    'Ideal para juntadas con amigos o familia, no te lo pierdas.',
+    'Descuentos explosivos solo por tiempo limitado.',
+    'La mejor combinación de calidad y precio en un solo combo.',
+    'Si llevás esto, tu bolsillo te lo va a agradecer.',
+    '¡Corré que se agota! Stock limitado para esta súper oferta.'
+  ];
+
   const promociones = [];
   for(let i=1; i<=20; i++) {
     const hoy = new Date();
@@ -195,10 +223,13 @@ async function main() {
     
     selectedProds.forEach(p => {
       const c = randInt(1, 4);
-      basePrice += Number(p.precio) * c;
+      const originalPrice = Number(p.precio);
+      const itemPromoPrice = originalPrice * randFloat(0.6, 0.9); 
+      basePrice += originalPrice * c;
       promoItems.push({
         productoId: p.id,
-        cantidad: c
+        cantidad: c,
+        precioPromocional: itemPromoPrice
       });
     });
 
@@ -206,8 +237,8 @@ async function main() {
 
     const prom = await prisma.promocion.create({
       data: {
-        nombre: `Promoción Semanal ${i}`,
-        descripcion: `Descripción automática para la promoción ${i}`,
+        nombre: `${randItem(promoNames)} - #${i}`,
+        descripcion: randItem(promoDescriptions),
         precio: precioPromo,
         activo: isActiva,
         fechaInicio: inicio,

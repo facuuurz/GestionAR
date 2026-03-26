@@ -187,7 +187,8 @@ model Promocion {
 model PromocionProducto {
   promocionId Int
   productoId  Int
-  cantidad    Int @default(1)
+  cantidad    Int     @default(1)
+  precioPromocional Decimal @default(0.00) @db.Decimal(10, 2)
 
   promocion Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)
   // CAMBIA ESTA LÍNEA:

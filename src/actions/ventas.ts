@@ -24,35 +24,35 @@ export async function buscarProductosVenta(query: string, filters?: Filters) {
     };
 
     if (filters?.category && filters.category !== "Todas") {
-        whereClause.tipo = { equals: filters.category, mode: "insensitive" };
+      whereClause.tipo = { equals: filters.category, mode: "insensitive" };
     }
 
     if (filters?.stockStatus && filters.stockStatus !== 'all') {
-        if (filters.stockStatus === 'low') {
-            whereClause.stock = { gt: 0, lte: 10 }; 
-        } else if (filters.stockStatus === 'none') {
-            whereClause.stock = { lte: 0 }; 
-        }
+      if (filters.stockStatus === 'low') {
+        whereClause.stock = { gt: 0, lte: 10 };
+      } else if (filters.stockStatus === 'none') {
+        whereClause.stock = { lte: 0 };
+      }
     } else {
-        if (!whereClause.stock) { 
-             whereClause.stock = { gt: 0 }; 
-        }
+      if (!whereClause.stock) {
+        whereClause.stock = { gt: 0 };
+      }
     }
 
     if (filters?.priceRange) {
-        const min = parseFloat(filters.priceRange.min);
-        const max = parseFloat(filters.priceRange.max);
-        
-        if (!isNaN(min) || !isNaN(max)) {
-            whereClause.precio = {};
-            if (!isNaN(min)) whereClause.precio.gte = min;
-            if (!isNaN(max)) whereClause.precio.lte = max;
-        }
+      const min = parseFloat(filters.priceRange.min);
+      const max = parseFloat(filters.priceRange.max);
+
+      if (!isNaN(min) || !isNaN(max)) {
+        whereClause.precio = {};
+        if (!isNaN(min)) whereClause.precio.gte = min;
+        if (!isNaN(max)) whereClause.precio.lte = max;
+      }
     }
 
     const productos = await prisma.producto.findMany({
       where: whereClause,
-      take: 20, 
+      take: 20,
       orderBy: [
         { fechaVencimiento: 'asc' },
         { nombre: 'asc' }
@@ -61,19 +61,19 @@ export async function buscarProductosVenta(query: string, filters?: Filters) {
 
     return productos.map((producto) => ({
       ...producto,
-      precio: producto.precio.toNumber(), 
+      precio: producto.precio.toNumber(),
     }));
 
   } catch (error) {
-      logger.error({ err: error, query, filters }, "Error al buscar productos en el Punto de Venta");
-      return [];
+    logger.error({ err: error, query, filters }, "Error al buscar productos en el Punto de Venta");
+    return [];
   }
 }
 
 // 2. BUSCAR CLIENTES
 export async function buscarClienteVenta(query: string) {
   if (!query) return [];
-  
+
   try {
     const clientes = await prisma.cuenta_corriente.findMany({
       where: {
@@ -106,7 +106,7 @@ export async function obtenerHistorialVentas(empleadoId?: number) {
         cuenta: true,
         user: true,
       },
-      take: 200 
+      take: 200
     });
 
     return ventas.map((venta) => {
@@ -124,7 +124,7 @@ export async function obtenerHistorialVentas(empleadoId?: number) {
         idRaw: venta.id,
         id: `#V-${venta.id}`,
         fecha: `${dia}/${mes}/${anio}`,
-        cuit: venta.cuenta?.cuit || "-", 
+        cuit: venta.cuenta?.cuit || "-",
         clienteNombre: venta.cuenta?.nombre || "Consumidor Final",
         monto: montoFormateado,
         vendedorNombre: (venta as any).user?.name || (venta as any).user?.username || "Sistema",
@@ -139,8 +139,8 @@ export async function obtenerHistorialVentas(empleadoId?: number) {
 
 // 4. PROCESAR VENTA (CRÍTICO)
 export async function procesarVenta(
-  items: { id: number; cantidad: number }[], 
-  total: number, 
+  items: { id: number; cantidad: number; precioUnitario: number }[],
+  total: number,
   clienteId?: number | null
 ) {
   try {
@@ -148,7 +148,7 @@ export async function procesarVenta(
     const stockNotificationsToEmit: { type: "STOCK_LOW" | "STOCK_NONE"; message: string; productId: number }[] = [];
 
     await prisma.$transaction(async (tx) => {
-      
+
       const nuevaVenta = await tx.venta.create({
         data: {
           total: total,
@@ -160,7 +160,7 @@ export async function procesarVenta(
 
       for (const item of items) {
         const producto = await tx.producto.findUnique({ where: { id: item.id } });
-        
+
         if (!producto || producto.stock < item.cantidad) {
           throw new Error(`Stock insuficiente para el producto ID: ${item.id}`);
         }
@@ -190,8 +190,8 @@ export async function procesarVenta(
             ventaId: nuevaVenta.id,
             productoId: item.id,
             cantidad: item.cantidad,
-            precioUnit: producto.precio, 
-            subtotal: Number(producto.precio) * item.cantidad
+            precioUnit: item.precioUnitario,
+            subtotal: item.precioUnitario * item.cantidad
           }
         });
       }
@@ -199,7 +199,7 @@ export async function procesarVenta(
       if (clienteId) {
         await tx.cuenta_corriente.update({
           where: { id: clienteId },
-          data: { saldo: { decrement: total } } 
+          data: { saldo: { decrement: total } }
         });
 
         await tx.movimiento.create({
@@ -213,11 +213,11 @@ export async function procesarVenta(
       }
 
       // Log de éxito con contexto comercial
-      logger.info({ 
-        ventaId: nuevaVenta.id, 
-        total, 
+      logger.info({
+        ventaId: nuevaVenta.id,
+        total,
         clienteId: clienteId || "Consumidor Final",
-        cantidadItems: items.length 
+        cantidadItems: items.length
       }, "Venta procesada y registrada exitosamente");
     });
 
@@ -231,10 +231,10 @@ export async function procesarVenta(
       );
     }
 
-    revalidatePath("/historial-ventas"); 
+    revalidatePath("/historial-ventas");
     revalidatePath("/inventario");
     if (clienteId) revalidatePath("/cuentas-corrientes");
-    
+
     return { success: true, message: "Venta registrada con éxito" };
 
   } catch (error: any) {
@@ -248,7 +248,7 @@ export async function procesarVenta(
 export async function obtenerCategorias() {
   try {
     const categorias = await prisma.categoria.findMany({
-      orderBy: { nombre: 'asc' }, 
+      orderBy: { nombre: 'asc' },
     });
 
     return categorias.map((c) => c.nombre);
@@ -265,6 +265,7 @@ export async function obtenerDetalleVenta(idRaw: number) {
       where: { id: idRaw },
       include: {
         cuenta: true,
+        user: true,
         detalles: {
           include: { producto: true }
         }
@@ -277,7 +278,7 @@ export async function obtenerDetalleVenta(idRaw: number) {
     }
 
     const formatear = (valor: any) => new Intl.NumberFormat("es-AR", {
-        style: "currency", currency: "ARS", minimumFractionDigits: 2
+      style: "currency", currency: "ARS", minimumFractionDigits: 2
     }).format(Number(valor));
 
     const dia = String(venta.fecha.getDate()).padStart(2, '0');
@@ -290,37 +291,38 @@ export async function obtenerDetalleVenta(idRaw: number) {
     let descuentoTotal = 0;
 
     const productos = venta.detalles.map((det) => {
-        const precioLista = Number(det.producto.precio); 
-        const precioCobrado = Number(det.precioUnit);
-        const cantidad = Number(det.cantidad);
+      const precioLista = Number(det.producto.precio);
+      const precioCobrado = Number(det.precioUnit);
+      const cantidad = Number(det.cantidad);
 
-        subtotalGeneral += (precioLista * cantidad);
-        
-        const esPromo = precioCobrado < precioLista;
-        if (esPromo) {
-            descuentoTotal += ((precioLista - precioCobrado) * cantidad);
-        }
+      subtotalGeneral += (precioLista * cantidad);
 
-        return {
-            nombre: det.producto.nombre,
-            sku: det.producto.codigoBarra || "S/C",
-            cantidad: cantidad % 1 !== 0 ? `${cantidad.toFixed(3)} kg` : `${cantidad}`,
-            precioUnitario: formatear(precioLista),
-            precioPromocional: esPromo ? formatear(precioCobrado) : null,
-            descuentoEtiqueta: esPromo ? "Precio Especial" : null,
-            subtotal: formatear(det.subtotal)
-        };
+      const esPromo = precioCobrado < precioLista;
+      if (esPromo) {
+        descuentoTotal += ((precioLista - precioCobrado) * cantidad);
+      }
+
+      return {
+        nombre: det.producto.nombre,
+        sku: det.producto.codigoBarra || "S/C",
+        cantidad: cantidad % 1 !== 0 ? `${cantidad.toFixed(3)} kg` : `${cantidad}`,
+        precioUnitario: formatear(precioLista),
+        precioPromocional: esPromo ? formatear(precioCobrado) : null,
+        descuentoEtiqueta: esPromo ? "Precio Especial" : null,
+        subtotal: formatear(det.subtotal)
+      };
     });
 
     return {
-        idVisual: `#V-${venta.id}`,
-        fecha: `${dia}/${mes}/${anio}`,
-        hora: `${hora}:${minutos}`,
-        cliente: venta.cuenta ? `${venta.cuenta.nombre} (${venta.cuenta.cuit})` : "Consumidor Final",
-        productos,
-        subtotalGeneral: formatear(subtotalGeneral),
-        descuentoTotal: descuentoTotal > 0 ? `-${formatear(descuentoTotal)}` : null,
-        totalFinal: formatear(venta.total)
+      idVisual: `#V-${venta.id}`,
+      fecha: `${dia}/${mes}/${anio}`,
+      hora: `${hora}:${minutos}`,
+      cliente: venta.cuenta ? `${venta.cuenta.nombre} (${venta.cuenta.cuit})` : "Consumidor Final",
+      vendedor: (venta as any).user?.name || (venta as any).user?.username || "Sistema",
+      productos,
+      subtotalGeneral: formatear(subtotalGeneral),
+      descuentoTotal: descuentoTotal > 0 ? `-${formatear(descuentoTotal)}` : null,
+      totalFinal: formatear(venta.total)
     };
 
   } catch (error) {

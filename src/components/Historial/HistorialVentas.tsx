@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import React, { useState } from 'react';
 import FiltroFechaModal from '@/components/Historial/FiltroFechaModal'; 
+import BotonDescargaPDFTabla from '@/components/Historial/BotonDescargaPDFTabla';
 
 interface VentaData {
   idRaw: number;
   id: string;       // Ej: "#V-1024"
   fecha: string;    // Ej: "24/05/2023"
   cuit: string;
+  clienteNombre: string;
   monto: string;
   vendedorNombre?: string;
 }
@@ -34,7 +36,8 @@ export default function HistorialVentas({ ventasIniciales, isAdmin, empleadoNomb
     const term = searchTerm.toLowerCase();
     const matchSearch = 
       venta.id.toLowerCase().includes(term) || 
-      (venta.cuit || "").toLowerCase().includes(term);
+      (venta.cuit || "").toLowerCase().includes(term) ||
+      (venta.clienteNombre || "").toLowerCase().includes(term);
 
     // B. Filtrado por Fecha Exacta
     const [vDia, vMes, vAnio] = venta.fecha.split("/");
@@ -115,6 +118,7 @@ export default function HistorialVentas({ ventasIniciales, isAdmin, empleadoNomb
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fecha</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">ID Venta</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cliente</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">CUIT/CUIL Cuenta</th>
                 {isAdmin && (
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Vendedor</th>
@@ -132,6 +136,9 @@ export default function HistorialVentas({ ventasIniciales, isAdmin, empleadoNomb
                     <td className="px-6 py-5 text-sm font-mono font-medium text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4">
                       {venta.id}
                     </td>
+                    <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                      {venta.clienteNombre}
+                    </td>
                     <td className={`px-6 py-5 text-sm font-mono font-medium ${venta.cuit === '-' ? 'text-slate-400 dark:text-slate-600' : 'text-cyan-600 hover:underline hover:cursor-pointer underline-offset-4 dark:text-slate-300'}`}>
                       {venta.cuit === '-' ? 'N/A (No Aplica)' : venta.cuit}
                     </td>
@@ -143,13 +150,16 @@ export default function HistorialVentas({ ventasIniciales, isAdmin, empleadoNomb
                     <td className="px-6 py-5 text-sm font-bold text-slate-900 dark:text-white">{venta.monto}</td>
                     
                     <td className="px-4 py-3 text-center sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-neutral-50 dark:group-hover:bg-slate-800 transition-colors z-10 shadow-[-1px_0_0_0_#ededed] dark:shadow-[-1px_0_0_0_#333]">
-                      <Link
-                        href={`/historial-ventas/${venta.idRaw}`}
-                        className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">visibility</span>
-                        <span>Ver Detalles</span>
-                      </Link>
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          href={`/historial-ventas/${venta.idRaw}`}
+                          className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm hover:shadow-md text-white bg-neutral-800 hover:bg-black dark:bg-white dark:text-black"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          <span>Ver Detalles</span>
+                        </Link>
+                        <BotonDescargaPDFTabla ventaId={venta.idRaw} />
+                      </div>
                     </td>
                   </tr>
                 ))

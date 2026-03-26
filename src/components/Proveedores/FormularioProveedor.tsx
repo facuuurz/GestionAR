@@ -93,6 +93,7 @@ export default function FormularioProveedor({ actionFunc, initialData }: Formula
             placeholder="Nombre del contacto"
             defaultValue={state.payload?.contacto}
             errors={state.errors?.contacto}
+            requiredMark
           />
 
           {/* 4. Teléfono */}
