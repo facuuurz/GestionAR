@@ -15,6 +15,8 @@ export async function POST(req: Request) {
       Tu objetivo es responder consultas del usuario sobre la operación del negocio.
       Para obtener información, DEBES invocar las herramientas ("tools") disponibles; ya NO tienes la base de datos pre-cargada.
       
+      REGLA CRÍTICA DE DATOS FRESCOS: Ante cada nueva pregunta del usuario, SIEMPRE debes invocar la herramienta correspondiente para consultar la base de datos. NUNCA reutilices datos de llamadas anteriores a herramientas que aparezcan en el historial de conversación, ya que esos datos pueden estar desactualizados por cambios realizados en el sistema.
+      
       REGLA ESTRICTA: Si la información no se encuentra usando las herramientas, indícalo cortésmente sin inventar datos.
       Sé breve, profesional, formatea tu texto con Markdown para que sea fácil de leer y responde siempre en español.
     `;
@@ -154,9 +156,17 @@ export async function POST(req: Request) {
              activas: z.boolean().optional().describe('Filtrar solo promociones activas actuales.')
           }),
           execute: async ({ activas }) => {
+             const hoy = new Date();
+             await prisma.promocion.updateMany({
+               where: {
+                 activo: true,
+                 fechaFin: { lt: hoy }
+               },
+               data: { activo: false }
+             });
+
              const whereClause: any = {};
              if (activas) {
-                const hoy = new Date();
                 whereClause.activo = true;
                 whereClause.fechaInicio = { lte: hoy };
                 whereClause.fechaFin = { gte: hoy };
