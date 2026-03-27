@@ -91,6 +91,15 @@ const ITEMS_POR_PAGINA = 15; // Ajusta este número según prefieras
 
 export async function obtenerPromociones(query: string = "", soloActivas: boolean = false, page: number = 1) {
   try {
+    const ahora = new Date();
+    await prisma.promocion.updateMany({
+      where: {
+        activo: true,
+        fechaFin: { lt: ahora }
+      },
+      data: { activo: false }
+    });
+
     const where: any = {
       ...(soloActivas ? { activo: true } : {}),
       ...(query ? {
@@ -381,6 +390,15 @@ export async function eliminarPromocion(id: number) {
 // --- OBTENER POR ID ---
 export async function obtenerPromocionPorId(id: number) {
   try {
+    const ahora = new Date();
+    await prisma.promocion.updateMany({
+      where: {
+        activo: true,
+        fechaFin: { lt: ahora }
+      },
+      data: { activo: false }
+    });
+
     const promocion = await prisma.promocion.findUnique({
       where: { id },
       include: {
