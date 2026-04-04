@@ -350,6 +350,37 @@ const manualData: ManualSection[] = [
       - **Ranking "Huesos" (Stock Estancado):** Te alerta sobre aquellos artículos que llevan más de 30 días sin registrar ni una sola venta. Es información clave para que decidas armar una Promoción y liberar ese espacio/dinero. Si todo se vende bien, verás el mensaje verde: "Excelente, no hay stock estancado".
       - **Riesgo Financiero (Top Deudores):** Si utilizas el módulo de Cuentas Corrientes, este recuadro te mostrará inmediatamente a los clientes que tienen las mayores deudas acumuladas (en rojo) junto a su número de teléfono, para que puedas gestionar la cobranza rápidamente (Ej. Facundo Hernandez: $16.000).
     `
+  },
+  {
+    id: "asistente-ia",
+    title: "Asistente IA (Chatbot)",
+    icon: "smart_toy",
+    description: "Consulta la información de tu negocio en tiempo real con Inteligencia Artificial.",
+    content: `
+      ### Asistente GestionAR
+
+      ¡Bienvenido al Asistente GestionAR! Para facilitarte el día a día, hemos integrado una Inteligencia Artificial directamente en tu sistema. Este asistente actúa como tu mano derecha, capaz de leer la información de tu negocio en tiempo real para darte respuestas rápidas sin que tengas que buscar pantalla por pantalla.
+
+      **1. ¿Cómo acceder al Asistente?**
+
+      **Abrir el chat:** En cualquier pantalla de GestionAR, busca el botón circular negro con el ícono de mensaje ubicado siempre en la esquina inferior derecha. Al hacerle clic, se desplegará la ventana principal del Asistente GestionAR.
+
+      **Cerrar el chat:** Puedes minimizarlo en cualquier momento haciendo clic en la "X" ubicada en la esquina superior derecha de la ventanita, o volviendo a presionar el botón circular negro inferior. Todo tu historial de charla reciente seguirá ahí si lo vuelves a abrir.
+
+      **2. ¿Cómo utilizarlo?**
+
+      En la barra inferior que dice "Escribe tu consulta aquí...", redacta tu pregunta con total naturalidad, como si le estuvieras hablando a un empleado o encargado.
+
+      Haz clic en el ícono de la flecha (o presiona la tecla Enter en tu teclado) para enviar tu mensaje. ¡El asistente te responderá en cuestión de segundos!
+
+      **3. ¿Qué le puedo preguntar? (⚠️ Importante)**
+
+      El Asistente GestionAR está estrictamente programado para ser una herramienta de trabajo exclusiva de tu empresa. Solo responderá preguntas referidas a la información guardada dentro del sistema GestionAR. Puedes hacerle consultas operativas rápidas como, por ejemplo:
+
+      - **"¿Qué productos tienen stock bajo?"**
+      - **"¿Cuáles son los clientes que nos deben dinero actualmente?"**
+      - **"¿Qué promociones tenemos activas?"**
+    `
   }
 ];
 
