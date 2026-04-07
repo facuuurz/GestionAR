@@ -58,7 +58,7 @@ export async function POST(req: Request) {
             if (proveedor) whereClause.proveedor = { contains: proveedor, mode: 'insensitive' as const };
             const resultados = await prisma.producto.findMany({
               where: whereClause,
-              take: 50,
+              take: 200,
               select: { nombre: true, codigoBarra: true, stock: true, precio: true, tipo: true, proveedor: true }
             });
             return { resultados };
@@ -177,6 +177,21 @@ export async function POST(req: Request) {
                 select: { nombre: true, descripcion: true, precio: true, fechaInicio: true, fechaFin: true, activo: true }
              });
              return { resultados };
+          }
+        }),
+        contarRegistros: tool({
+          description: 'Cuenta el total exacto de registros en una tabla (productos, ventas, clientes, proveedores, promociones). Usar SIEMPRE que el usuario pregunte "cuántos" hay en total.',
+          parameters: z.object({
+            tabla: z.enum(['productos', 'ventas', 'clientes', 'proveedores', 'promociones']).describe('La tabla a contar.')
+          }),
+          execute: async ({ tabla }) => {
+            let total = 0;
+            if (tabla === 'productos')   total = await prisma.producto.count();
+            if (tabla === 'ventas')      total = await prisma.venta.count();
+            if (tabla === 'clientes')    total = await prisma.cuenta_corriente.count();
+            if (tabla === 'proveedores') total = await prisma.proveedor.count();
+            if (tabla === 'promociones') total = await prisma.promocion.count();
+            return { tabla, total };
           }
         })
       }
